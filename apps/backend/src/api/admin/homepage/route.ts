@@ -22,7 +22,10 @@ export const POST = async (
   const settings = await homepageModuleService.listHomepageSettings()
   
   if (settings.length > 0) {
-    const updated = await homepageModuleService.updateHomepageSettings(settings[0].id, req.body as any)
+    const updated = await homepageModuleService.updateHomepageSettings({
+      id: settings[0].id,
+      ...req.body as any
+    })
     res.json({ homepage_setting: updated })
   } else {
     const created = await homepageModuleService.createHomepageSettings(req.body as any)

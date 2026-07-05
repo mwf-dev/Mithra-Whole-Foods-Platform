@@ -1,19 +1,27 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import type { HomepageSettings } from '@/services/medusa';
+import { BACKEND_URL } from '@/services/medusa';
 
-export function Collections() {
+export function Collections({ settings }: { settings?: HomepageSettings | null }) {
+  let img1 = settings?.promo_card_1_url || 'https://placehold.co/200x200/f3eef0/c09a9a?text=Breakfast';
+  if (img1.startsWith('/')) img1 = `${BACKEND_URL}${img1}`;
+  
+  let img2 = settings?.promo_card_2_url || 'https://placehold.co/200x200/f2ece1/b39a7a?text=Millets';
+  if (img2.startsWith('/')) img2 = `${BACKEND_URL}${img2}`;
+
   const collections = [
     {
-      title: 'Breakfast Essentials',
+      title: settings?.promo_card_1_title || 'Breakfast Essentials',
       desc: 'Start your day the healthy way',
       bg: 'bg-[#F3EEF0]',
-      img: 'https://placehold.co/200x200/f3eef0/c09a9a?text=Breakfast'
+      img: img1
     },
     {
-      title: 'Millet Collection',
+      title: settings?.promo_card_2_title || 'Millet Collection',
       desc: 'Wholesome millets for every meal',
       bg: 'bg-[#F2ECE1]',
-      img: 'https://placehold.co/200x200/f2ece1/b39a7a?text=Millets'
+      img: img2
     },
     {
       title: 'Natural Sweeteners',
@@ -54,7 +62,7 @@ export function Collections() {
               </div>
               <div 
                 className="absolute right-0 bottom-0 w-32 h-32 bg-contain bg-bottom bg-no-repeat -mb-2 -mr-2 group-hover:scale-105 transition-transform duration-500"
-                style={{ backgroundImage: `url(${coll.img})` }}
+                style={{ backgroundImage: `url('${coll.img}')` }}
               ></div>
             </div>
           ))}

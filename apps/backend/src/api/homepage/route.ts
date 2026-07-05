@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { HOMEPAGE_MODULE } from "../../../modules/homepage"
-import HomepageService from "../../../modules/homepage/service"
+import { HOMEPAGE_MODULE } from "../../modules/homepage"
+import HomepageService from "../../modules/homepage/service"
 
 export const GET = async (
   req: MedusaRequest,
