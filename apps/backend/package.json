@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "@dtc/backend",
   "version": "0.0.1",
   "description": "A starter for Medusa projects.",
   "author": "Medusa (https://medusajs.com)",
@@ -19,7 +19,9 @@
     "lint": "medusa lint",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
     "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
-    "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
+    "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit",
+    "db:migrate": "medusa db:migrate",
+    "seed": "medusa exec ./src/migration-scripts/initial-data-seed.ts"
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.17.0",
@@ -32,6 +34,7 @@
     "@medusajs/medusa": "2.17.0",
     "@medusajs/ui": "4.1.15",
     "@tanstack/react-query": "5.64.2",
+    "pg": "^8.22.0",
     "react-i18next": "13.5.0",
     "react-router-dom": "6.30.3",
     "zod": "4.2.0"
@@ -55,5 +58,6 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "packageManager": "pnpm@9.0.0"
 }
