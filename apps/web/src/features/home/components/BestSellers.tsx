@@ -2,57 +2,33 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { ProductCard } from './ProductCard';
 
-export function BestSellers() {
-  const dummyProducts = [
+export function BestSellers({ products = [] }: { products?: any[] }) {
+  const displayProducts = products.length > 0 ? products.map(p => {
+    const priceAmount = p.variants?.[0]?.prices?.[0]?.amount || 0;
+    return {
+      title: p.title,
+      weight: p.variants?.[0]?.options?.Weight || '1kg',
+      price: priceAmount,
+      originalPrice: null,
+      rating: 5.0, // default rating for now
+      reviews: 10,
+      isNew: false,
+      img: p.images?.[0]?.url || 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product'
+    };
+  }) : [
     {
       title: 'Organic Little Millet',
       weight: '500g',
-      price: 5.99,
+      price: 120,
       originalPrice: null,
       rating: 4.8,
       reviews: 124,
       isNew: false,
       img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+1'
-    },
-    {
-      title: 'Barnyard Millet',
-      weight: '500g',
-      price: 4.99,
-      rating: 4.9,
-      reviews: 89,
-      isNew: false,
-      img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+2'
-    },
-    {
-      title: 'Cold Pressed Groundnut Oil',
-      weight: '1L',
-      price: 9.99,
-      originalPrice: 12.99,
-      rating: 5.0,
-      reviews: 245,
-      isNew: false,
-      img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+3'
-    },
-    {
-      title: 'A2 Cow Ghee',
-      weight: '500ml',
-      price: 14.99,
-      rating: 4.7,
-      reviews: 56,
-      isNew: false,
-      img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+4'
-    },
-    {
-      title: 'Multi Millet Health Mix',
-      weight: '500g',
-      price: 6.99,
-      originalPrice: null,
-      rating: 4.8,
-      reviews: 112,
-      isNew: false,
-      img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+5'
     }
   ];
+
+
 
   return (
     <section className="py-12 bg-white">
@@ -76,7 +52,7 @@ export function BestSellers() {
 
           {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {dummyProducts.map((product, i) => (
+            {displayProducts.map((product, i) => (
               <ProductCard key={i} {...product} />
             ))}
           </div>

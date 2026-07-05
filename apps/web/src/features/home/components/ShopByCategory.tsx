@@ -1,7 +1,11 @@
 import Link from 'next/link';
 
-export function ShopByCategory() {
-  const categories = [
+export function ShopByCategory({ categories = [] }: { categories?: any[] }) {
+  const displayCategories = categories.length > 0 ? categories.map(c => ({
+    name: c.name,
+    sub: `${c.products?.length || 0} Products`,
+    img: `https://placehold.co/150x150/fdfbf7/a99479?text=${encodeURIComponent(c.name)}`
+  })) : [
     { name: 'Millets', sub: '32 Products', img: 'https://placehold.co/150x150/fdfbf7/a99479?text=Millets' },
     { name: 'Traditional Rice', sub: '28 Products', img: 'https://placehold.co/150x150/fdfbf7/a99479?text=Rice' },
     { name: 'Cold Pressed Oils', sub: '18 Products', img: 'https://placehold.co/150x150/fdfbf7/a99479?text=Oils' },
@@ -27,7 +31,7 @@ export function ShopByCategory() {
         
         {/* Horizontal scroll container */}
         <div className="flex overflow-x-auto gap-4 md:gap-8 pb-8 no-scrollbar snap-x justify-start md:justify-center">
-          {categories.map((cat, i) => (
+          {displayCategories.map((cat, i) => (
             <div key={i} className="flex flex-col items-center gap-3 snap-start group cursor-pointer flex-shrink-0 w-[120px]">
               <div 
                 className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-center bg-cover border-4 border-white shadow-sm"

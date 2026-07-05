@@ -9,7 +9,7 @@ import { TrustStrip } from './components/TrustStrip';
 import { Newsletter } from './components/Newsletter';
 import type { HomepageSettings } from '@/services/medusa';
 
-export function Home({ settings: initialSettings }: { settings: HomepageSettings | null }) {
+export function Home({ settings: initialSettings, bestSellers = [], categories = [] }: { settings: HomepageSettings | null, bestSellers?: any[], categories?: any[] }) {
   const [settings, setSettings] = useState<HomepageSettings | null>(initialSettings);
 
   useEffect(() => {
@@ -26,8 +26,8 @@ export function Home({ settings: initialSettings }: { settings: HomepageSettings
   return (
     <div className="flex flex-col w-full bg-[#FAFAFA]">
       <Hero settings={settings} />
-      <ShopByCategory />
-      <BestSellers />
+      <ShopByCategory categories={categories} />
+      <BestSellers products={bestSellers} />
       <Collections settings={settings} />
       <WhyChooseUs />
       <TrustStrip />
