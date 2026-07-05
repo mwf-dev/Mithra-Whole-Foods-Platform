@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Premium Grocery & Traditional Foods E-commerce Platform",
 };
 
+import { GlobalShell } from '@/features/layout/GlobalShell';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,10 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${playfair.variable} antialiased`}
-      >
-        {children}
+      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+        <GlobalShell>
+          {children}
+        </GlobalShell>
       </body>
     </html>
   );
