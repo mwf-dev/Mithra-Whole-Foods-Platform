@@ -2,7 +2,12 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
-if (process.env.NODE_ENV === 'production') {
+// Treat anything that is not explicitly development/test as production:
+// Cloud Run does not set NODE_ENV automatically, and a missing NODE_ENV
+// must never silently downgrade to insecure defaults.
+const IS_DEV = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+
+if (!IS_DEV) {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'supersecret') {
     throw new Error('JWT_SECRET must be securely set in production');
   }
@@ -23,8 +28,9 @@ module.exports = defineConfig({
       storeCors: process.env.STORE_CORS || "",
       adminCors: process.env.ADMIN_CORS || "",
       authCors: process.env.AUTH_CORS || "",
-      jwtSecret: process.env.JWT_SECRET || "supersecret",
-      cookieSecret: process.env.COOKIE_SECRET || "supersecret",
+      // Dev-only fallback; the guard above makes unset secrets fatal outside development/test
+      jwtSecret: process.env.JWT_SECRET || (IS_DEV ? "supersecret" : ""),
+      cookieSecret: process.env.COOKIE_SECRET || (IS_DEV ? "supersecret" : ""),
     }
   },
   modules: [

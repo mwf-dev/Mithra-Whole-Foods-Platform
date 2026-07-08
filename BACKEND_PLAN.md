@@ -7,7 +7,7 @@ Audited: `apps/backend` (config, API routes, homepage module, admin UI, seed scr
 
 ## 🚨 Critical, act before anything else
 
-**Live production DB credential leaked in git.** `apps/backend/get_key.js:5` contains the full Neon connection string including password (`npg_NUPG8ym6Dlkb@ep-dry-frost-...`). `test-db.js` / `test-env.js` and `.env.production` / `.env.development` / `.env.test` are also git-tracked. **Rotate the Neon credential immediately**, delete these files, purge git history (e.g. `git filter-repo`), keep only `.env.template` with placeholders. JWT/cookie secrets are `supersecret` (Medusa's known default) — forgeable admin sessions.
+**Live production DB credential leaked in git.** `apps/backend/get_key.js:5` contains the full Neon connection string including password (`<REDACTED — rotate this credential>`). `test-db.js` / `test-env.js` and `.env.production` / `.env.development` / `.env.test` are also git-tracked. **Rotate the Neon credential immediately**, delete these files, purge git history (e.g. `git filter-repo`), keep only `.env.template` with placeholders. JWT/cookie secrets are `supersecret` (Medusa's known default) — forgeable admin sessions.
 
 ---
 

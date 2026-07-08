@@ -14,7 +14,7 @@
 **Files:** `apps/backend/.env` (line 3), `apps/backend/get_key.js`, `apps/backend/test-db.js`, `apps/backend/test-env.js`
 **What:** The Neon PostgreSQL connection string containing username + password is tracked in git:
 ```
-DATABASE_URL='postgres://neondb_owner:npg_NUPG8ym6Dlkb@ep-dry-frost-...'
+DATABASE_URL='postgres://neondb_owner:<REDACTED>@ep-dry-frost-...'
 ```
 This is a full read/write credential to the production database. Additionally `.env.production`, `.env.development`, `.env.test` across both apps are git-tracked and contain real credentials.
 **Risk:** Anyone with repo access (committers, CI/CD, any future contributor) has unlimited access to the production database.
