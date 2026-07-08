@@ -1,36 +1,21 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import "./globals.css";
+import { getBaseURL } from "@lib/util/env"
+import { Metadata } from "next"
+import { Inter, Playfair_Display } from "next/font/google"
+import "styles/globals.css"
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" })
 
 export const metadata: Metadata = {
-  title: "Mithra Whole Foods",
-  description: "Premium Grocery & Traditional Foods E-commerce Platform",
-};
+  metadataBase: new URL(getBaseURL()),
+}
 
-import { GlobalShell } from '@/features/layout/GlobalShell';
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
-        <GlobalShell>
-          {children}
-        </GlobalShell>
+    <html lang="en" data-mode="light" className={`${inter.variable} ${playfair.variable}`}>
+      <body>
+        <main className="relative">{props.children}</main>
       </body>
     </html>
-  );
+  )
 }

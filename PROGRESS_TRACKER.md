@@ -25,3 +25,10 @@ This document tracks the step-by-step progress of the Mithra Whole Foods project
 - [x] Fix crash in `ProductDetails.tsx` by using optional chaining on product variants to safely handle invalid handles.
 - [x] Format product prices using the Indian Rupee (`INR`) locale (`Intl.NumberFormat`).
 - [x] Remove the dummy fallback product array from `BestSellers.tsx` and implement an honest empty state for empty categories/API results.
+
+## Phase 4: Migration to Medusa Next.js Storefront Starter
+- [x] Swapped custom Next.js frontend with the official Medusa Next.js starter template for robust auth, cart, and checkout logic.
+- [x] Merged custom UI styling (colors, tailwind config, Playfair font) from the old web app into the new template.
+- [x] Ported custom Mithra layout components (`Hero`, `CategoryNav`, `BestSellers`) to the starter's homepage.
+- [x] Adapted `ProductCard` to use Medusa's `HttpTypes.StoreProduct` and replace the starter's default `ProductPreview`.
+- [x] Injected the custom Product Details Page (PDP) design into the Medusa `ProductTemplate` while retaining the core Medusa `ProductActionsWrapper` for functioning cart and variants.
