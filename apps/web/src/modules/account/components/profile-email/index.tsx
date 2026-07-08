@@ -1,74 +1,32 @@
 "use client"
 
-import React, { useEffect, useActionState } from "react";
+import React from "react"
 
-import Input from "@modules/common/components/input"
-
-import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
-// import { updateCustomer } from "@lib/data/customer"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
 }
 
+// Medusa's store API does not support changing the sign-in email, so this is
+// intentionally read-only. The previous editable form pretended to succeed
+// without saving anything.
 const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
-  const [successState, setSuccessState] = React.useState(false)
-
-  // TODO: It seems we don't support updating emails now?
-  const updateCustomerEmail = (
-    _currentState: Record<string, unknown>,
-    formData: FormData
-  ) => {
-    const customer = {
-      email: formData.get("email") as string,
-    }
-
-    try {
-      // await updateCustomer(customer)
-      return { success: true, error: null }
-    } catch (error: any) {
-      return { success: false, error: error.toString() }
-    }
-  }
-
-  const [state, formAction] = useActionState(updateCustomerEmail, {
-    error: false,
-    success: false,
-  })
-
-  const clearState = () => {
-    setSuccessState(false)
-  }
-
-  useEffect(() => {
-    setSuccessState(state.success)
-  }, [state])
-
   return (
-    <form action={formAction} className="w-full">
-      <AccountInfo
-        label="Email"
-        currentInfo={`${customer.email}`}
-        isSuccess={successState}
-        isError={!!state.error}
-        errorMessage={state.error}
-        clearState={clearState}
-        data-testid="account-email-editor"
-      >
-        <div className="grid grid-cols-1 gap-y-2">
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            defaultValue={customer.email}
-            data-testid="email-input"
-          />
+    <div className="text-small-regular w-full" data-testid="account-email-editor">
+      <div className="flex items-end justify-between">
+        <div className="flex flex-col">
+          <span className="uppercase text-ui-fg-base">Email</span>
+          <span className="font-semibold" data-testid="current-info">
+            {customer.email}
+          </span>
         </div>
-      </AccountInfo>
-    </form>
+      </div>
+      <span className="text-ui-fg-muted text-xs mt-2 block">
+        Your email is used to sign in and can&apos;t be changed here. Contact
+        support if you need to update it.
+      </span>
+    </div>
   )
 }
 

@@ -56,9 +56,15 @@ const EditAddress: React.FC<EditAddressProps> = ({
   }, [formState])
 
   const removeAddress = async () => {
+    if (!window.confirm("Delete this address? This can't be undone.")) {
+      return
+    }
     setRemoving(true)
-    await deleteCustomerAddress(address.id)
-    setRemoving(false)
+    try {
+      await deleteCustomerAddress(address.id)
+    } finally {
+      setRemoving(false)
+    }
   }
 
   return (

@@ -38,9 +38,11 @@ export default function ProductPreview({
       {/* Image Container */}
       <LocalizedClientLink href={href} className="relative aspect-[4/5] bg-gray-50/50 rounded-lg mb-4 overflow-hidden flex items-center justify-center block">
         {/* Placeholder for Product Image */}
-        <div 
+        <div
           className="absolute inset-0 bg-contain bg-center bg-no-repeat group-hover:scale-105 transition-transform duration-500 m-4"
           style={{ backgroundImage: `url('${safeCssUrl(img)}')` }}
+          role="img"
+          aria-label={product.title}
         ></div>
       </LocalizedClientLink>
 

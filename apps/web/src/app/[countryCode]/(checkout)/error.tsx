@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect } from "react"
 
 export default function CheckoutError({
@@ -32,12 +33,12 @@ export default function CheckoutError({
         >
           Try again
         </button>
-        <a
+        <Link
           href="/cart"
           className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
         >
           Back to cart
-        </a>
+        </Link>
       </div>
     </div>
   )

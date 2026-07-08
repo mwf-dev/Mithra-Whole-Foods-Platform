@@ -61,9 +61,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           {/* Images */}
           <div className="w-full md:w-1/2">
             <div className="aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center p-8">
-              <div 
+              <div
                 className="w-full h-full bg-contain bg-center bg-no-repeat"
                 style={{ backgroundImage: `url('${safeCssUrl(currentImage)}')` }}
+                role="img"
+                aria-label={product.title}
               ></div>
             </div>
           </div>

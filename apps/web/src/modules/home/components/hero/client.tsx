@@ -52,7 +52,9 @@ export function HeroClient({ initialTitle, initialSubtitle, initialBgImage, back
     return () => window.removeEventListener("message", handleMessage);
   }, [backendUrl]);
 
-  const formattedTitle = title.split('\\n').map((line, i, arr) => (
+  // Titles may contain real newlines (typed in admin) or the literal "\n"
+  // stored by the seed default — normalize both to line breaks.
+  const formattedTitle = title.replace(/\\n/g, "\n").split("\n").map((line, i, arr) => (
     <span key={i}>
       {line}
       {i < arr.length - 1 && <br />}
@@ -62,9 +64,11 @@ export function HeroClient({ initialTitle, initialSubtitle, initialBgImage, back
   return (
     <section className="relative w-full h-[600px] md:h-[700px] flex items-center bg-gray-100 overflow-hidden">
       {/* Background Image Placeholder */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url('${safeCssUrl(bgImage)}')` }}
+        role="img"
+        aria-label="Farm fresh produce background"
       ></div>
       <div className="absolute inset-0 bg-black/40"></div>
       

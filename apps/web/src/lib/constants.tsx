@@ -1,5 +1,6 @@
 import React from "react"
 import { CreditCard } from "@medusajs/icons"
+import { Banknote } from "lucide-react"
 
 import Ideal from "@modules/common/icons/ideal"
 import Bancontact from "@modules/common/icons/bancontact"
@@ -30,9 +31,12 @@ export const paymentInfoMap: Record<
     title: "PayPal",
     icon: <PayPal />,
   },
+  // Presented as Cash on Delivery: the system-default provider authorizes
+  // without charging, and payment is collected on delivery. Swap in a real
+  // gateway (Razorpay/Stripe) before enabling online payments.
   pp_system_default: {
-    title: "Manual Payment",
-    icon: <CreditCard />,
+    title: "Cash on Delivery (COD)",
+    icon: <Banknote size={20} />,
   },
   // Add more payment providers here
 }
