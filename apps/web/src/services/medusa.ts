@@ -77,3 +77,35 @@ export async function getCategories() {
     return [];
   }
 }
+
+export async function getProducts(categoryId?: string) {
+  try {
+    const query: any = {
+      fields: "*variants,*variants.prices,*categories",
+    };
+    
+    if (categoryId) {
+      query.category_id = [categoryId];
+    }
+    
+    const { products } = await sdk.store.product.list(query, { next: { revalidate: 0 } });
+    return products || [];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+}
+
+export async function getProductByHandle(handle: string) {
+  try {
+    const { products } = await sdk.store.product.list({
+      handle,
+      fields: "*variants,*variants.prices,*categories,*options",
+    }, { next: { revalidate: 0 } });
+    
+    return products?.[0] || null;
+  } catch (error) {
+    console.error(`Error fetching product ${handle}:`, error);
+    return null;
+  }
+}

@@ -18,7 +18,14 @@ export function Header() {
           </div>
         </Link>
 
-        {/* Search Bar - Hidden on small screens, full width on large */}
+        {/* Navigation - desktop */}
+        <nav className="hidden lg:flex items-center gap-6">
+          <Link href="/shop" className="text-sm font-bold text-gray-700 hover:text-[#2E5C31]">Shop</Link>
+          <Link href="/shop" className="text-sm font-bold text-gray-700 hover:text-[#2E5C31]">Categories</Link>
+          <Link href="#" className="text-sm font-bold text-gray-700 hover:text-[#2E5C31]">About Us</Link>
+        </nav>
+
+        {/* Search Bar - Hidden on small screens, flex on large */}
         <div className="hidden md:flex flex-1 max-w-2xl items-center relative">
           <input 
             type="text" 

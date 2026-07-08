@@ -10,9 +10,10 @@ interface ProductCardProps {
   reviews: number;
   isNew?: boolean;
   img?: string;
+  href?: string;
 }
 
-export function ProductCard({ title, weight, price, originalPrice, rating, reviews, isNew, img }: ProductCardProps) {
+export function ProductCard({ title, weight, price, originalPrice, rating, reviews, isNew, img, href = "#" }: ProductCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-xl hover:border-gray-200 transition-all duration-300 flex flex-col group h-full">
       
@@ -38,7 +39,7 @@ export function ProductCard({ title, weight, price, originalPrice, rating, revie
         </div>
 
         {/* Title & Weight */}
-        <Link href="#" className="flex-1 mb-2">
+        <Link href={href} className="flex-1 mb-2">
           <h4 className="font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#4A5D23] transition-colors line-clamp-2 text-sm">
             {title}
           </h4>
