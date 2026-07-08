@@ -14,6 +14,7 @@ import {
   removeCartId,
   setAuthToken,
 } from "./cookies"
+import { addressRules, validateFormFields } from "@lib/util/form-validation"
 
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
@@ -60,12 +61,24 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
 }
 
 export async function signup(_currentState: unknown, formData: FormData) {
-  const password = formData.get("password") as string
+  const { values, error } = validateFormFields(formData, {
+    email: { label: "Email", required: true, maxLength: 255, kind: "email" },
+    password: { label: "Password", required: true, minLength: 8, maxLength: 128 },
+    first_name: { label: "First name", required: true, maxLength: 100 },
+    last_name: { label: "Last name", required: true, maxLength: 100 },
+    phone: { label: "Phone", maxLength: 32, kind: "phone" },
+  })
+
+  if (error) {
+    return error
+  }
+
+  const password = values.password
   const customerForm = {
-    email: formData.get("email") as string,
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    phone: formData.get("phone") as string,
+    email: values.email,
+    first_name: values.first_name,
+    last_name: values.last_name,
+    phone: values.phone,
   }
 
   try {
@@ -105,8 +118,16 @@ export async function signup(_currentState: unknown, formData: FormData) {
 }
 
 export async function login(_currentState: unknown, formData: FormData) {
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
+  const { values, error } = validateFormFields(formData, {
+    email: { label: "Email", required: true, maxLength: 255, kind: "email" },
+    password: { label: "Password", required: true, maxLength: 128 },
+  })
+
+  if (error) {
+    return error
+  }
+
+  const { email, password } = values
 
   try {
     await sdk.auth
@@ -165,17 +186,22 @@ export const addCustomerAddress = async (
   const isDefaultBilling = (currentState.isDefaultBilling as boolean) || false
   const isDefaultShipping = (currentState.isDefaultShipping as boolean) || false
 
+  const { values, error } = validateFormFields(formData, addressRules())
+  if (error) {
+    return { success: false, error }
+  }
+
   const address = {
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
-    address_2: formData.get("address_2") as string,
-    city: formData.get("city") as string,
-    postal_code: formData.get("postal_code") as string,
-    province: formData.get("province") as string,
-    country_code: formData.get("country_code") as string,
-    phone: formData.get("phone") as string,
+    first_name: values.first_name,
+    last_name: values.last_name,
+    company: values.company,
+    address_1: values.address_1,
+    address_2: values.address_2,
+    city: values.city,
+    postal_code: values.postal_code,
+    province: values.province,
+    country_code: values.country_code,
+    phone: values.phone,
     is_default_billing: isDefaultBilling,
     is_default_shipping: isDefaultShipping,
   }
@@ -226,22 +252,25 @@ export const updateCustomerAddress = async (
     return { success: false, error: "Address ID is required" }
   }
 
+  const { values, error } = validateFormFields(formData, addressRules())
+  if (error) {
+    return { success: false, error }
+  }
+
   const address = {
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
-    address_2: formData.get("address_2") as string,
-    city: formData.get("city") as string,
-    postal_code: formData.get("postal_code") as string,
-    province: formData.get("province") as string,
-    country_code: formData.get("country_code") as string,
+    first_name: values.first_name,
+    last_name: values.last_name,
+    company: values.company,
+    address_1: values.address_1,
+    address_2: values.address_2,
+    city: values.city,
+    postal_code: values.postal_code,
+    province: values.province,
+    country_code: values.country_code,
   } as HttpTypes.StoreUpdateCustomerAddress
 
-  const phone = formData.get("phone") as string
-
-  if (phone) {
-    address.phone = phone
+  if (values.phone) {
+    address.phone = values.phone
   }
 
   const headers = {

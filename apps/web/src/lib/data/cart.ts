@@ -15,6 +15,7 @@ import {
 } from "./cookies"
 import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
+import { addressRules, validateFormFields } from "@lib/util/form-validation"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -325,9 +326,15 @@ export async function submitPromotionForm(
   currentState: unknown,
   formData: FormData
 ) {
-  const code = formData.get("code") as string
+  const { values, error } = validateFormFields(formData, {
+    code: { label: "Promotion code", required: true, maxLength: 100 },
+  })
+  if (error) {
+    return error
+  }
+
   try {
-    await applyPromotions([code])
+    await applyPromotions([values.code])
   } catch (e: any) {
     return e.message
   }
@@ -335,55 +342,74 @@ export async function submitPromotionForm(
 
 // TODO: Pass a POJO instead of a form entity here
 export async function setAddresses(currentState: unknown, formData: FormData) {
+  let countryCode: string
+
   try {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
 
+    const shipping = validateFormFields(formData, {
+      ...addressRules("shipping_address."),
+      email: { label: "Email", required: true, maxLength: 255, kind: "email" },
+    })
+    if (shipping.error) {
+      return shipping.error
+    }
+    const sv = shipping.values
+    countryCode = sv["shipping_address.country_code"].toLowerCase()
+
     const data = {
       shipping_address: {
-        first_name: formData.get("shipping_address.first_name"),
-        last_name: formData.get("shipping_address.last_name"),
-        address_1: formData.get("shipping_address.address_1"),
+        first_name: sv["shipping_address.first_name"],
+        last_name: sv["shipping_address.last_name"],
+        address_1: sv["shipping_address.address_1"],
         address_2: "",
-        company: formData.get("shipping_address.company"),
-        postal_code: formData.get("shipping_address.postal_code"),
-        city: formData.get("shipping_address.city"),
-        country_code: formData.get("shipping_address.country_code"),
-        province: formData.get("shipping_address.province"),
-        phone: formData.get("shipping_address.phone"),
+        company: sv["shipping_address.company"],
+        postal_code: sv["shipping_address.postal_code"],
+        city: sv["shipping_address.city"],
+        country_code: countryCode,
+        province: sv["shipping_address.province"],
+        phone: sv["shipping_address.phone"],
       },
-      email: formData.get("email"),
+      email: sv["email"],
     } as any
 
     const sameAsBilling = formData.get("same_as_billing")
-    if (sameAsBilling === "on") data.billing_address = data.shipping_address
-
-    if (sameAsBilling !== "on")
-      data.billing_address = {
-        first_name: formData.get("billing_address.first_name"),
-        last_name: formData.get("billing_address.last_name"),
-        address_1: formData.get("billing_address.address_1"),
-        address_2: "",
-        company: formData.get("billing_address.company"),
-        postal_code: formData.get("billing_address.postal_code"),
-        city: formData.get("billing_address.city"),
-        country_code: formData.get("billing_address.country_code"),
-        province: formData.get("billing_address.province"),
-        phone: formData.get("billing_address.phone"),
+    if (sameAsBilling === "on") {
+      data.billing_address = data.shipping_address
+    } else {
+      const billing = validateFormFields(
+        formData,
+        addressRules("billing_address.")
+      )
+      if (billing.error) {
+        return billing.error
       }
+      const bv = billing.values
+      data.billing_address = {
+        first_name: bv["billing_address.first_name"],
+        last_name: bv["billing_address.last_name"],
+        address_1: bv["billing_address.address_1"],
+        address_2: "",
+        company: bv["billing_address.company"],
+        postal_code: bv["billing_address.postal_code"],
+        city: bv["billing_address.city"],
+        country_code: bv["billing_address.country_code"].toLowerCase(),
+        province: bv["billing_address.province"],
+        phone: bv["billing_address.phone"],
+      }
+    }
     await updateCart(data)
   } catch (e: any) {
     return e.message
   }
 
-  redirect(
-    `/${formData.get("shipping_address.country_code")}/checkout?step=delivery`
-  )
+  redirect(`/${countryCode}/checkout?step=delivery`)
 }
 
 /**
