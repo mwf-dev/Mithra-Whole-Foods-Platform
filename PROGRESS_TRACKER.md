@@ -19,3 +19,9 @@ This document tracks the step-by-step progress of the Mithra Whole Foods project
 - [x] Refactor `Shop.tsx` and `shop/page.tsx` to drive the active category state from the URL (`useSearchParams`) rather than local state.
 - [x] Update `ProductCard.tsx` to make both the product image and title clickable, wrapping them in `<Link>` tags for better UX.
 - [x] Verify the end-to-end product navigation flow: Homepage → Shop (Filtered by Category) → Product Details Page.
+
+## Phase 3: Routing Hygiene, Performance & Honest UI States
+- [x] Optimize homepage loading performance by fetching data concurrently with `Promise.all` (`app/page.tsx`).
+- [x] Fix crash in `ProductDetails.tsx` by using optional chaining on product variants to safely handle invalid handles.
+- [x] Format product prices using the Indian Rupee (`INR`) locale (`Intl.NumberFormat`).
+- [x] Remove the dummy fallback product array from `BestSellers.tsx` and implement an honest empty state for empty categories/API results.

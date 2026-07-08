@@ -4,9 +4,11 @@ import { getHomepageSettings, getBestSellers, getCategories } from '@/services/m
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  const settings = await getHomepageSettings();
-  const bestSellers = await getBestSellers();
-  const categories = await getCategories();
+  const [settings, bestSellers, categories] = await Promise.all([
+    getHomepageSettings(),
+    getBestSellers(),
+    getCategories()
+  ]);
   
   return (
     <HomePage settings={settings} bestSellers={bestSellers} categories={categories} />

@@ -6,7 +6,7 @@ import { ProductCard } from '@/features/home/components/ProductCard';
 
 export function ProductDetails({ product, relatedProducts = [] }: { product: any, relatedProducts?: any[] }) {
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
+  const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0] || null);
   
   if (!product) return <div>Product not found</div>;
 
@@ -53,8 +53,9 @@ export function ProductDetails({ product, relatedProducts = [] }: { product: any
                 <span className="text-sm text-gray-500">124 Reviews</span>
                 <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-bold">In Stock</span>
               </div>
-
-              <div className="text-3xl font-bold text-gray-900">₹{currentPrice.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(currentPrice)}
+              </div>
             </div>
 
             <p className="text-gray-600 leading-relaxed mb-8">

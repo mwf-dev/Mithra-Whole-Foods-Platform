@@ -3,7 +3,18 @@ import Link from 'next/link';
 import { ProductCard } from './ProductCard';
 
 export function BestSellers({ products = [] }: { products?: any[] }) {
-  const displayProducts = products.length > 0 ? products.map(p => {
+  if (!products || products.length === 0) {
+    return (
+      <section className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-4">Today's Best Sellers</h2>
+          <p className="text-gray-500">Check back later for our best sellers!</p>
+        </div>
+      </section>
+    );
+  }
+
+  const displayProducts = products.map(p => {
     const priceAmount = p.variants?.[0]?.calculated_price?.calculated_amount || 0;
     return {
       title: p.title,
@@ -15,22 +26,7 @@ export function BestSellers({ products = [] }: { products?: any[] }) {
       isNew: false,
       img: p.images?.[0]?.url || 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product'
     };
-  }) : [
-    {
-      title: 'Organic Little Millet',
-      weight: '500g',
-      price: 120,
-      originalPrice: null,
-      rating: 4.8,
-      reviews: 124,
-      isNew: false,
-      img: 'https://placehold.co/200x250/ffffff/d4d4d4?text=Product+1'
-    }
-  ];
-
-
-
-  return (
+  });  return (
     <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
