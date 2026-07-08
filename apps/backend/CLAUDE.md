@@ -41,11 +41,10 @@ npx medusa db:generate homepage       # regenerate migration after model edit
   non-empty DB. `seed-products.ts` is a divergent unwired duplicate
   (different images, oil `1L` vs `1kg`) — do not run alongside the main seed;
   slated for consolidation (BACKEND_PLAN Module 5).
-- **Upsert race**: `POST /admin/homepage` is read-then-write with no
-  transaction/constraint; body spread lets a client `id` redirect the update.
-- **Envelope inconsistency**: GET → `homepage_settings`, POST →
-  `homepage_setting`. Renaming breaks `web/src/services/medusa.ts` and admin
-  `page.tsx` — change all three together.
+- **Upsert (fixed 2026-07-08)**: `POST /admin/homepage` whitelists fields
+  (no `id` injection), validates lengths/URLs, reads ordered `created_at ASC`
+  and self-heals duplicate rows. GET and POST both return
+  `{ homepage_settings }` (envelope normalized).
 - No `src/api/middlewares.ts` exists; admin protection is Medusa's implicit
   `/admin/*` auth, and there is zero body validation anywhere.
 - Uploads land on local disk (`static/`) — ephemeral on Cloud Run until a

@@ -3,6 +3,12 @@ import { BuildingStorefront } from "@medusajs/icons"
 import { Container, Heading, Text, Button, Input, Label, toast } from "@medusajs/ui"
 import { useState, useEffect, useRef } from "react"
 
+// Injected at admin build time from STOREFRONT_URL (see medusa-config.ts).
+// Used for the live-preview iframe and as the postMessage target origin.
+const STOREFRONT_URL: string =
+  (import.meta as any).env?.VITE_STOREFRONT_URL || "http://localhost:8000"
+const STOREFRONT_ORIGIN = new URL(STOREFRONT_URL).origin
+
 const HomepageSettings = () => {
   const [loading, setLoading] = useState(false)
   const [settings, setSettings] = useState<any>({
@@ -40,11 +46,11 @@ const HomepageSettings = () => {
   // Send preview updates to iframe
   useEffect(() => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
-      // ponytail: explicit origin locks down postMessage vulnerability.
-      iframeRef.current.contentWindow.postMessage({ 
-        type: 'UPDATE_PREVIEW', 
-        settings 
-      }, 'http://localhost:8000');
+      // Explicit target origin so preview data can only go to our storefront.
+      iframeRef.current.contentWindow.postMessage({
+        type: 'UPDATE_PREVIEW',
+        settings
+      }, STOREFRONT_ORIGIN);
     }
   }, [settings])
 
@@ -93,19 +99,12 @@ const HomepageSettings = () => {
         body: JSON.stringify(settings)
       })
       if (res.ok) {
-        // Revalidate storefront cache
-        try {
-          await fetch("http://localhost:8000/api/revalidate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ path: "/", type: "layout" })
-          })
-        } catch (e) {
-          console.error("Failed to revalidate storefront", e)
-        }
+        // The backend triggers storefront cache revalidation server-side
+        // (keeps the revalidate secret out of the browser).
         toast.success("Settings saved successfully!")
       } else {
-        toast.error("Failed to save settings")
+        const data = await res.json().catch(() => null)
+        toast.error(data?.errors?.join(", ") || "Failed to save settings")
       }
     } catch (err) {
       console.error(err)
@@ -240,9 +239,9 @@ const HomepageSettings = () => {
              <Text className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Syncing</Text>
           </div>
         </div>
-        <iframe 
+        <iframe
           ref={iframeRef}
-          src="http://localhost:8000" 
+          src={STOREFRONT_URL}
           className="w-full flex-1 border-none"
           title="Live Preview"
         />

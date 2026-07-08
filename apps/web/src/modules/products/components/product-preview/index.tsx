@@ -1,6 +1,7 @@
 import { Star, ShoppingCart } from 'lucide-react';
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { safeCssUrl } from "@lib/util/safe-css-url"
 import { HttpTypes } from "@medusajs/types"
 
 export default function ProductPreview({ 
@@ -39,7 +40,7 @@ export default function ProductPreview({
         {/* Placeholder for Product Image */}
         <div 
           className="absolute inset-0 bg-contain bg-center bg-no-repeat group-hover:scale-105 transition-transform duration-500 m-4"
-          style={{ backgroundImage: `url(${img})` }}
+          style={{ backgroundImage: `url('${safeCssUrl(img)}')` }}
         ></div>
       </LocalizedClientLink>
 

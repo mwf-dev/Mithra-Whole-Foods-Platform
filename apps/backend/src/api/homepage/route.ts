@@ -7,8 +7,13 @@ export const GET = async (
   res: MedusaResponse
 ) => {
   const homepageModuleService: HomepageService = req.scope.resolve(HOMEPAGE_MODULE)
-  const settings = await homepageModuleService.listHomepageSettings()
-  
+  // Deterministic singleton read: always the oldest row, so concurrent
+  // writes can never make different requests see different settings.
+  const settings = await homepageModuleService.listHomepageSettings(
+    {},
+    { order: { created_at: "ASC" } }
+  )
+
   res.json({
     homepage_settings: settings.length > 0 ? settings[0] : null,
   })

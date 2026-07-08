@@ -20,6 +20,17 @@ if (!IS_DEV) {
 }
 
 module.exports = defineConfig({
+  admin: {
+    // Expose the storefront URL to the admin bundle (live-preview iframe
+    // + postMessage target in src/admin/routes/homepage/page.tsx).
+    vite: () => ({
+      define: {
+        "import.meta.env.VITE_STOREFRONT_URL": JSON.stringify(
+          process.env.STOREFRONT_URL || "http://localhost:8000"
+        ),
+      },
+    }),
+  },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
     databaseDriverOptions: { connection: { ssl: { rejectUnauthorized: true } } },

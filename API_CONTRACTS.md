@@ -10,7 +10,7 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
 |---|---|---|---|---|
 | GET | `/homepage` | **None** (public by design — bypasses publishable key; see note 1) | — | `{ homepage_settings: HomepageSetting \| null }` |
 | GET | `/admin/homepage` | Admin session | — | `{ homepage_settings: HomepageSetting \| null }` |
-| POST | `/admin/homepage` | Admin session | Any subset of the 8 writable `HomepageSetting` fields. ⚠️ Currently **unvalidated** — body is spread raw; a body `id` redirects the upsert | `{ homepage_setting: HomepageSetting }` ⚠️ **singular** key — differs from GET's plural |
+| POST | `/admin/homepage` | Admin session | Any subset of the 7 writable `HomepageSetting` fields. Whitelisted (`id` cannot be injected); strings only; titles ≤300/subtitle ≤500 chars; URL fields ≤2000 chars, must be http(s) or root-relative. Invalid → 400 `{ message, errors[] }` | `{ homepage_settings: HomepageSetting }` (same **plural** key as GET, normalized 2026-07-08). On success the backend also POSTs `${STOREFRONT_URL}/api/revalidate` with header `x-revalidate-secret` |
 | GET | `/admin/custom` | Admin session | — | empty 200 — dead starter stub, slated for deletion |
 | GET | `/store/custom` | Publishable key | — | empty 200 — dead starter stub, slated for deletion |
 
@@ -61,16 +61,26 @@ Admin UI (`src/admin/routes/homepage/page.tsx`) additionally calls built-in
 3. **Prices**: `*variants.prices` is not a store-API field; store API exposes
    `calculated_price` and needs `region_id`/`currency_code` context. Raw
    `variants[0].prices[0].amount` reads likely render 0/undefined.
-4. **Envelope inconsistency**: GET returns `homepage_settings`, POST returns
-   `homepage_setting`. Normalizing it breaks `medusa.ts:39` and admin
-   `page.tsx` — one commit, all three places.
+4. ~~Envelope inconsistency~~ **Resolved 2026-07-08**: GET and POST both
+   return `{ homepage_settings }`. GET/POST reads are ordered
+   `created_at ASC` and POST self-heals duplicate rows, so the singleton is
+   deterministic.
 
 ## Non-HTTP contract: admin live preview
 
-Admin `page.tsx` → storefront `Home.tsx` iframe via
-`postMessage({ type: 'UPDATE_PREVIEW', settings: HomepageSetting }, '*')`.
-⚠️ No origin checks on either side yet (see FRONTEND_PLAN breaking-change #2);
-fix must land on both sides atomically.
+Admin `page.tsx` → storefront hero iframe via
+`postMessage({ type: 'UPDATE_PREVIEW', settings }, STOREFRONT_ORIGIN)`.
+Both sides validate origin (2026-07-08): the admin targets
+`STOREFRONT_URL` (injected at admin build via Vite define), and the
+storefront's `hero/client.tsx` accepts messages only from the backend
+origin (derived from `MEDUSA_BACKEND_URL`) plus localhost dev origins.
+
+## Storefront cache revalidation
+
+`POST {storefront}/api/revalidate` with header `x-revalidate-secret:
+$REVALIDATE_SECRET` and body `{ path, type? }`. 401 without the secret;
+503 if the storefront has no secret configured. Called server-side by the
+backend after homepage saves — never from the browser.
 
 ## Seed-data dependencies (backend data the frontend hardcodes)
 

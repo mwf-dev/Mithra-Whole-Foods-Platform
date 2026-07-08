@@ -8,6 +8,7 @@ import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { safeCssUrl } from "@lib/util/safe-css-url"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -62,7 +63,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <div className="aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center p-8">
               <div 
                 className="w-full h-full bg-contain bg-center bg-no-repeat"
-                style={{ backgroundImage: `url(${currentImage})` }}
+                style={{ backgroundImage: `url('${safeCssUrl(currentImage)}')` }}
               ></div>
             </div>
           </div>

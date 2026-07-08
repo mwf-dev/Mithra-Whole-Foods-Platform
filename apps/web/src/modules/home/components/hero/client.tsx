@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { safeCssUrl } from "@lib/util/safe-css-url";
 
 interface HeroClientProps {
   initialTitle: string;
@@ -17,9 +18,17 @@ export function HeroClient({ initialTitle, initialSubtitle, initialBgImage, back
   const [bgImage, setBgImage] = useState(initialBgImage);
 
   useEffect(() => {
+    // Preview messages come from the admin panel, which is served from the
+    // backend origin. Allow that origin plus localhost dev origins only.
+    const allowedOrigins = new Set(["http://localhost:9000", "http://localhost:8000"]);
+    try {
+      allowedOrigins.add(new URL(backendUrl).origin);
+    } catch {
+      // ignore malformed backend URL; localhost fallbacks remain
+    }
+
     const handleMessage = (event: MessageEvent) => {
-      // Allow localhost connections for the preview
-      if (event.origin !== "http://localhost:9000" && event.origin !== "http://localhost:8000") {
+      if (!allowedOrigins.has(event.origin)) {
         return;
       }
 
@@ -55,7 +64,7 @@ export function HeroClient({ initialTitle, initialSubtitle, initialBgImage, back
       {/* Background Image Placeholder */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('${bgImage}')` }}
+        style={{ backgroundImage: `url('${safeCssUrl(bgImage)}')` }}
       ></div>
       <div className="absolute inset-0 bg-black/40"></div>
       
