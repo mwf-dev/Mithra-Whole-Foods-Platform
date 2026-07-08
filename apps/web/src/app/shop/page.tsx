@@ -1,17 +1,14 @@
 import { Shop } from '@/features/shop/Shop';
 import { getProducts, getCategories } from '@/services/medusa';
-import { Header } from '@/features/layout/components/Header';
-import { Footer } from '@/features/layout/components/Footer';
 
-export default async function ShopPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const products = await getProducts();
   const categories = await getCategories();
+  const { category } = await searchParams;
   
   return (
-    <>
-      <Header />
-      <Shop products={products} categories={categories} />
-      <Footer />
-    </>
+    <Shop products={products} categories={categories} initialCategory={category || 'All'} />
   );
 }

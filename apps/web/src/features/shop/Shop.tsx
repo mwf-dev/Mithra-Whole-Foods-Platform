@@ -1,11 +1,13 @@
 "use client"
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, Filter } from 'lucide-react';
 import { ProductCard } from '@/features/home/components/ProductCard';
 
-export function Shop({ products = [], categories = [] }: { products: any[], categories: any[] }) {
-  const [activeCategory, setActiveCategory] = useState<string>('All');
+export function Shop({ products = [], categories = [], initialCategory = 'All' }: { products: any[], categories: any[], initialCategory?: string }) {
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams?.get('category') || initialCategory;
   const [sortBy, setSortBy] = useState<string>('featured');
 
   const filteredProducts = useMemo(() => {
@@ -18,9 +20,9 @@ export function Shop({ products = [], categories = [] }: { products: any[], cate
     
     // Sort
     if (sortBy === 'price-low') {
-      result = [...result].sort((a, b) => (a.variants?.[0]?.prices?.[0]?.amount || 0) - (b.variants?.[0]?.prices?.[0]?.amount || 0));
+      result = [...result].sort((a, b) => (a.variants?.[0]?.calculated_price?.calculated_amount || 0) - (b.variants?.[0]?.calculated_price?.calculated_amount || 0));
     } else if (sortBy === 'price-high') {
-      result = [...result].sort((a, b) => (b.variants?.[0]?.prices?.[0]?.amount || 0) - (a.variants?.[0]?.prices?.[0]?.amount || 0));
+      result = [...result].sort((a, b) => (b.variants?.[0]?.calculated_price?.calculated_amount || 0) - (a.variants?.[0]?.calculated_price?.calculated_amount || 0));
     } else if (sortBy === 'newest') {
       result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
@@ -49,22 +51,22 @@ export function Shop({ products = [], categories = [] }: { products: any[], cate
             </h3>
             <ul className="space-y-3">
               <li>
-                <button 
-                  onClick={() => setActiveCategory('All')}
-                  className={`text-sm w-full text-left transition-colors ${activeCategory === 'All' ? 'text-[#4A5D23] font-bold' : 'text-gray-600 hover:text-[#4A5D23]'}`}
+                <Link 
+                  href="/shop"
+                  className={`block text-sm w-full text-left transition-colors ${activeCategory === 'All' ? 'text-[#4A5D23] font-bold' : 'text-gray-600 hover:text-[#4A5D23]'}`}
                 >
                   All Products
-                </button>
+                </Link>
               </li>
               {categories.map((cat, i) => (
                 <li key={i}>
-                  <button 
-                    onClick={() => setActiveCategory(cat.name)}
-                    className={`text-sm w-full text-left transition-colors flex justify-between ${activeCategory === cat.name ? 'text-[#4A5D23] font-bold' : 'text-gray-600 hover:text-[#4A5D23]'}`}
+                  <Link 
+                    href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                    className={`block text-sm w-full text-left transition-colors flex justify-between ${activeCategory === cat.name ? 'text-[#4A5D23] font-bold' : 'text-gray-600 hover:text-[#4A5D23]'}`}
                   >
                     <span>{cat.name}</span>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{cat.products?.length || 0}</span>
-                  </button>
+                    {/* ponytail: omitted count to save *products payload */}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -94,12 +96,12 @@ export function Shop({ products = [], categories = [] }: { products: any[], cate
             <div className="bg-white p-12 text-center rounded-xl border border-gray-100">
               <h3 className="text-xl font-bold text-gray-900 mb-2">No products found</h3>
               <p className="text-gray-500">Try selecting a different category.</p>
-              <button 
-                onClick={() => setActiveCategory('All')}
-                className="mt-4 px-6 py-2 bg-[#4A5D23] text-white rounded font-bold text-sm hover:bg-[#3A4A1A] transition-colors"
+              <Link 
+                href="/shop"
+                className="inline-block mt-4 px-6 py-2 bg-[#4A5D23] text-white rounded font-bold text-sm hover:bg-[#3A4A1A] transition-colors"
               >
                 Clear Filters
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -107,8 +109,8 @@ export function Shop({ products = [], categories = [] }: { products: any[], cate
                 <div key={i}>
                   <ProductCard 
                     title={p.title}
-                    weight={p.variants?.[0]?.options?.Weight || '1kg'}
-                    price={p.variants?.[0]?.prices?.[0]?.amount || 0}
+                    weight={p.variants?.[0]?.title || '1kg'}
+                    price={p.variants?.[0]?.calculated_price?.calculated_amount || 0}
                     rating={5.0}
                     reviews={10}
                     img={p.images?.[0]?.url}

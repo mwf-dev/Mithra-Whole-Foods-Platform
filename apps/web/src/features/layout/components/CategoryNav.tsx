@@ -3,13 +3,13 @@ import { Menu, ChevronDown } from 'lucide-react';
 
 export function CategoryNav() {
   const categories = [
-    { name: 'Millets', href: '/category/millets' },
-    { name: 'Rice & Dals', href: '/category/rice-dals' },
-    { name: 'Cold Pressed Oils', href: '/category/oils' },
-    { name: 'Ghee', href: '/category/ghee' },
-    { name: 'Health Mixes', href: '/category/health-mixes' },
-    { name: 'Natural Sweeteners', href: '/category/sweeteners' },
-    { name: 'Herbs & Spices', href: '/category/spices' },
+    { name: 'Millets', href: '/shop?category=Millets' },
+    { name: 'Rice & Dals', href: '/shop?category=Rice%20%26%20Dals' },
+    { name: 'Cold Pressed Oils', href: '/shop?category=Cold%20Pressed%20Oils' },
+    { name: 'Ghee', href: '/shop?category=Ghee' },
+    { name: 'Health Mixes', href: '/shop?category=Health%20Mixes' },
+    { name: 'Natural Sweeteners', href: '/shop?category=Natural%20Sweeteners' },
+    { name: 'Herbs & Spices', href: '/shop?category=Herbs%20%26%20Spices' },
   ];
 
   return (

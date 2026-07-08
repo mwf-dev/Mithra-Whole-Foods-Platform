@@ -18,13 +18,13 @@ export function ProductCard({ title, weight, price, originalPrice, rating, revie
     <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-xl hover:border-gray-200 transition-all duration-300 flex flex-col group h-full">
       
       {/* Image Container */}
-      <div className="relative aspect-[4/5] bg-gray-50/50 rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+      <Link href={href} className="relative aspect-[4/5] bg-gray-50/50 rounded-lg mb-4 overflow-hidden flex items-center justify-center block">
         {/* Placeholder for Product Image */}
         <div 
           className="absolute inset-0 bg-contain bg-center bg-no-repeat group-hover:scale-105 transition-transform duration-500 m-4"
           style={{ backgroundImage: `url(${img || 'https://placehold.co/200x250/ffffff/d4d4d4'})` }}
         ></div>
-      </div>
+      </Link>
 
       {/* Content */}
       <div className="flex-1 flex flex-col">

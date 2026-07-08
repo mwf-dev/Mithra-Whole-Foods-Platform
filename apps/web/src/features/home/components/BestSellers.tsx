@@ -4,10 +4,10 @@ import { ProductCard } from './ProductCard';
 
 export function BestSellers({ products = [] }: { products?: any[] }) {
   const displayProducts = products.length > 0 ? products.map(p => {
-    const priceAmount = p.variants?.[0]?.prices?.[0]?.amount || 0;
+    const priceAmount = p.variants?.[0]?.calculated_price?.calculated_amount || 0;
     return {
       title: p.title,
-      weight: p.variants?.[0]?.options?.Weight || '1kg',
+      weight: p.variants?.[0]?.title || '1kg',
       price: priceAmount,
       originalPrice: null,
       rating: 5.0, // default rating for now

@@ -10,7 +10,7 @@ export function ProductDetails({ product, relatedProducts = [] }: { product: any
   
   if (!product) return <div>Product not found</div>;
 
-  const currentPrice = selectedVariant?.prices?.[0]?.amount || 0;
+  const currentPrice = selectedVariant?.calculated_price?.calculated_amount || 0;
   const currentImage = product.images?.[0]?.url || 'https://placehold.co/600x800/ffffff/d4d4d4?text=Product';
 
   return (
@@ -151,8 +151,8 @@ export function ProductDetails({ product, relatedProducts = [] }: { product: any
                 <div key={i}>
                   <ProductCard 
                     title={p.title}
-                    weight={p.variants?.[0]?.options?.Weight || '1kg'}
-                    price={p.variants?.[0]?.prices?.[0]?.amount || 0}
+                    weight={p.variants?.[0]?.title || '1kg'}
+                    price={p.variants?.[0]?.calculated_price?.calculated_amount || 0}
                     rating={5.0}
                     reviews={10}
                     img={p.images?.[0]?.url}

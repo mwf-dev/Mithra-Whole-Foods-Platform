@@ -60,7 +60,7 @@ export function Hero({ settings }: { settings?: HomepageSettings | null }) {
              <div className="flex-1">
                <span className="font-bold text-gray-900 block leading-tight">20% OFF</span>
                <span className="text-xs text-gray-500 block mb-2">on Millets Collection</span>
-               <Link href="/offers" className="text-xs font-bold text-gray-800 flex items-center gap-1 hover:text-[#4A5D23]">
+               <Link href="/shop?category=Millets" className="text-xs font-bold text-gray-800 flex items-center gap-1 hover:text-[#4A5D23]">
                  Shop Now <ArrowRight size={12} />
                </Link>
              </div>
@@ -71,7 +71,7 @@ export function Hero({ settings }: { settings?: HomepageSettings | null }) {
              <div className="flex-1">
                <span className="font-bold text-gray-900 block leading-tight">New Arrival</span>
                <span className="text-xs text-gray-500 block mb-2">Cold Pressed Oils</span>
-               <Link href="/category/oils" className="text-xs font-bold text-gray-800 flex items-center gap-1 hover:text-[#4A5D23]">
+               <Link href="/shop?category=Cold%20Pressed%20Oils" className="text-xs font-bold text-gray-800 flex items-center gap-1 hover:text-[#4A5D23]">
                  Shop Now <ArrowRight size={12} />
                </Link>
              </div>
