@@ -8,7 +8,7 @@ export function BestSellers({ products = [], region }: { products?: HttpTypes.St
     return (
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-4">Today's Best Sellers</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-4">Today&apos;s Best Sellers</h2>
           <p className="text-gray-500">Check back later for our best sellers!</p>
         </div>
       </section>
@@ -19,7 +19,7 @@ export function BestSellers({ products = [], region }: { products?: HttpTypes.St
     <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">Today's Best Sellers</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">Today&apos;s Best Sellers</h2>
           <Link href="/store" className="text-gray-900 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all shrink-0">
             View All <ArrowRight size={16} />
           </Link>
