@@ -40,10 +40,11 @@ const HomepageSettings = () => {
   // Send preview updates to iframe
   useEffect(() => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
+      // ponytail: explicit origin locks down postMessage vulnerability.
       iframeRef.current.contentWindow.postMessage({ 
         type: 'UPDATE_PREVIEW', 
         settings 
-      }, '*');
+      }, 'http://localhost:8000');
     }
   }, [settings])
 
@@ -92,6 +93,16 @@ const HomepageSettings = () => {
         body: JSON.stringify(settings)
       })
       if (res.ok) {
+        // Revalidate storefront cache
+        try {
+          await fetch("http://localhost:8000/api/revalidate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: "/", type: "layout" })
+          })
+        } catch (e) {
+          console.error("Failed to revalidate storefront", e)
+        }
         toast.success("Settings saved successfully!")
       } else {
         toast.error("Failed to save settings")
@@ -231,7 +242,7 @@ const HomepageSettings = () => {
         </div>
         <iframe 
           ref={iframeRef}
-          src="http://localhost:3000" 
+          src="http://localhost:8000" 
           className="w-full flex-1 border-none"
           title="Live Preview"
         />

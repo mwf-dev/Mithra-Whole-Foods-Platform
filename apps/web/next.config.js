@@ -18,14 +18,13 @@ const nextConfig = {
       fullUrl: true,
     },
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // ponytail: fixed HIGH-2 (removed ignoreBuildErrors/ignoreDuringBuilds)
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+      },
       {
         protocol: "http",
         hostname: "localhost",

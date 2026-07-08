@@ -32,3 +32,9 @@ This document tracks the step-by-step progress of the Mithra Whole Foods project
 - [x] Ported custom Mithra layout components (`Hero`, `CategoryNav`, `BestSellers`) to the starter's homepage.
 - [x] Adapted `ProductCard` to use Medusa's `HttpTypes.StoreProduct` and replace the starter's default `ProductPreview`.
 - [x] Injected the custom Product Details Page (PDP) design into the Medusa `ProductTemplate` while retaining the core Medusa `ProductActionsWrapper` for functioning cart and variants.
+
+## Phase 5: Admin Preview & Core Bug Fixes
+- [x] **Storefront UI & Live Preview**: Fixed the `Hero` component which was missing its content due to an earlier migration oversight. Abstracted the logic into a `HeroClient` component that listens for `postMessage` events (`UPDATE_PREVIEW`) to provide real-time updates when modifying settings in the Admin panel.
+- [x] **Storefront Caching**: Created a `/api/revalidate` route in the Next.js storefront to clear the `revalidate: 60` cache limit. Updated the Admin Homepage Settings component to trigger this route on save, ensuring immediate front-end updates.
+- [x] **Add to Cart 500 Error Fix**: Identified that the Medusa v2 checkout API crashes with a 500 error when adding products to a regional cart (e.g., India/INR) without local pricing. Wrote and executed a backend script (`src/scripts/add-inr-prices.ts`) that automatically applied INR prices to all variants missing them, fully resolving the cart validation error.
+- [x] **Debugging Improvements**: Enhanced the Medusa SDK error handler (`medusaError`) to aggressively log full JSON response bodies for 500 Internal Server errors to the console to speed up backend troubleshooting.
