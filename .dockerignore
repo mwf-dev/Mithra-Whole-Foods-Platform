@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.medusa
+**/.turbo
+**/dist
+**/.env
+**/.env.*
+!**/.env.template
+.git
+apps/backend/static
+*.md
+!apps/backend/README.md

@@ -1,8 +1,9 @@
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star } from 'lucide-react';
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { safeCssUrl } from "@lib/util/safe-css-url"
 import { HttpTypes } from "@medusajs/types"
+import AddToCartButton from "./add-to-cart-button"
 
 export default function ProductPreview({ 
   product,
@@ -75,9 +76,11 @@ export default function ProductPreview({
         </div>
 
         {/* Add to Cart Action */}
-        <button className="w-full bg-[#4A5D23] text-white hover:bg-[#3A4A1A] py-2 rounded flex items-center justify-center gap-2 text-xs font-bold transition-colors">
-          Add To Cart
-        </button>
+        <AddToCartButton
+          variantId={product.variants?.[0]?.id}
+          variantCount={product.variants?.length ?? 0}
+          productHref={href}
+        />
       </div>
     </div>
   );

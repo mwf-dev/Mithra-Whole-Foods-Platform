@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "pnpm@9", "--filter", "medusa-next", "dev"],
+      "port": 8000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "pnpm@9", "--filter", "@dtc/backend", "dev"],
+      "port": 9000
+    }
+  ]
+}

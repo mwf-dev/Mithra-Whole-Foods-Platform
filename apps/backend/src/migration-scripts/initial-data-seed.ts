@@ -35,6 +35,30 @@ export default async function initial_data_seed({
     ModuleRegistrationName.FULFILLMENT
   );
 
+  // Idempotency guard: this seed creates store/region/collection/products
+  // unconditionally, so re-running it on a seeded database duplicates the
+  // entire catalog (including the homepage-best-sellers collection handle,
+  // which silently swaps the homepage product rail). Abort if any prior
+  // seed marker exists.
+  const { data: existingCollections } = await query.graph({
+    entity: "product_collection",
+    fields: ["id", "handle"],
+    filters: { handle: "homepage-best-sellers" },
+  });
+  const { data: existingChannels } = await query.graph({
+    entity: "sales_channel",
+    fields: ["id", "name"],
+    filters: { name: "Default Sales Channel" },
+  });
+  if (existingCollections.length > 0 || existingChannels.length > 0) {
+    logger.warn(
+      "Seed skipped: database already contains seeded data " +
+        "(found existing 'homepage-best-sellers' collection or 'Default Sales Channel'). " +
+        "Re-running the seed would duplicate the catalog."
+    );
+    return;
+  }
+
   const countries = ["in", "us", "gb"];
 
   logger.info("Seeding store data...");
