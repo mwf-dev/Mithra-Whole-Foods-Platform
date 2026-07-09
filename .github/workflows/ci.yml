@@ -1,0 +1,118 @@
+name: CI
+
+# Lint + typecheck + build + tests on every PR and on pushes to main.
+# Railway's "Wait for CI" and Vercel's Git integration gate deploys on this
+# workflow succeeding on main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Storefront (apps/web): lint + typecheck. A full `next build` is intentionally
+  # NOT run here — the Medusa starter statically generates product/category pages
+  # against a LIVE backend, which CI has none of. Vercel owns the real build.
+  # ---------------------------------------------------------------------------
+  web:
+    name: web (lint + typecheck)
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_test_dummy
+      MEDUSA_BACKEND_URL: http://localhost:9000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter medusa-next lint
+
+      - name: Typecheck
+        run: pnpm --filter medusa-next run typecheck
+
+  # ---------------------------------------------------------------------------
+  # Backend (apps/backend): production build + unit + integration tests.
+  # `medusa build` is the compile gate (same command the Railway Docker build
+  # runs). `medusa lint`
+  # is currently broken upstream (ESLint 9 flat config vs bundled ESLint 8), so
+  # it is intentionally omitted — see .github/workflows/README.md.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: backend (build + tests)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: medusa-test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # NODE_ENV=test skips medusa-config's production secret/CORS boot guards.
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres@localhost:5432/medusa-test
+      # Plain CI Postgres has no SSL — opt out (default is SSL-on for Neon/prod).
+      DATABASE_SSL: "false"
+      JWT_SECRET: test-jwt-secret
+      COOKIE_SECRET: test-cookie-secret
+      STORE_CORS: http://localhost:8000
+      ADMIN_CORS: http://localhost:9000
+      AUTH_CORS: http://localhost:8000,http://localhost:9000
+      STOREFRONT_URL: http://localhost:8000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # pg-god (used by @medusajs/test-utils) connects as the OS user ("runner")
+      # rather than reading DATABASE_URL. Create that role in the CI postgres so
+      # it can create/drop per-test databases without a "role does not exist" error.
+      - name: Create "runner" postgres role for pg-god
+        run: psql -h localhost -U postgres -c "CREATE ROLE runner SUPERUSER LOGIN;"
+
+      - name: Build (medusa build — compile gate)
+        run: pnpm --filter @dtc/backend build
+
+      - name: Unit tests
+        run: pnpm --filter @dtc/backend test:unit
+
+      - name: Integration tests (HTTP)
+        run: pnpm --filter @dtc/backend test:integration:http
+
+      - name: Integration tests (modules)
+        run: pnpm --filter @dtc/backend test:integration:modules

@@ -1,34 +1,29 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import "./globals.css";
+import { getBaseURL } from "@lib/util/env"
+import { Metadata } from "next"
+import { DM_Serif_Display, Inter } from "next/font/google"
+import "styles/globals.css"
 
-const inter = Inter({
-  variable: "--font-inter",
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
+  weight: "400",
+  variable: "--font-display",
+})
 
 export const metadata: Metadata = {
-  title: "Mithra Whole Foods",
-  description: "Premium Grocery & Traditional Foods E-commerce Platform",
-};
+  metadataBase: new URL(getBaseURL()),
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+import { Analytics } from "@vercel/analytics/react"
+
+export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${playfair.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" data-mode="light" className={`${inter.variable} ${dmSerif.variable}`} suppressHydrationWarning>
+      <body>
+        <main className="relative">{props.children}</main>
+        <Analytics />
       </body>
     </html>
-  );
+  )
 }
+
