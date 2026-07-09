@@ -27,9 +27,9 @@ export default function ProductPreview({
 
   const price = cheapestPrice?.calculated_price_number || 0
   const originalPrice = cheapestPrice?.original_price_number || null
-  const currencyCode = region.currency_code || "INR"
+  const currencyCode = region.currency_code || "USD"
 
-  const priceFormatter = new Intl.NumberFormat("en-IN", {
+  const priceFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currencyCode,
     minimumFractionDigits: 0,
