@@ -25,6 +25,9 @@ jobs:
   web:
     name: web (lint + typecheck)
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_test_dummy
+      MEDUSA_BACKEND_URL: http://localhost:9000
     steps:
       - uses: actions/checkout@v4
 
