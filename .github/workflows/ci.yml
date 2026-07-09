@@ -1,0 +1,112 @@
+name: CI
+
+# Lint + typecheck + build + tests on every PR and on pushes to main.
+# The Koyeb deploy (deploy-backend.yml) is gated on this workflow succeeding.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Storefront (apps/web): lint + typecheck. A full `next build` is intentionally
+  # NOT run here — the Medusa starter statically generates product/category pages
+  # against a LIVE backend, which CI has none of. Vercel owns the real build.
+  # ---------------------------------------------------------------------------
+  web:
+    name: web (lint + typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter medusa-next lint
+
+      - name: Typecheck
+        run: pnpm --filter medusa-next run typecheck
+
+  # ---------------------------------------------------------------------------
+  # Backend (apps/backend): production build + unit + integration tests.
+  # `medusa build` is the compile gate (same command Koyeb runs). `medusa lint`
+  # is currently broken upstream (ESLint 9 flat config vs bundled ESLint 8), so
+  # it is intentionally omitted — see .github/workflows/README.md.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: backend (build + tests)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: medusa-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # NODE_ENV=test skips medusa-config's production secret/CORS boot guards.
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/medusa-test
+      # Plain CI Postgres has no SSL — opt out (default is SSL-on for Neon/prod).
+      DATABASE_SSL: "false"
+      JWT_SECRET: test-jwt-secret
+      COOKIE_SECRET: test-cookie-secret
+      STORE_CORS: http://localhost:8000
+      ADMIN_CORS: http://localhost:9000
+      AUTH_CORS: http://localhost:8000,http://localhost:9000
+      STOREFRONT_URL: http://localhost:8000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (medusa build — compile gate)
+        run: pnpm --filter @dtc/backend build
+
+      - name: Unit tests
+        run: pnpm --filter @dtc/backend test:unit
+
+      - name: Integration tests (HTTP)
+        run: pnpm --filter @dtc/backend test:integration:http
+
+      - name: Integration tests (modules)
+        run: pnpm --filter @dtc/backend test:integration:modules

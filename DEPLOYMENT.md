@@ -3,6 +3,13 @@
 Verified against the code 2026-07-09. Env var names must match
 `apps/backend/.env.template` and `apps/web/.env.template` exactly.
 
+> **Backend now deploys to Koyeb, not Cloud Run.** The CI/CD pipeline
+> (`.github/workflows/`, documented in `.github/workflows/README.md`) builds and
+> tests on every PR and auto-redeploys the backend to Koyeb once CI passes on
+> `main`; the storefront ships via Vercel's Git integration. The Cloud Run notes
+> below are kept as a reference for the Docker / migration / seed mechanics
+> (which carry over to Koyeb), but Koyeb is the live target.
+
 ## 0. One-time prerequisites
 
 - [ ] **Rotate the Neon database credential** (the old one is in git history

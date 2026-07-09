@@ -7,6 +7,10 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 // must never silently downgrade to insecure defaults.
 const IS_DEV = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
 
+// Managed Postgres (Neon/prod) requires SSL; a plain local or CI Postgres does
+// not. Default SSL on; set DATABASE_SSL=false for a non-SSL Postgres (CI, local).
+const DB_SSL = process.env.DATABASE_SSL !== 'false'
+
 if (!IS_DEV) {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'supersecret') {
     throw new Error('JWT_SECRET must be securely set in production');
@@ -105,7 +109,9 @@ module.exports = defineConfig({
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
-    databaseDriverOptions: { connection: { ssl: { rejectUnauthorized: true } } },
+    databaseDriverOptions: DB_SSL
+      ? { connection: { ssl: { rejectUnauthorized: true } } }
+      : {},
     redisUrl: !IS_DEV ? process.env.REDIS_URL : undefined,
     workerMode: (process.env.MEDUSA_WORKER_MODE as "shared" | "worker" | "server") || "shared",
     http: {

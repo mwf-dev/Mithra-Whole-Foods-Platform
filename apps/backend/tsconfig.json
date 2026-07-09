@@ -32,5 +32,9 @@
     ".medusa/admin",
     ".cache",
     "eslint.config.*",
+    // One-off ops scripts run via `medusa exec` (swc-transpiled at runtime),
+    // not part of the server/admin bundle. Excluded so their loose typings
+    // never block `medusa build` (the production/Koyeb build) or CI.
+    "src/scripts/**",
   ]
 }
