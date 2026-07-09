@@ -2,6 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { HOMEPAGE_MODULE } from "../../../modules/homepage"
 import HomepageService from "../../../modules/homepage/service"
 import { validateBody } from "./validation"
+import { revalidateStorefront } from "../../../utils/revalidate-storefront"
 
 export const GET = async (
   req: MedusaRequest,
@@ -16,34 +17,6 @@ export const GET = async (
   res.json({
     homepage_settings: settings.length > 0 ? settings[0] : null,
   })
-}
-
-const triggerStorefrontRevalidation = async (): Promise<void> => {
-  const storefrontUrl = process.env.STOREFRONT_URL
-  const secret = process.env.REVALIDATE_SECRET
-
-  if (!storefrontUrl || !secret) {
-    console.warn(
-      "[homepage] STOREFRONT_URL / REVALIDATE_SECRET not set — skipping storefront cache revalidation"
-    )
-    return
-  }
-
-  try {
-    const res = await fetch(`${storefrontUrl.replace(/\/$/, "")}/api/revalidate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-revalidate-secret": secret,
-      },
-      body: JSON.stringify({ path: "/", type: "layout" }),
-    })
-    if (!res.ok) {
-      console.warn(`[homepage] storefront revalidation failed: ${res.status}`)
-    }
-  } catch (e) {
-    console.warn("[homepage] storefront revalidation request failed", e)
-  }
 }
 
 export const POST = async (
@@ -85,7 +58,7 @@ export const POST = async (
 
     // Invalidate the storefront's cached homepage so edits appear immediately.
     // Failures are logged but never fail the save.
-    await triggerStorefrontRevalidation()
+    await revalidateStorefront("/", "layout")
 
     res.json({ homepage_settings: result })
   } catch (e: any) {

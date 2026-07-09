@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import { Hero } from "@modules/home/components/hero"
 import { BestSellers } from "@modules/home/components/best-sellers"
 import { CategoryNav } from "@modules/home/components/category-nav"
+import { PromoCards } from "@modules/home/components/promo-cards"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
@@ -56,6 +57,7 @@ export default async function Home(props: {
     <>
       <CategoryNav />
       <Hero settings={settings} />
+      <PromoCards settings={settings} />
       <BestSellers products={products} region={region} />
     </>
   )
