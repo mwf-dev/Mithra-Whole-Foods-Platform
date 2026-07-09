@@ -99,6 +99,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # pg-god (used by @medusajs/test-utils) connects as the OS user ("runner")
+      # rather than reading DATABASE_URL. Create that role in the CI postgres so
+      # it can create/drop per-test databases without a "role does not exist" error.
+      - name: Create "runner" postgres role for pg-god
+        run: psql -h localhost -U postgres -c "CREATE ROLE runner SUPERUSER LOGIN;"
+
       - name: Build (medusa build — compile gate)
         run: pnpm --filter @dtc/backend build
 
