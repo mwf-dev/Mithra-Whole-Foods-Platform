@@ -22,11 +22,17 @@ Verified against the code 2026-07-09. Env var names must match
 The repository includes a `railway.json` file in the root directory that automatically directs Railway to build the `apps/backend/Dockerfile` and sets the `/health` check.
 
 **Setup Instructions:**
-1. Connect your repository to Railway as a new project.
+1. Connect your repository to Railway as a new project. Do **not** set a
+   Root Directory — the Dockerfile needs the repo root as build context
+   (`railway.json` already points at `apps/backend/Dockerfile`).
 2. In the Railway Service Settings, enable **"Wait for CI"**.
-3. Set the **Custom Start Command** in Deployments to:
-   `npx medusa db:migrate && npm run start`
-   *(This ensures migrations run safely before the server boots).*
+3. **Migrations run automatically** via the `preDeployCommand` in
+   `railway.json` (`npm run db:migrate:prod`), which executes before each
+   new deploy is promoted. Set `DATABASE_URL_DIRECT` to the Neon **direct**
+   (non-pooled) connection string — migrations must not go through
+   PgBouncer transaction pooling; runtime keeps using the pooled
+   `DATABASE_URL`. If `DATABASE_URL_DIRECT` is unset, the script falls
+   back to `DATABASE_URL`. Do NOT set a Custom Start Command.
 4. **Seed (once per fresh database only):** You can use Railway's CLI or dashboard console to run:
    `npx medusa exec ./src/migration-scripts/initial-data-seed.ts`. The seed
    self-guards: it aborts if it finds already-seeded data.
@@ -35,7 +41,8 @@ The repository includes a `railway.json` file in the root directory that automat
 - Port: Railway injects `PORT` (Medusa honors it). Health probe: `GET /health` (set in `railway.json`).
 - **`max-instances=1` until Redis is wired** — cache/event-bus are in-memory per instance.
   When scaling out: set `REDIS_URL` to a Redis service instance.
-- Env: `NODE_ENV=production`, `DATABASE_URL` (pooled), `JWT_SECRET`,
+- Env: `NODE_ENV=production`, `DATABASE_URL` (pooled), `DATABASE_URL_DIRECT`
+  (Neon direct, for migrations), `JWT_SECRET`,
   `COOKIE_SECRET`, `STORE_CORS`/`ADMIN_CORS`/`AUTH_CORS` (must include the
   Vercel prod + preview URLs and the backend's own URL for admin),
   `STOREFRONT_URL`, `REVALIDATE_SECRET`, `CLOUDINARY_*`, `SENDGRID_*`.

@@ -1,7 +1,8 @@
 name: CI
 
 # Lint + typecheck + build + tests on every PR and on pushes to main.
-# The Koyeb deploy (deploy-backend.yml) is gated on this workflow succeeding.
+# Railway's "Wait for CI" and Vercel's Git integration gate deploys on this
+# workflow succeeding on main.
 on:
   pull_request:
   push:
@@ -48,7 +49,8 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Backend (apps/backend): production build + unit + integration tests.
-  # `medusa build` is the compile gate (same command Koyeb runs). `medusa lint`
+  # `medusa build` is the compile gate (same command the Railway Docker build
+  # runs). `medusa lint`
   # is currently broken upstream (ESLint 9 flat config vs bundled ESLint 8), so
   # it is intentionally omitted — see .github/workflows/README.md.
   # ---------------------------------------------------------------------------

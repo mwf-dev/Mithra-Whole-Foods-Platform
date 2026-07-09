@@ -1,7 +1,7 @@
 import React, { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
-import { ChevronRight, Star, Truck, ShieldCheck, Leaf } from 'lucide-react'
+import { ChevronRight, Truck, ShieldCheck, Leaf } from 'lucide-react'
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductActions from "@modules/products/components/product-actions"
 import RelatedProducts from "@modules/products/components/related-products"
@@ -76,12 +76,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-3">{product.title}</h1>
               
               <div className="flex items-center gap-4 mb-4">
-                <div className="flex text-[#E8A93C]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-                <span className="text-sm text-gray-500">124 Reviews</span>
                 <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-bold">In Stock</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
