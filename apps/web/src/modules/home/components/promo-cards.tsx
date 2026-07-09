@@ -1,5 +1,6 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { safeCssUrl } from "@lib/util/safe-css-url"
+import { resolveBackendImage as resolveImage } from "@lib/data/homepage"
 import { ArrowRight } from "lucide-react"
 
 interface PromoSettings {
@@ -7,15 +8,6 @@ interface PromoSettings {
   promo_card_1_url?: string | null
   promo_card_2_title?: string | null
   promo_card_2_url?: string | null
-}
-
-const BACKEND_URL = process.env.MEDUSA_BACKEND_URL || "http://localhost:9000"
-
-function resolveImage(url?: string | null): string {
-  if (!url) {
-    return ""
-  }
-  return url.startsWith("/") ? `${BACKEND_URL}${url}` : url
 }
 
 /**

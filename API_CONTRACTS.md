@@ -19,16 +19,28 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
 ```ts
 {
   id: string
-  hero_title: string        // NOT NULL in DB; default contains literal "\n" —
-  hero_subtitle: string     //   Hero.tsx splits title on the two chars '\','n'
+  hero_title: string        // NOT NULL in DB; hero renders both real "\n" and literal "\n"
+  hero_subtitle: string
   hero_image_url: string | null      // relative like /static/<file> or absolute
   promo_card_1_title: string | null
   promo_card_1_url: string | null    // image URL, despite the name
   promo_card_2_title: string | null
   promo_card_2_url: string | null
+  // CMS sections added 2026-07-09 (all admin-managed, hidden when empty):
+  announcement_text: string | null   // thin bar above the header
+  footer_tagline: string | null
+  hero_banners: Array<{ title?; subtitle?; image_url?; link? }> | null   // max 5; replaces single hero when present
+  offer_cards: Array<{ title?; image_url?; link? }> | null              // max 8
+  category_tiles: Array<{ name?; image_url?; link? }> | null            // max 12
   created_at: string; updated_at: string
 }
 ```
+
+List fields are validated server-side (array/type/length caps per item,
+URL fields must be http(s) or relative); unknown item keys are stripped
+and fully-empty items dropped. Consumer helper:
+`apps/web/src/lib/data/homepage.ts` (`getHomepageSettings()`, 60s ISR +
+on-demand revalidation via the catalog/homepage save hooks).
 
 Frontend type in `medusa.ts` wrongly marks title/subtitle nullable — DB has
 NOT NULL + defaults (FRONTEND_PLAN breaking-change #5).

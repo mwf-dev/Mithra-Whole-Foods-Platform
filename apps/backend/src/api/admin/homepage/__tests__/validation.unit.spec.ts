@@ -40,4 +40,36 @@ describe("homepage settings validation", () => {
     expect(errors).toEqual([])
     expect(payload).toEqual({})
   })
+
+  it("accepts valid list fields and strips unknown item keys + empty items", () => {
+    const { payload, errors } = validateBody({
+      hero_banners: [
+        { title: "Fresh Millets", image_url: "/static/b1.png", evil: "x" },
+        { title: "", subtitle: "" }, // fully empty after cleaning → dropped
+      ],
+      offer_cards: [{ title: "Under ₹99", link: "/store" }],
+    })
+    expect(errors).toEqual([])
+    expect(payload.hero_banners).toEqual([
+      { title: "Fresh Millets", image_url: "/static/b1.png" },
+    ])
+    expect(payload.offer_cards).toEqual([{ title: "Under ₹99", link: "/store" }])
+  })
+
+  it("rejects non-array list fields and oversized lists", () => {
+    const tooMany = Array.from({ length: 6 }, () => ({ title: "x" }))
+    const { errors } = validateBody({
+      hero_banners: "not-an-array",
+      offer_cards: tooMany.concat(tooMany), // 12 > max 8
+    })
+    expect(errors).toContain("hero_banners must be an array")
+    expect(errors.some((e) => e.includes("at most 8 items"))).toBe(true)
+  })
+
+  it("rejects invalid URLs inside list items", () => {
+    const { errors } = validateBody({
+      category_tiles: [{ name: "Millets", image_url: "javascript:alert(1)" }],
+    })
+    expect(errors[0]).toMatch(/category_tiles\[0\].image_url/)
+  })
 })

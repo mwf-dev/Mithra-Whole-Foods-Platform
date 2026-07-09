@@ -1,26 +1,34 @@
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
+import { getHomepageSettings } from "@lib/data/homepage"
 import { Text, clx } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 export default async function Footer() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
-  const productCategories = await listCategories()
+  const [{ collections }, productCategories, homepageSettings] =
+    await Promise.all([
+      listCollections({ fields: "*products" }),
+      listCategories(),
+      getHomepageSettings(),
+    ])
 
   return (
     <footer className="border-t border-ui-border-base w-full">
       <div className="content-container flex flex-col w-full">
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div>
+          <div className="max-w-xs">
             <LocalizedClientLink
               href="/"
               className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
             >
               Mithra Whole Foods
             </LocalizedClientLink>
+            {homepageSettings?.footer_tagline && (
+              <Text className="txt-small text-ui-fg-subtle mt-3">
+                {homepageSettings.footer_tagline}
+              </Text>
+            )}
           </div>
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
             {productCategories && productCategories?.length > 0 && (
