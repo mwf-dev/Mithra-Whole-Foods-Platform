@@ -1,14 +1,12 @@
-# Deployment — Vercel (web) + GCP Cloud Run (backend)
+# Deployment — Vercel (web) + Railway (backend)
 
 Verified against the code 2026-07-09. Env var names must match
 `apps/backend/.env.template` and `apps/web/.env.template` exactly.
 
-> **Backend now deploys to Koyeb, not Cloud Run.** The CI/CD pipeline
+> **Backend deploys to Railway.** The CI/CD pipeline
 > (`.github/workflows/`, documented in `.github/workflows/README.md`) builds and
-> tests on every PR and auto-redeploys the backend to Koyeb once CI passes on
-> `main`; the storefront ships via Vercel's Git integration. The Cloud Run notes
-> below are kept as a reference for the Docker / migration / seed mechanics
-> (which carry over to Koyeb), but Koyeb is the live target.
+> tests on every PR. Deployments occur through Railway and Vercel's native Git integrations
+> which will automatically wait for the CI checks on `main` to pass.
 
 ## 0. One-time prerequisites
 
@@ -16,40 +14,31 @@ Verified against the code 2026-07-09. Env var names must match
       on GitHub) and use the **pooled** connection string in production.
 - [ ] Generate strong secrets: `openssl rand -base64 48` for `JWT_SECRET`,
       `COOKIE_SECRET`; `openssl rand -base64 32` for `REVALIDATE_SECRET`
-      (same value on both apps). Store in GCP Secret Manager / Vercel env.
-- [ ] Create a GCS bucket for uploads with S3-interop HMAC keys
-      (Settings → Interoperability), or an S3 bucket. Uploads on Cloud Run
-      are lost without this (`S3_*` vars in the backend template).
+      (same value on both apps). Store in Railway / Vercel env.
+- [ ] Ensure you have Cloudinary and SendGrid API keys configured.
 
-## 1. Backend → Cloud Run
+## 1. Backend → Railway
 
-Build from repo root (workspace context):
+The repository includes a `railway.json` file in the root directory that automatically directs Railway to build the `apps/backend/Dockerfile` and sets the `/health` check.
 
-```bash
-docker build -f apps/backend/Dockerfile \
-  --build-arg STOREFRONT_URL=https://<your-vercel-domain> \
-  -t <region>-docker.pkg.dev/<project>/<repo>/mithra-backend:$(git rev-parse --short HEAD) .
-docker push <same-tag>
-```
-
-**Migration job (before every deploy of a new image):** Cloud Run Job, same
-image, command `npx medusa db:migrate`, same env/secrets.
-
-**Seed (once per fresh database only):** Cloud Run Job, command
-`npx medusa exec ./src/migration-scripts/initial-data-seed.ts`. The seed
-self-guards: it aborts if it finds already-seeded data.
+**Setup Instructions:**
+1. Connect your repository to Railway as a new project.
+2. In the Railway Service Settings, enable **"Wait for CI"**.
+3. Set the **Custom Start Command** in Deployments to:
+   `npx medusa db:migrate && npm run start`
+   *(This ensures migrations run safely before the server boots).*
+4. **Seed (once per fresh database only):** You can use Railway's CLI or dashboard console to run:
+   `npx medusa exec ./src/migration-scripts/initial-data-seed.ts`. The seed
+   self-guards: it aborts if it finds already-seeded data.
 
 **Service settings:**
-- Port: Cloud Run injects `PORT` (Medusa honors it). Health probe: `GET /health`.
-- `min-instances=1` (cold starts are heavy), **`max-instances=1` until Redis
-  (Memorystore) is wired** — cache/event-bus are in-memory per instance.
-  When scaling out: set `REDIS_URL`, and optionally split a worker service
-  (`MEDUSA_WORKER_MODE=worker`, `DISABLE_MEDUSA_ADMIN=true`) from the API
-  service (`MEDUSA_WORKER_MODE=server`).
+- Port: Railway injects `PORT` (Medusa honors it). Health probe: `GET /health` (set in `railway.json`).
+- **`max-instances=1` until Redis is wired** — cache/event-bus are in-memory per instance.
+  When scaling out: set `REDIS_URL` to a Redis service instance.
 - Env: `NODE_ENV=production`, `DATABASE_URL` (pooled), `JWT_SECRET`,
   `COOKIE_SECRET`, `STORE_CORS`/`ADMIN_CORS`/`AUTH_CORS` (must include the
   Vercel prod + preview URLs and the backend's own URL for admin),
-  `STOREFRONT_URL`, `REVALIDATE_SECRET`, `S3_*` vars.
+  `STOREFRONT_URL`, `REVALIDATE_SECRET`, `CLOUDINARY_*`, `SENDGRID_*`.
   Missing secrets/CORS are **fatal at boot** by design.
 
 ## 2. Web → Vercel
@@ -57,7 +46,7 @@ self-guards: it aborts if it finds already-seeded data.
 - Root Directory: `apps/web`. Install command: default (pnpm, detected from
   the lockfile). Build: `next build`.
 - Env (Production **and** Preview):
-  - `MEDUSA_BACKEND_URL=https://<cloud-run-url>` (server-side; NOT `NEXT_PUBLIC_`)
+  - `MEDUSA_BACKEND_URL=https://<your-railway-url>` (server-side; NOT `NEXT_PUBLIC_`)
   - `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_...` (from Medusa admin)
   - `NEXT_PUBLIC_DEFAULT_REGION=in`
   - `NEXT_PUBLIC_BASE_URL=https://<your-domain>`
@@ -71,8 +60,8 @@ self-guards: it aborts if it finds already-seeded data.
 2. Storefront homepage renders with hero + products (no blank page).
 3. Admin (`https://<backend>/app`) → Homepage settings → save → storefront
    homepage updates (proves STOREFRONT_URL + REVALIDATE_SECRET wiring).
-4. Upload a hero image in admin → URL must point at the bucket, not
-   `/static` (proves S3/GCS file module).
+4. Upload a hero image in admin → URL must point at Cloudinary, not
+   `/static`.
 5. Full order: add to cart → checkout → COD → order confirmation, then the
    order appears in admin.
 6. `POST https://<storefront>/api/revalidate` without the secret header → 401.
@@ -82,8 +71,4 @@ self-guards: it aborts if it finds already-seeded data.
 - **Payments = Cash on Delivery only** (`pp_system_default`). Online
   payments need a Razorpay/Stripe provider integration — do NOT enable
   card/UPI copy anywhere until that lands.
-- Existing `hero_image_url`/product image rows in the database may point at
-  `http://localhost:9000/...` — re-upload them via admin after the file
-  module is live, or fix the rows.
-- No rate limiting at the app layer — front Cloud Run with Cloud Armor or
-  an API gateway if abuse becomes a concern.
+- Rate limiting is wired in Express and configured for proxy resolution via `X-Forwarded-For`.
