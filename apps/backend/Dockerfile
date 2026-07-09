@@ -37,4 +37,4 @@ COPY --from=build /app/apps/backend/.medusa/server ./
 
 # Cloud Run injects PORT; medusa start honors it. 9000 for local runs.
 EXPOSE 9000
-CMD ["npx", "medusa", "start"]
+CMD npx medusa start --port $PORT
