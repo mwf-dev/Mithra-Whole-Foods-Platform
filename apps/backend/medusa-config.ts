@@ -72,7 +72,7 @@ if (process.env.S3_BUCKET) {
 // Redis-backed cache/event-bus/workflow engine. Required as soon as more
 // than one backend instance runs (in-memory versions are per-instance).
 // Local dev without REDIS_URL keeps the in-memory fakes.
-if (process.env.REDIS_URL) {
+if (process.env.REDIS_URL && !IS_DEV) {
   modules.push(
     {
       resolve: "@medusajs/medusa/cache-redis",
@@ -106,7 +106,7 @@ module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
     databaseDriverOptions: { connection: { ssl: { rejectUnauthorized: true } } },
-    redisUrl: process.env.REDIS_URL,
+    redisUrl: !IS_DEV ? process.env.REDIS_URL : undefined,
     workerMode: (process.env.MEDUSA_WORKER_MODE as "shared" | "worker" | "server") || "shared",
     http: {
       storeCors: process.env.STORE_CORS || "",
