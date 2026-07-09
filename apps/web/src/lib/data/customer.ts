@@ -109,7 +109,11 @@ export async function signup(_currentState: unknown, formData: FormData) {
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
-    await transferCart()
+    // A failed transfer must not read as a failed signup — the cart-mismatch
+    // banner already offers a retry once the user is signed in.
+    await transferCart().catch((error) => {
+      console.error("Cart transfer after signup failed:", error)
+    })
 
     return createdCustomer
   } catch (error: any) {
@@ -141,11 +145,11 @@ export async function login(_currentState: unknown, formData: FormData) {
     return error.toString()
   }
 
-  try {
-    await transferCart()
-  } catch (error: any) {
-    return error.toString()
-  }
+  // A failed transfer must not read as a failed login — the cart-mismatch
+  // banner already offers a retry once the user is signed in.
+  await transferCart().catch((error) => {
+    console.error("Cart transfer after login failed:", error)
+  })
 }
 
 export async function signout(countryCode: string) {
@@ -173,10 +177,79 @@ export async function transferCart() {
 
   const headers = await getAuthHeaders()
 
-  await sdk.store.cart.transferCart(cartId, {}, headers)
+  try {
+    await sdk.store.cart.transferCart(cartId, {}, headers)
+  } catch (error: any) {
+    const recovered = await recoverFailedCartTransfer(cartId, headers, error)
+
+    if (!recovered) {
+      throw error
+    }
+  }
 
   const cartCacheTag = await getCacheTag("carts")
   revalidateTag(cartCacheTag)
+}
+
+/**
+ * The transfer endpoint force-refreshes every cart item, so it throws when the
+ * cart cookie is stale (cart deleted server-side) or when an item's variant
+ * has been removed or no longer has a price in the cart's currency — e.g.
+ * carts created before a catalog re-import. Recover instead of leaving the
+ * customer stuck on "Run transfer again".
+ * @returns true when the situation was resolved and the failure can be ignored.
+ */
+async function recoverFailedCartTransfer(
+  cartId: string,
+  headers: { authorization: string } | {},
+  error: any
+): Promise<boolean> {
+  const message = String(error?.message ?? error ?? "")
+  console.error(`Cart transfer failed for ${cartId}: ${message}`)
+
+  const cart = await sdk.client
+    .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${cartId}`, {
+      method: "GET",
+      query: { fields: "id,completed_at,*items" },
+      headers,
+      cache: "no-store",
+    })
+    .then(({ cart }) => cart)
+    .catch(() => null)
+
+  // Stale cookie: the cart is gone or already completed — drop it so the
+  // customer starts a fresh cart on their next add-to-cart.
+  if (!cart || cart.completed_at) {
+    await removeCartId()
+    return true
+  }
+
+  // Remove items whose variants the backend reported as unpurchasable, then
+  // retry the transfer once.
+  const brokenVariantIds: string[] = message.match(/variant_[A-Za-z0-9]+/g) ?? []
+  const brokenItems = (cart.items ?? []).filter(
+    (item) => item.variant_id && brokenVariantIds.includes(item.variant_id)
+  )
+
+  if (!brokenItems.length) {
+    return false
+  }
+
+  for (const item of brokenItems) {
+    await sdk.store.cart
+      .deleteLineItem(cartId, item.id, {}, headers)
+      .catch(() => {})
+  }
+
+  try {
+    await sdk.store.cart.transferCart(cartId, {}, headers)
+    return true
+  } catch (retryError: any) {
+    console.error(
+      `Cart transfer retry failed for ${cartId}: ${retryError?.message ?? retryError}`
+    )
+    return false
+  }
 }
 
 export const addCustomerAddress = async (

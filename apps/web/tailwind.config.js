@@ -34,16 +34,30 @@ module.exports = {
           80: "#1F2937",
           90: "#111827",
         },
+        // Mithra Design System v1.0 palette
         primary: {
-          DEFAULT: "#2E7D32",
+          DEFAULT: "#2E7D32", // Forest Green
+          dark: "#1E5B22", // hover/active
           foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#8D6E63",
+          DEFAULT: "#8B5E3C", // Warm Brown
           foreground: "#FFFFFF",
         },
-        background: "#FAF8F3",
-        foreground: "#1F1F1F",
+        olive: "#7A8F3F",
+        sage: "#A8B89A",
+        terracotta: "#C86F45",
+        cream: "#FAF7F1",
+        beige: "#F3EDE2",
+        charcoal: "#333333",
+        background: "#FAF7F1", // Cream
+        foreground: "#333333", // Dark Gray
+      },
+      boxShadow: {
+        "card-sm": "0 1px 2px rgba(0, 0, 0, 0.05)",
+        card: "0 4px 8px rgba(0, 0, 0, 0.06)",
+        "card-lg": "0 10px 24px rgba(0, 0, 0, 0.08)",
+        "card-xl": "0 20px 40px rgba(0, 0, 0, 0.12)",
       },
       borderRadius: {
         none: "0px",
@@ -79,7 +93,9 @@ module.exports = {
           "Ubuntu",
           "sans-serif",
         ],
-        playfair: ["var(--font-playfair)", "serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
+        // legacy alias — older components use font-playfair; both render DM Serif Display
+        playfair: ["var(--font-display)", "Georgia", "serif"],
       },
       keyframes: {
         ring: {

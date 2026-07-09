@@ -15,6 +15,9 @@ importers:
       prettier:
         specifier: ^3.0.0
         version: 3.9.4
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.15.43(@swc/helpers@0.5.15))(@types/node@22.20.0)(typescript@5.9.3)
       turbo:
         specifier: ^2.0.0
         version: 2.10.3
@@ -54,6 +57,9 @@ importers:
       '@tanstack/react-query':
         specifier: 5.64.2
         version: 5.64.2(react@18.3.1)
+      '@tsc_tech/medusa-plugin-cloudinary':
+        specifier: ^1.0.0
+        version: 1.0.0(@medusajs/admin-sdk@2.17.0)(@medusajs/cli@2.17.0(@types/node@20.19.43))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/icons@2.17.2(react@18.3.1))(@medusajs/medusa@2.17.0(@medusajs/admin-sdk@2.17.0)(@medusajs/cli@2.17.0(@types/node@20.19.43))(@medusajs/dashboard@2.17.0(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(typescript@5.9.3))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/icons@2.17.2(react@18.3.1))(@medusajs/test-utils@2.17.0)(@medusajs/ui@4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@swc/core@1.15.43(@swc/helpers@0.5.15))(@types/node@20.19.43)(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(awilix@8.0.1)(lightningcss@1.32.0)(picomatch@4.0.5)(posthog-node@5.39.4(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(terser@5.48.0)(typescript@5.9.3)(yalc@1.0.0-pre.53)(yaml@2.9.0))(@medusajs/test-utils@2.17.0(@medusajs/core-flows@2.17.0(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0)))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/medusa@2.17.0))(@medusajs/ui@4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@mikro-orm/cli@6.6.14(pg@8.22.0))(@mikro-orm/core@6.6.14)(@mikro-orm/knex@6.6.14(@mikro-orm/core@6.6.14)(pg@8.22.0))(@mikro-orm/migrations@6.6.14(@mikro-orm/core@6.6.14)(@types/node@20.19.43)(pg@8.22.0))(@mikro-orm/postgresql@6.6.14(@mikro-orm/core@6.6.14))(awilix@8.0.1)(pg@8.22.0)
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -146,8 +152,8 @@ importers:
         specifier: ^1.23.0
         version: 1.23.0(react@19.0.5)
       next:
-        specifier: 15.3.9
-        version: 15.3.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
+        specifier: 15.5.18
+        version: 15.5.18(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
       pg:
         specifier: ^8.11.3
         version: 8.22.0
@@ -171,7 +177,7 @@ importers:
         version: 2.9.0
       webpack:
         specifier: ^5
-        version: 5.108.4(lightningcss@1.32.0)(postcss@8.5.16)
+        version: 5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)
     devDependencies:
       '@babel/core':
         specifier: ^7.17.5
@@ -205,7 +211,7 @@ importers:
         version: 10.5.2(postcss@8.5.16)
       babel-loader:
         specifier: ^8.2.3
-        version: 8.4.1(@babel/core@7.29.7)(webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.16))
+        version: 8.4.1(@babel/core@7.29.7)(webpack@5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16))
       eslint:
         specifier: ^8.57.0
         version: 8.57.1
@@ -1764,56 +1770,56 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@next/env@15.3.9':
-    resolution: {integrity: sha512-I7wMCjlHc85EvAebNYJCRBZ+shdrGhcIXBviWmDzGYXwTQ+WrYpfg1LBOnTK1Bn3b+ud5apesNObXKEGqi/C3g==}
+  '@next/env@15.5.18':
+    resolution: {integrity: sha512-hAV85Ckd9QR6RvH04MEKwsfLTksvFpO47j9xwtoIuvuPnlwecpSi+uZTtm8HirVbtlI2Fnz//xpcSTjFdyJk+g==}
 
   '@next/eslint-plugin-next@15.0.8':
     resolution: {integrity: sha512-cXWJ/jeRyNeQX7SO+7B5bkwZ/sKCRzZJ1OVq9xB6S5c04vW5L52/+K+eTmH2Th2eg9rlFKLs7smMyvyn9IMyHA==}
 
-  '@next/swc-darwin-arm64@15.3.5':
-    resolution: {integrity: sha512-lM/8tilIsqBq+2nq9kbTW19vfwFve0NR7MxfkuSUbRSgXlMQoJYg+31+++XwKVSXk4uT23G2eF/7BRIKdn8t8w==}
+  '@next/swc-darwin-arm64@15.5.18':
+    resolution: {integrity: sha512-w0WvQf1n+txiwns/9pwIQteCJpZTbxzO2SE0FLcwuD4v0WEh1JPOjdyxWL21XwJsdpx8cFRjyzxzCS/siP7HcQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@15.3.5':
-    resolution: {integrity: sha512-WhwegPQJ5IfoUNZUVsI9TRAlKpjGVK0tpJTL6KeiC4cux9774NYE9Wu/iCfIkL/5J8rPAkqZpG7n+EfiAfidXA==}
+  '@next/swc-darwin-x64@15.5.18':
+    resolution: {integrity: sha512-znn71QmDuxm+BOaglihMZfvyySMnNljkVIY5Z2TCssBmm+WqL6c19VhtH5ktFkHa8EZ2bnTUpcNcmNSQsg67og==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@15.3.5':
-    resolution: {integrity: sha512-LVD6uMOZ7XePg3KWYdGuzuvVboxujGjbcuP2jsPAN3MnLdLoZUXKRc6ixxfs03RH7qBdEHCZjyLP/jBdCJVRJQ==}
+  '@next/swc-linux-arm64-gnu@15.5.18':
+    resolution: {integrity: sha512-yPPe5MNL+igZUa+OsqQJisqSfh6oarIuA1Q0BDxljGJhRQyZeP+WRHh7rs/jZUGMh5aY0YdIjXZG0VohkKkUdw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-musl@15.3.5':
-    resolution: {integrity: sha512-k8aVScYZ++BnS2P69ClK7v4nOu702jcF9AIHKu6llhHEtBSmM2zkPGl9yoqbSU/657IIIb0QHpdxEr0iW9z53A==}
+  '@next/swc-linux-arm64-musl@15.5.18':
+    resolution: {integrity: sha512-glaCczEWIrHsokFZ3pP08U4BpKxwIdnT+txdOM32OBgpL9Yw4aqx8NejmgtZQZOdstQ5f0L3CasIZudzCuD+nw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-x64-gnu@15.3.5':
-    resolution: {integrity: sha512-2xYU0DI9DGN/bAHzVwADid22ba5d/xrbrQlr2U+/Q5WkFUzeL0TDR963BdrtLS/4bMmKZGptLeg6282H/S2i8A==}
+  '@next/swc-linux-x64-gnu@15.5.18':
+    resolution: {integrity: sha512-oUfg2EgJmU3R0OCOWiokGFUTvZiPfXtriXiuF3YNxRoROCdgvTedHIzYoeKH34gsZxS/V7mHbfq2hpAHwhH1/A==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-musl@15.3.5':
-    resolution: {integrity: sha512-TRYIqAGf1KCbuAB0gjhdn5Ytd8fV+wJSM2Nh2is/xEqR8PZHxfQuaiNhoF50XfY90sNpaRMaGhF6E+qjV1b9Tg==}
+  '@next/swc-linux-x64-musl@15.5.18':
+    resolution: {integrity: sha512-JLxSP3KTd9iu/bvUMQxH7RJo9xKSHf55/6RPE4a6FTSZygGn7uvZbCej0AHXydwkggQGSD9UddSjwv6Xz5ESfA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-win32-arm64-msvc@15.3.5':
-    resolution: {integrity: sha512-h04/7iMEUSMY6fDGCvdanKqlO1qYvzNxntZlCzfE8i5P0uqzVQWQquU1TIhlz0VqGQGXLrFDuTJVONpqGqjGKQ==}
+  '@next/swc-win32-arm64-msvc@15.5.18':
+    resolution: {integrity: sha512-ir1v7enP52K2HNz3tQQvwF+x7VNxBk1ciiZ18WBPvxf4C59IqdfmHPJYK3vH7rSxpuCVw/8C712wTXNAtEp+NA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@15.3.5':
-    resolution: {integrity: sha512-5fhH6fccXxnX2KhllnGhkYMndhOiLOLEiVGYjP2nizqeGWkN10sA9taATlXwake2E2XMvYZjjz0Uj7T0y+z1yw==}
+  '@next/swc-win32-x64-msvc@15.5.18':
+    resolution: {integrity: sha512-LIu5me6QTANCd25E7I5uIEfvgQ06RK7tvHAbYo3zCb3VpxQEPvMcSpd87NwUABDT6MbGPdEGR5VRiK4PPTJhQg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -3233,6 +3239,25 @@ packages:
   '@tanstack/virtual-core@3.17.3':
     resolution: {integrity: sha512-8Np/TFELpI0ySuJoVmjvOrQYXH/8sTX0Biv9szhFhY39xOdAAY+smrMxjxOum/ux3eM8MUJQsEJ0/R0UpvC8dw==}
 
+  '@tsc_tech/medusa-plugin-cloudinary@1.0.0':
+    resolution: {integrity: sha512-Sz51QErklCU6eyxSC5SuY8IbNQIMdjY1safaOaE1dyNxW8Q4t4ON1bUAShGkZieEkODCijxdLF9LVGCDLTq9nQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@medusajs/admin-sdk': 2.4.0
+      '@medusajs/cli': 2.4.0
+      '@medusajs/framework': 2.4.0
+      '@medusajs/icons': 2.4.0
+      '@medusajs/medusa': 2.4.0
+      '@medusajs/test-utils': 2.4.0
+      '@medusajs/ui': 4.0.3
+      '@mikro-orm/cli': 6.4.3
+      '@mikro-orm/core': 6.4.3
+      '@mikro-orm/knex': 6.4.3
+      '@mikro-orm/migrations': 6.4.3
+      '@mikro-orm/postgresql': 6.4.3
+      awilix: ^8.0.1
+      pg: ^8.13.0
+
   '@tsconfig/node10@1.0.12':
     resolution: {integrity: sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ==}
 
@@ -4106,6 +4131,10 @@ packages:
   clone@2.1.2:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
+
+  cloudinary@2.10.0:
+    resolution: {integrity: sha512-sY09kYg7wprkndAOjZBAYqFZqwL+SxnEGcAvksOvFA+5upnFn949UjkEkHKNSwkBtW/xRDd0p6NgbSXZcxkI3w==}
+    engines: {node: '>=9'}
 
   clsx@1.2.1:
     resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
@@ -6095,13 +6124,13 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  next@15.3.9:
-    resolution: {integrity: sha512-bat50ogkh2esjfkbqmVocL5QunR9RGCSO2oQKFjKeDcEylIgw3JY6CMfGnzoVfXJ9SDLHI546sHmsk90D2ivwQ==}
+  next@15.5.18:
+    resolution: {integrity: sha512-eKL8zUJkX9Y5lE+RX/2YJoItVdGlIscyVyboeD9wSpp0PaGqjoA4tTpT2qPqz9ax+5IzGESyLSeZ/RCwbSZ2uQ==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
-      '@playwright/test': ^1.41.2
+      '@playwright/test': ^1.51.1
       babel-plugin-react-compiler: '*'
       react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
       react-dom: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
@@ -9915,34 +9944,34 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@next/env@15.3.9': {}
+  '@next/env@15.5.18': {}
 
   '@next/eslint-plugin-next@15.0.8':
     dependencies:
       fast-glob: 3.3.1
 
-  '@next/swc-darwin-arm64@15.3.5':
+  '@next/swc-darwin-arm64@15.5.18':
     optional: true
 
-  '@next/swc-darwin-x64@15.3.5':
+  '@next/swc-darwin-x64@15.5.18':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@15.3.5':
+  '@next/swc-linux-arm64-gnu@15.5.18':
     optional: true
 
-  '@next/swc-linux-arm64-musl@15.3.5':
+  '@next/swc-linux-arm64-musl@15.5.18':
     optional: true
 
-  '@next/swc-linux-x64-gnu@15.3.5':
+  '@next/swc-linux-x64-gnu@15.5.18':
     optional: true
 
-  '@next/swc-linux-x64-musl@15.3.5':
+  '@next/swc-linux-x64-musl@15.5.18':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@15.3.5':
+  '@next/swc-win32-arm64-msvc@15.5.18':
     optional: true
 
-  '@next/swc-win32-x64-msvc@15.3.5':
+  '@next/swc-win32-x64-msvc@15.5.18':
     optional: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -12211,6 +12240,25 @@ snapshots:
 
   '@tanstack/virtual-core@3.17.3': {}
 
+  ? '@tsc_tech/medusa-plugin-cloudinary@1.0.0(@medusajs/admin-sdk@2.17.0)(@medusajs/cli@2.17.0(@types/node@20.19.43))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/icons@2.17.2(react@18.3.1))(@medusajs/medusa@2.17.0(@medusajs/admin-sdk@2.17.0)(@medusajs/cli@2.17.0(@types/node@20.19.43))(@medusajs/dashboard@2.17.0(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(typescript@5.9.3))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/icons@2.17.2(react@18.3.1))(@medusajs/test-utils@2.17.0)(@medusajs/ui@4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@swc/core@1.15.43(@swc/helpers@0.5.15))(@types/node@20.19.43)(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(awilix@8.0.1)(lightningcss@1.32.0)(picomatch@4.0.5)(posthog-node@5.39.4(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(terser@5.48.0)(typescript@5.9.3)(yalc@1.0.0-pre.53)(yaml@2.9.0))(@medusajs/test-utils@2.17.0(@medusajs/core-flows@2.17.0(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0)))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/medusa@2.17.0))(@medusajs/ui@4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@mikro-orm/cli@6.6.14(pg@8.22.0))(@mikro-orm/core@6.6.14)(@mikro-orm/knex@6.6.14(@mikro-orm/core@6.6.14)(pg@8.22.0))(@mikro-orm/migrations@6.6.14(@mikro-orm/core@6.6.14)(@types/node@20.19.43)(pg@8.22.0))(@mikro-orm/postgresql@6.6.14(@mikro-orm/core@6.6.14))(awilix@8.0.1)(pg@8.22.0)'
+  : dependencies:
+      '@medusajs/admin-sdk': 2.17.0
+      '@medusajs/cli': 2.17.0(@types/node@20.19.43)
+      '@medusajs/framework': 2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0)
+      '@medusajs/icons': 2.17.2(react@18.3.1)
+      '@medusajs/medusa': 2.17.0(@medusajs/admin-sdk@2.17.0)(@medusajs/cli@2.17.0(@types/node@20.19.43))(@medusajs/dashboard@2.17.0(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(typescript@5.9.3))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/icons@2.17.2(react@18.3.1))(@medusajs/test-utils@2.17.0)(@medusajs/ui@4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@swc/core@1.15.43(@swc/helpers@0.5.15))(@types/node@20.19.43)(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(awilix@8.0.1)(lightningcss@1.32.0)(picomatch@4.0.5)(posthog-node@5.39.4(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(terser@5.48.0)(typescript@5.9.3)(yalc@1.0.0-pre.53)(yaml@2.9.0)
+      '@medusajs/test-utils': 2.17.0(@medusajs/core-flows@2.17.0(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0)))(@medusajs/framework@2.17.0(@medusajs/cli@2.17.0(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(terser@5.48.0))(zod@4.2.0))(@medusajs/medusa@2.17.0)
+      '@medusajs/ui': 4.1.15(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      '@mikro-orm/cli': 6.6.14(pg@8.22.0)
+      '@mikro-orm/core': 6.6.14
+      '@mikro-orm/knex': 6.6.14(@mikro-orm/core@6.6.14)(pg@8.22.0)
+      '@mikro-orm/migrations': 6.6.14(@mikro-orm/core@6.6.14)(@types/node@20.19.43)(pg@8.22.0)
+      '@mikro-orm/postgresql': 6.6.14(@mikro-orm/core@6.6.14)
+      awilix: 8.0.1
+      cloudinary: 2.10.0
+      pg: 8.22.0
+      uuid: 11.1.1
+
   '@tsconfig/node10@1.0.12': {}
 
   '@tsconfig/node12@1.0.11': {}
@@ -12904,14 +12952,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-loader@8.4.1(@babel/core@7.29.7)(webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.16)):
+  babel-loader@8.4.1(@babel/core@7.29.7)(webpack@5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)):
     dependencies:
       '@babel/core': 7.29.7
       find-cache-dir: 3.3.2
       loader-utils: 2.0.4
       make-dir: 3.1.0
       schema-utils: 2.7.1
-      webpack: 5.108.4(lightningcss@1.32.0)(postcss@8.5.16)
+      webpack: 5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)
 
   babel-plugin-istanbul@6.1.1:
     dependencies:
@@ -13225,6 +13273,10 @@ snapshots:
   clone@1.0.4: {}
 
   clone@2.1.2: {}
+
+  cloudinary@2.10.0:
+    dependencies:
+      lodash: 4.18.1
 
   clsx@1.2.1: {}
 
@@ -15417,14 +15469,15 @@ snapshots:
 
   minimist@1.2.8: {}
 
-  minimizer-webpack-plugin@5.6.1(lightningcss@1.32.0)(postcss@8.5.16)(webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.16)):
+  minimizer-webpack-plugin@5.6.1(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)(webpack@5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
-      webpack: 5.108.4(lightningcss@1.32.0)(postcss@8.5.16)
+      webpack: 5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)
     optionalDependencies:
+      '@swc/core': 1.15.43(@swc/helpers@0.5.15)
       lightningcss: 1.32.0
       postcss: 8.5.16
 
@@ -15511,26 +15564,24 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@15.3.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.0.5(react@19.0.5))(react@19.0.5):
+  next@15.5.18(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.0.5(react@19.0.5))(react@19.0.5):
     dependencies:
-      '@next/env': 15.3.9
-      '@swc/counter': 0.1.3
+      '@next/env': 15.5.18
       '@swc/helpers': 0.5.15
-      busboy: 1.6.0
       caniuse-lite: 1.0.30001800
       postcss: 8.4.31
       react: 19.0.5
       react-dom: 19.0.5(react@19.0.5)
       styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.0.5)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 15.3.5
-      '@next/swc-darwin-x64': 15.3.5
-      '@next/swc-linux-arm64-gnu': 15.3.5
-      '@next/swc-linux-arm64-musl': 15.3.5
-      '@next/swc-linux-x64-gnu': 15.3.5
-      '@next/swc-linux-x64-musl': 15.3.5
-      '@next/swc-win32-arm64-msvc': 15.3.5
-      '@next/swc-win32-x64-msvc': 15.3.5
+      '@next/swc-darwin-arm64': 15.5.18
+      '@next/swc-darwin-x64': 15.5.18
+      '@next/swc-linux-arm64-gnu': 15.5.18
+      '@next/swc-linux-arm64-musl': 15.5.18
+      '@next/swc-linux-x64-gnu': 15.5.18
+      '@next/swc-linux-x64-musl': 15.5.18
+      '@next/swc-win32-arm64-msvc': 15.5.18
+      '@next/swc-win32-x64-msvc': 15.5.18
       '@opentelemetry/api': 1.9.1
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -16986,6 +17037,26 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.15.43(@swc/helpers@0.5.15)
 
+  ts-node@10.9.2(@swc/core@1.15.43(@swc/helpers@0.5.15))(@types/node@22.20.0)(typescript@5.9.3):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.12
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 22.20.0
+      acorn: 8.17.0
+      acorn-walk: 8.3.5
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.4
+      make-error: 1.3.6
+      typescript: 5.9.3
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    optionalDependencies:
+      '@swc/core': 1.15.43(@swc/helpers@0.5.15)
+
   tsconfig-paths@3.15.0:
     dependencies:
       '@types/json5': 0.0.29
@@ -17249,7 +17320,7 @@ snapshots:
 
   webpack-sources@3.5.1: {}
 
-  webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.16):
+  webpack@5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16):
     dependencies:
       '@types/estree': 1.0.9
       '@types/json-schema': 7.0.15
@@ -17267,7 +17338,7 @@ snapshots:
       graceful-fs: 4.2.11
       loader-runner: 4.3.2
       mime-db: 1.54.0
-      minimizer-webpack-plugin: 5.6.1(lightningcss@1.32.0)(postcss@8.5.16)(webpack@5.108.4(lightningcss@1.32.0)(postcss@8.5.16))
+      minimizer-webpack-plugin: 5.6.1(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16)(webpack@5.108.4(@swc/core@1.15.43(@swc/helpers@0.5.15))(lightningcss@1.32.0)(postcss@8.5.16))
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3

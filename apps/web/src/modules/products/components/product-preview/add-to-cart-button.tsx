@@ -49,7 +49,7 @@ export default function AddToCartButton({
     <button
       onClick={handleClick}
       disabled={isPending}
-      className="w-full bg-[#4A5D23] text-white hover:bg-[#3A4A1A] disabled:opacity-60 py-2 rounded flex items-center justify-center gap-2 text-xs font-bold transition-colors"
+      className="w-full bg-primary text-white hover:bg-primary-dark disabled:opacity-60 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold transition-colors"
       aria-label="Add to cart"
     >
       {isPending ? (

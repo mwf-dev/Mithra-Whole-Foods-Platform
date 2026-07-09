@@ -48,6 +48,25 @@ if (process.env.S3_BUCKET) {
       ],
     },
   })
+} else if (process.env.CLOUDINARY_CLOUD_NAME) {
+  modules.push({
+    resolve: "@medusajs/medusa/file",
+    options: {
+      providers: [
+        {
+          resolve: "@tsc_tech/medusa-plugin-cloudinary/providers/file-cloudinary",
+          id: "cloudinary",
+          options: {
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+            apiKey: process.env.CLOUDINARY_API_KEY,
+            apiSecret: process.env.CLOUDINARY_API_SECRET,
+            folderName: "mithra-wholefoods",
+            secure: true,
+          },
+        },
+      ],
+    },
+  })
 }
 
 // Redis-backed cache/event-bus/workflow engine. Required as soon as more

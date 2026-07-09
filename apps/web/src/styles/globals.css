@@ -111,7 +111,20 @@
   }
 }
 
+:root {
+  /* Mithra Design System v1.0 */
+  --background: #faf7f1; /* Cream */
+  --foreground: #333333; /* Dark Gray */
+}
+
 body {
   background-color: var(--background) !important;
   color: var(--foreground) !important;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
 }

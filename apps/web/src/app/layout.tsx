@@ -1,10 +1,14 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import { Inter, Playfair_Display } from "next/font/google"
+import { DM_Serif_Display, Inter } from "next/font/google"
 import "styles/globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" })
+const dmSerif = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -12,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-mode="light" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="en" data-mode="light" className={`${inter.variable} ${dmSerif.variable}`} suppressHydrationWarning>
       <body>
         <main className="relative">{props.children}</main>
       </body>
