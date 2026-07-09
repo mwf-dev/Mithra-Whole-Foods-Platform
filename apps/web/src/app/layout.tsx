@@ -14,12 +14,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
 
+import { Analytics } from "@vercel/analytics/react"
+
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" className={`${inter.variable} ${dmSerif.variable}`} suppressHydrationWarning>
       <body>
         <main className="relative">{props.children}</main>
+        <Analytics />
       </body>
     </html>
   )
 }
+

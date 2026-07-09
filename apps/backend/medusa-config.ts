@@ -93,6 +93,26 @@ if (process.env.REDIS_URL && !IS_DEV) {
   )
 }
 
+// SendGrid email notification provider
+if (process.env.SENDGRID_API_KEY) {
+  modules.push({
+    resolve: "@medusajs/medusa/notification",
+    options: {
+      providers: [
+        {
+          resolve: "@medusajs/notification-sendgrid",
+          id: "sendgrid",
+          options: {
+            channels: ["email"],
+            api_key: process.env.SENDGRID_API_KEY,
+            from: process.env.SENDGRID_FROM_EMAIL,
+          },
+        },
+      ],
+    },
+  })
+}
+
 module.exports = defineConfig({
   admin: {
     // Worker instances don't serve the admin UI.
