@@ -3,7 +3,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", ".medusa/**", "dist/**", "build/**"]
+      "outputs": [".next/**", "!.next/cache/**", ".medusa/**", "dist/**", "build/**"],
+      "env": [
+        "MEDUSA_BACKEND_URL",
+        "REVALIDATE_SECRET"
+      ]
     },
     "lint": {},
     "typecheck": {},
