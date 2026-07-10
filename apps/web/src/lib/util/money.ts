@@ -21,6 +21,6 @@ export const convertToLocale = ({
         currency: currency_code,
         minimumFractionDigits,
         maximumFractionDigits,
-      }).format(amount / 100)
+      }).format(amount)
     : amount.toString()
 }

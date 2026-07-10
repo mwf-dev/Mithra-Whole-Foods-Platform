@@ -135,7 +135,7 @@ export default async function import_legacy_data({ container }: { container: Med
             options: { "Default Option": "Default" },
             prices: [
               {
-                amount: Math.round(legacyProduct.price * 100),
+                amount: legacyProduct.price,
                 currency_code: "usd",
               },
             ],
