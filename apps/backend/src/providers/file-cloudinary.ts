@@ -6,7 +6,7 @@ import {
 } from "@medusajs/framework/utils";
 import { v2 as cloudinary } from "cloudinary";
 import { Readable } from "stream";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "crypto";
 
 interface CloudinaryProviderOptions {
   cloudName: string;
@@ -121,7 +121,7 @@ class CloudinaryFileProviderService extends AbstractFileProviderService {
 
   private generatePublicId(filename: string): string {
     const cleaned = this.cleanFilename(filename);
-    const unique = uuid();
+    const unique = randomUUID();
     return `${unique}_${cleaned}`;
   }
 }
