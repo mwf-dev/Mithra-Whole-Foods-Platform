@@ -58,7 +58,7 @@ if (process.env.S3_BUCKET) {
     options: {
       providers: [
         {
-          resolve: "@tsc_tech/medusa-plugin-cloudinary/providers/file-cloudinary",
+          resolve: "./src/providers/file-cloudinary",
           id: "cloudinary",
           options: {
             cloudName: process.env.CLOUDINARY_CLOUD_NAME,
