@@ -93,6 +93,30 @@ if (process.env.REDIS_URL && !IS_DEV) {
   )
 }
 
+// Stripe payments. Registering the payment module with an explicit provider
+// list keeps Medusa's built-in system provider (pp_system_default, surfaced
+// as COD in the storefront) alongside Stripe. `capture: true` auto-captures
+// on authorization so the admin never has to capture manually. Test vs live
+// is decided purely by which keys are set (sk_test_* vs sk_live_*).
+if (process.env.STRIPE_API_KEY) {
+  modules.push({
+    resolve: "@medusajs/medusa/payment",
+    options: {
+      providers: [
+        {
+          resolve: "@medusajs/payment-stripe",
+          id: "stripe",
+          options: {
+            apiKey: process.env.STRIPE_API_KEY,
+            webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+            capture: true,
+          },
+        },
+      ],
+    },
+  })
+}
+
 // SendGrid email notification provider
 if (process.env.SENDGRID_API_KEY) {
   modules.push({

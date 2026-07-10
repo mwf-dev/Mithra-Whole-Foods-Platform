@@ -6,7 +6,8 @@
       "outputs": [".next/**", "!.next/cache/**", ".medusa/**", "dist/**", "build/**"],
       "env": [
         "MEDUSA_BACKEND_URL",
-        "REVALIDATE_SECRET"
+        "REVALIDATE_SECRET",
+        "NEXT_PUBLIC_STRIPE_KEY"
       ]
     },
     "lint": {},

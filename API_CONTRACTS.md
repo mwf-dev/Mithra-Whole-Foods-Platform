@@ -61,6 +61,19 @@ Admin UI (`src/admin/routes/homepage/page.tsx`) additionally calls built-in
 `POST /admin/uploads` (multipart) — files land on **local disk** `static/`
 (no file module configured; ephemeral on Cloud Run).
 
+## Payments (Stripe)
+
+- Provider id at checkout: **`pp_stripe_stripe`** (mapped to "Credit card" in
+  `apps/web/src/lib/constants.tsx`); `pp_system_default` stays available as COD.
+- Registered in `medusa-config.ts` only when `STRIPE_API_KEY` is set;
+  auto-capture on (`capture: true`).
+- Webhook (built-in Medusa route, no auth, Stripe-signature verified):
+  `POST /hooks/payment/stripe_stripe` — configure this URL + signing secret
+  (`STRIPE_WEBHOOK_SECRET`) in the Stripe dashboard. Setup: `docs/STRIPE_SETUP.md`.
+- Order emails: subscribers `order-placed.ts` / `shipment-created.ts` send via
+  SendGrid dynamic templates (env-gated; template data contract documented in
+  each subscriber and in `docs/STRIPE_SETUP.md`).
+
 ## Response-shape traps (cost hours before — don't repeat)
 
 1. **`/homepage` is intentionally top-level**, not `/store/homepage`, so the
