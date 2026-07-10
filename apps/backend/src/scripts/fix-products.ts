@@ -86,8 +86,8 @@ export default async function fixProducts({ container }: { container: MedusaCont
         const inrPrice = prices.find((p: any) => p.currency_code === "inr")
 
         if (usdPrice && !inrPrice) {
-          // Add INR price (USD * 83)
-          const inrAmount = Math.round(usdPrice.amount * 83)
+          // usdPrice.amount is in cents (minor units). Convert to rupees then paise.
+          const inrAmount = Math.round((usdPrice.amount / 100) * 83 * 100)
           await updateProductVariantsWorkflow(container).run({
             input: {
               product_variants: [
@@ -101,7 +101,7 @@ export default async function fixProducts({ container }: { container: MedusaCont
               ]
             }
           })
-          logger.info(`Added INR price ${inrAmount} to variant ${variant.id} of ${product.title}`)
+          logger.info(`Added INR price ${inrAmount} (paise) to variant ${variant.id} of ${product.title}`)
         }
       }
     } catch (e: any) {
