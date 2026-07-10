@@ -22,7 +22,14 @@ endpoint shapes in [/API_CONTRACTS.md](../../API_CONTRACTS.md).
 - `src/migration-scripts/initial-data-seed.ts` — the wired seed (`pnpm seed`):
   store/region(INR)/channel/key + 3 categories + `homepage-best-sellers`
   collection + 3 products.
-- `jobs/ links/ subscribers/ workflows/` — README-only placeholders.
+- `src/subscribers/` — `catalog-changed.ts` (storefront cache revalidation +
+  orphaned-cart cleanup), `order-placed.ts` (customer confirmation + admin
+  alert email), `shipment-created.ts` (tracking email). Email subscribers
+  no-op gracefully without SendGrid env vars.
+- Payments: Stripe via `@medusajs/payment-stripe` (env-gated on
+  `STRIPE_API_KEY`, auto-capture, webhook `/hooks/payment/stripe_stripe`) —
+  see `/docs/STRIPE_SETUP.md`. `pp_system_default` doubles as COD.
+- `jobs/ links/ workflows/` — README-only placeholders.
 
 ## Commands
 
