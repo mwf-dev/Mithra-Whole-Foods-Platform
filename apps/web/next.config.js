@@ -20,6 +20,13 @@ const nextConfig = {
   },
   // ponytail: fixed HIGH-2 (removed ignoreBuildErrors/ignoreDuringBuilds)
   images: {
+    // Serve modern formats (much smaller than JP/PNG) and cache optimized
+    // variants at the edge for a day. `qualities` allow-lists the quality
+    // values components pass (Thumbnail=50, product cards=60) — required to
+    // avoid the Next 16 deprecation on arbitrary `quality`.
+    formats: ["image/avif", "image/webp"],
+    qualities: [50, 60, 75],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: "https",

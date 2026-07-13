@@ -1,7 +1,7 @@
 import { Star } from "lucide-react"
+import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
-import { safeCssUrl } from "@lib/util/safe-css-url"
 import { HttpTypes } from "@medusajs/types"
 import AddToCartButton from "./add-to-cart-button"
 import WishlistHeart from "./wishlist-heart"
@@ -66,12 +66,16 @@ export default function ProductPreview({
           </span>
         )}
 
-        <div
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat group-hover:scale-105 transition-transform duration-500 m-4"
-          style={{ backgroundImage: `url('${safeCssUrl(img)}')` }}
-          role="img"
-          aria-label={product.title}
-        ></div>
+        {/* next/image (not a CSS background) so cards get AVIF/WebP,
+            responsive srcset and lazy-loading out of the box. */}
+        <Image
+          src={img}
+          alt={product.title}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+          quality={60}
+          className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+        />
       </LocalizedClientLink>
 
       {/* Content */}
