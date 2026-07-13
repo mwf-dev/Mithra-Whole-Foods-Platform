@@ -46,7 +46,7 @@ Last updated: 2026-07-13.
 
 | Item | Where | Note |
 |---|---|---|
-| Warm the backend / kill cold starts | Railway | Min-instance or a scheduled `/health` ping. First request after idle is multi-second (startup timeout was raised to 300s). |
+| ⏳ Warm the backend / kill cold starts | `.github/workflows/keep-warm.yml` (added) | Scheduled `/health` ping — **inert until you set the `BACKEND_HEALTHCHECK_URL` repo secret**. Stopgap; the robust fix is Railway "min instances = 1" + region colocation. |
 | Colocate backend near users (India) | Railway region | Cuts per-request RTT to Vercel/browser. |
 | `listProductsWithSort` over-fetch | `apps/web/src/lib/data/products.ts` | Fetches 100 products to sort in memory, then slices 12. Move sort/paginate server-side as the catalog grows. |
 | Surface errors in web data helpers | `apps/web/src/lib/data/*` | Several helpers swallow errors → `null`/`[]` (FRONTEND_PLAN Module 1). |

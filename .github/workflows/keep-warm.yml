@@ -1,0 +1,42 @@
+name: Keep backend warm
+
+# Pings the backend /health endpoint on a schedule so the Railway instance
+# doesn't go cold between bursts of traffic — the first request after an idle
+# period is otherwise multi-second (Medusa boot is slow; the startup timeout is
+# 300s). This is a STOPGAP; the robust fix is Railway "min instances = 1" plus
+# colocating the backend near your users. See docs/PERFORMANCE_TODO.md.
+#
+# Inert until you add the repo secret BACKEND_HEALTHCHECK_URL
+# (e.g. https://<your-railway-app>.up.railway.app/health). GitHub cron is
+# best-effort and can be delayed 5-15 min, which is fine for keep-warm.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+# Never pile up; one warm ping at a time is enough.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        env:
+          HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
+        run: |
+          if [ -z "$HEALTHCHECK_URL" ]; then
+            echo "BACKEND_HEALTHCHECK_URL not set — skipping."
+            echo "Add it in repo Settings → Secrets → Actions to enable keep-warm."
+            exit 0
+          fi
+          echo "Pinging $HEALTHCHECK_URL"
+          # Non-fatal: a failed ping shouldn't turn the whole schedule red.
+          if curl -fsS --max-time 30 "$HEALTHCHECK_URL" > /dev/null; then
+            echo "OK — backend responded."
+          else
+            echo "::warning::Keep-warm ping failed (backend may be cold or down)."
+          fi
