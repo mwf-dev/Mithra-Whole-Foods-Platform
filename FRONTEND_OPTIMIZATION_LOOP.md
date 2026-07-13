@@ -101,17 +101,36 @@ committed.
 
 ### Phase 2 — UI overhaul (premium, distinctive, on-brand)
 
-Use the **frontend-design** skill for aesthetic direction. Reference: premium
-grocery / whole-foods e-commerce (logo top-left, clean top nav, generous
-whitespace, warm organic palette). Ask the user for specific reference links if
-provided; otherwise follow this brief.
+Use the **frontend-design** skill for aesthetic direction.
 
-- [ ] **P2.1** Header/logo: put a proper **Mithra logo top-left**; build a clean
-  horizontal top nav (Home / Store / Cart / Account). Remove the slide-out
-  left "Menu" popover as the primary nav on desktop (keep a hamburger only for
-  mobile).
-- [ ] **P2.2** Remove the unwanted left sidebar feel on `/` and `/store`; use a
-  top filter/sort bar or a refined, intentional sidebar — not the default.
+**Reference analysis (2026-07-13, user-provided):**
+- **bliss-tree-nj.us** — logo top-left (green tree mark + wordmark), full-width
+  search, phone CTA, account/wishlist/cart top-right, then a horizontal
+  category nav bar (NEW ARRIVALS / RICE / SWEETS / OILS / ALL PRODUCTS). Green
+  organic palette, natural food photography, promo tiles beside the hero. This
+  is the header/nav target for Mithra.
+- **naturemills.com** — leaf logo, "100% Natural" script badges, food shot on
+  light stone backgrounds, clean minimal header, soft palette.
+- **shop.cookdtv.com (PDP)** — the product-page target: left image **gallery**
+  (large image + storytelling shots: product / ingredients / how-to / benefits);
+  right column = title, star rating (x/5 + count), price, **pill** variant
+  selectors (Pack Size, Size), quantity stepper, big Add-to-Cart, delivery
+  countdown + order timeline (Purchased→Processing→Delivered); then related-
+  product rail, customer reviews, FAQs.
+
+**Brand:** Mithra's own tree/leaf logo motif; palette = cream `#faf7f1` +
+forest green `#2E5C31` + earthy accents; serif display (`--font-display`).
+Logo file provided by user at `apps/web/public/` (wire `/logo.png` with a text
+wordmark fallback until it lands).
+
+- [x] **P2.1** Header/logo: **logo top-left** (`Logo` component — serif
+  wordmark + leaf mark, auto-swaps to `public/logo.png` when provided); clean
+  two-row header (logo · Home/Shop · Account/Cart, then a `CategoryBar`).
+  Desktop slide-out "Menu" removed; hamburger kept for mobile only. Removed the
+  now-dead homepage `CategoryNav`. _Done 2026-07-13, verified desktop+mobile._
+- [ ] **P2.2** Remove the unwanted left sidebar feel on `/store` (the plain
+  "Sort by" column); use a top filter/sort bar or a refined, intentional
+  sidebar — not the default. (Header slide-out menu already removed in P2.1.)
 - [ ] **P2.3** Cart page + cart dropdown: fix the background/contrast, spacing,
   and empty state to match the premium brand.
 - [ ] **P2.4** Global polish: typography scale, spacing, buttons, product cards,

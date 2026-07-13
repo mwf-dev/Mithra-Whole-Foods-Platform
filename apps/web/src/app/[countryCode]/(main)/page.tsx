@@ -2,11 +2,9 @@ import { Metadata } from "next"
 
 import { Hero } from "@modules/home/components/hero"
 import { BestSellers } from "@modules/home/components/best-sellers"
-import { CategoryNav } from "@modules/home/components/category-nav"
 import { CategoryTiles } from "@modules/home/components/category-tiles"
 import { OfferCards } from "@modules/home/components/offer-cards"
 import { PromoCards } from "@modules/home/components/promo-cards"
-import { listCategories } from "@lib/data/categories"
 import { getHomepageSettings } from "@lib/data/homepage"
 import { getRegion } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
@@ -23,10 +21,9 @@ export default async function Home(props: {
   const params = await props.params
 
   const { countryCode } = params
-  const [region, settings, categories, productsResult] = await Promise.all([
+  const [region, settings, productsResult] = await Promise.all([
     getRegion(countryCode),
     getHomepageSettings(),
-    listCategories().catch(() => []),
     listProducts({
       pageParam: 1,
       queryParams: { limit: 12 },
@@ -45,7 +42,6 @@ export default async function Home(props: {
 
   return (
     <>
-      <CategoryNav categories={categories} />
       <Hero settings={settings} />
       <CategoryTiles tiles={settings?.category_tiles} />
       <OfferCards cards={settings?.offer_cards} />
