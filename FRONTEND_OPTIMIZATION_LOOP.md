@@ -128,9 +128,10 @@ wordmark fallback until it lands).
   two-row header (logo · Home/Shop · Account/Cart, then a `CategoryBar`).
   Desktop slide-out "Menu" removed; hamburger kept for mobile only. Removed the
   now-dead homepage `CategoryNav`. _Done 2026-07-13, verified desktop+mobile._
-- [ ] **P2.2** Remove the unwanted left sidebar feel on `/store` (the plain
-  "Sort by" column); use a top filter/sort bar or a refined, intentional
-  sidebar — not the default. (Header slide-out menu already removed in P2.1.)
+- [x] **P2.2** Removed the left "Sort by" sidebar on `/store`, `/categories/*`,
+  `/collections/*`. `RefinementList` is now a compact top-bar sort dropdown;
+  templates use a serif title + subtitle header row with the grid full-width.
+  Store loading skeleton updated to match. _Done 2026-07-13, verified._
 - [ ] **P2.3** Cart page + cart dropdown: fix the background/contrast, spacing,
   and empty state to match the premium brand.
 - [ ] **P2.4** Global polish: typography scale, spacing, buttons, product cards,

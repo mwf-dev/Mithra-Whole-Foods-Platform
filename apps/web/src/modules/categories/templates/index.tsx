@@ -37,28 +37,34 @@ export default function CategoryTemplate({
   getParents(category)
 
   return (
-    <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
-      data-testid="category-container"
-    >
-      <RefinementList sortBy={sort} data-testid="sort-by-container" />
-      <div className="w-full">
-        <div className="flex flex-row mb-8 text-2xl-semi gap-4">
-          {parents &&
-            parents.map((parent) => (
-              <span key={parent.id} className="text-ui-fg-subtle">
-                <LocalizedClientLink
-                  className="mr-4 hover:text-black"
-                  href={`/categories/${parent.handle}`}
-                  data-testid="sort-by-link"
-                >
-                  {parent.name}
-                </LocalizedClientLink>
-                /
-              </span>
-            ))}
-          <h1 data-testid="category-page-title">{category.name}</h1>
+    <div className="py-8 content-container" data-testid="category-container">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
+        <div>
+          <div className="flex flex-row items-center gap-2 text-sm text-ui-fg-subtle mb-1">
+            {parents &&
+              parents.map((parent) => (
+                <span key={parent.id} className="flex items-center gap-2">
+                  <LocalizedClientLink
+                    className="hover:text-[#2E5C31]"
+                    href={`/categories/${parent.handle}`}
+                    data-testid="sort-by-link"
+                  >
+                    {parent.name}
+                  </LocalizedClientLink>
+                  /
+                </span>
+              ))}
+          </div>
+          <h1
+            data-testid="category-page-title"
+            className="font-display text-3xl md:text-4xl text-ui-fg-base"
+          >
+            {category.name}
+          </h1>
         </div>
+        <RefinementList sortBy={sort} data-testid="sort-by-container" />
+      </div>
+      <div className="w-full">
         {category.description && (
           <div className="mb-8 text-base-regular">
             <p>{category.description}</p>
