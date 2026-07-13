@@ -27,19 +27,20 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   // the update is optimistic; without one we fall back to the plain action.
   const cartCtx = useCartOptional()
   const [updating, setUpdating] = useState(false)
-  const [localError, setLocalError] = useState<string | null>(null)
-  const error = cartCtx?.error ?? localError
+  // Only the no-provider fallback surfaces inline; with a provider, mutation
+  // errors are shown app-wide by the cart error toast (avoids a per-row dup).
+  const [error, setError] = useState<string | null>(null)
 
   const changeQuantity = async (quantity: number) => {
     // Optimistic: the quantity (and the derived nav badge) updates instantly
     // via the cart context; the server reconciles on response.
-    setLocalError(null)
+    setError(null)
     setUpdating(true)
     if (cartCtx) {
       await cartCtx.updateItem({ lineId: item.id, quantity })
     } else {
       await updateLineItem({ lineId: item.id, quantity }).catch((err) =>
-        setLocalError(err.message)
+        setError(err.message)
       )
     }
     setUpdating(false)

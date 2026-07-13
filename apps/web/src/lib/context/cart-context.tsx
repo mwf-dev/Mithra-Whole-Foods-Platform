@@ -10,6 +10,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useOptimistic,
   useState,
   useTransition,
@@ -200,7 +201,49 @@ export function CartProvider({
       }}
     >
       {children}
+      <CartErrorToast error={error} onDismiss={clearError} />
     </CartContext.Provider>
+  )
+}
+
+/**
+ * App-wide toast for a failed cart mutation. When an optimistic add/update/
+ * delete is rejected by the backend, the optimistic change has already rolled
+ * back — this tells the shopper why. Auto-dismisses after a few seconds.
+ */
+function CartErrorToast({
+  error,
+  onDismiss,
+}: {
+  error: string | null
+  onDismiss: () => void
+}) {
+  useEffect(() => {
+    if (!error) return
+    const t = setTimeout(onDismiss, 4000)
+    return () => clearTimeout(t)
+  }, [error, onDismiss])
+
+  if (!error) return null
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="fixed inset-x-0 bottom-4 z-[100] flex justify-center px-4 pointer-events-none"
+    >
+      <div className="pointer-events-auto flex items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-sm text-white shadow-lg max-w-md">
+        <span className="flex-1">{error}</span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="shrink-0 rounded px-1 text-white/80 hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
   )
 }
 
