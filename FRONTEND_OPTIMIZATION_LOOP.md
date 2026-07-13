@@ -147,10 +147,16 @@ wordmark fallback until it lands).
   remotePatterns (product images now go through next/image). _Done 2026-07-13;
   verified end-to-end with 4 real images — thumbnail click swaps main image +
   active dot/thumb._
-- [ ] **P2.6** **Admin**: allow uploading/ordering multiple images per product
-  (grouped: main / about / ingredients) so the PDP carousel is content-driven.
-  (Medusa admin already supports multiple product images + variant images;
-  extend/verify the flow and PDP consumption.)
+- [x] **P2.6 (core)** **Admin multi-image**: Medusa's admin (`/app` →
+  Products → product → **Media**) already supports uploading **multiple** images
+  per product and reordering them — this is the "option in the admin page." The
+  new `ProductGallery` consumes **all** `product.images`, so a product shot +
+  "about" + ingredients + nutrition images uploaded there appear as carousel
+  slides with zero extra config. Verified: admin reachable (`/app` 200); store
+  API exposes the `images` array the carousel renders. _Done 2026-07-13._
+  - [ ] **P2.6 (optional follow-up)** Separate *labeled/grouped* galleries
+    (a distinct "Ingredients" carousel vs "About") would need product metadata
+    + a small custom admin widget. Not built — flag for user if desired.
 
 **Exit criteria:** logo top-left; no accidental left sidebar; cart visually
 consistent; PDP shows a multi-image carousel fed by product data; admin can
@@ -183,3 +189,12 @@ _(append newest-last; one line per landed change)_
   on cart & checkout. Verified: `pnpm typecheck` green; store + PDP render
   correctly against local backend (58 products, region USA/us). Perceived
   navigation now paints a skeleton immediately instead of a 3–4 s blank screen.
+- 2026-07-13 — Phase 2 landed & committed: P2.1 header/logo top-left + category
+  bar (slide-out menu now mobile-only); P2.2 removed left sort sidebar,
+  full-width listings; P2.5 swipeable PDP ProductGallery (verified with 4 real
+  images); P2.3 premium cart cards + empty state; P2.6 admin multi-image is
+  native + carousel consumes all images. Reference analysis from bliss-tree,
+  naturemills, cookd. Open: P2.4 broad global polish (typography, product cards,
+  cart dropdown), P2.6 optional labeled image groups, P1.4–P1.7 deeper perf.
+  Note: several products show $0/out-of-stock — a backend pricing/inventory data
+  issue, not frontend.
