@@ -7,8 +7,8 @@ import ProductActions from "@modules/products/components/product-actions"
 import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import ProductActionsWrapper from "./product-actions-wrapper"
+import ProductGallery from "@modules/products/components/product-gallery"
 import { getProductPrice } from "@lib/util/get-product-price"
-import { safeCssUrl } from "@lib/util/safe-css-url"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -40,8 +40,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     minimumFractionDigits: 0,
   });
 
-  const currentImage = images?.[0]?.url || 'https://placehold.co/600x800/ffffff/d4d4d4?text=Product';
-
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
       {/* Breadcrumb */}
@@ -60,14 +58,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           
           {/* Images */}
           <div className="w-full md:w-1/2">
-            <div className="aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center p-8">
-              <div
-                className="w-full h-full bg-contain bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('${safeCssUrl(currentImage)}')` }}
-                role="img"
-                aria-label={product.title}
-              ></div>
-            </div>
+            <ProductGallery images={images} title={product.title} />
           </div>
 
           {/* Details */}

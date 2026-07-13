@@ -136,9 +136,14 @@ wordmark fallback until it lands).
   and empty state to match the premium brand.
 - [ ] **P2.4** Global polish: typography scale, spacing, buttons, product cards,
   hover/transitions, dark-mode-safe where the design commits to it.
-- [ ] **P2.5** Product image **carousels** — support multiple images per product
-  (hero, "about", ingredients, nutrition) with a swipeable/clickable gallery on
-  the PDP.
+- [x] **P2.5** Product image **carousel** — new `ProductGallery` renders every
+  image on the product (upload as many as you like: product shot, ingredients,
+  nutrition, "about") as a swipeable gallery with large main image, prev/next
+  arrows, thumbnail strip, and dot indicators. Replaced the old single
+  background-image on the PDP. Added `images.unsplash.com` to `next.config`
+  remotePatterns (product images now go through next/image). _Done 2026-07-13;
+  verified end-to-end with 4 real images — thumbnail click swaps main image +
+  active dot/thumb._
 - [ ] **P2.6** **Admin**: allow uploading/ordering multiple images per product
   (grouped: main / about / ingredients) so the PDP carousel is content-driven.
   (Medusa admin already supports multiple product images + variant images;
