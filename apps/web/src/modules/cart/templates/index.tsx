@@ -12,36 +12,37 @@ const CartTemplate = ({
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
 }) => {
+  const hasItems = !!cart?.items?.length
+
   return (
-    <div className="py-12">
+    <div className="py-10 min-h-[60vh]">
       <div className="content-container" data-testid="cart-container">
-        {cart?.items?.length ? (
-          <div className="grid grid-cols-1 small:grid-cols-[1fr_360px] gap-x-40">
-            <div className="flex flex-col bg-white py-6 gap-y-6">
-              {!customer && (
-                <>
-                  <SignInPrompt />
-                  <Divider />
-                </>
-              )}
-              <ItemsTemplate cart={cart} />
-            </div>
-            <div className="relative">
-              <div className="flex flex-col gap-y-8 sticky top-12">
-                {cart && cart.region && (
+        {hasItems ? (
+          <>
+            <h1 className="font-display text-3xl md:text-4xl text-ui-fg-base mb-8">
+              Your cart
+            </h1>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
+              <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-8">
+                {!customer && (
                   <>
-                    <div className="bg-white py-6">
-                      <Summary cart={cart as any} />
-                    </div>
+                    <SignInPrompt />
+                    <Divider />
                   </>
+                )}
+                <ItemsTemplate cart={cart} />
+              </div>
+              <div className="lg:sticky lg:top-24">
+                {cart && cart.region && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-8">
+                    <Summary cart={cart as any} />
+                  </div>
                 )}
               </div>
             </div>
-          </div>
+          </>
         ) : (
-          <div>
-            <EmptyCartMessage />
-          </div>
+          <EmptyCartMessage />
         )}
       </div>
     </div>

@@ -132,8 +132,11 @@ wordmark fallback until it lands).
   `/collections/*`. `RefinementList` is now a compact top-bar sort dropdown;
   templates use a serif title + subtitle header row with the grid full-width.
   Store loading skeleton updated to match. _Done 2026-07-13, verified._
-- [ ] **P2.3** Cart page + cart dropdown: fix the background/contrast, spacing,
-  and empty state to match the premium brand.
+- [x] **P2.3** Cart page: items + summary now sit in rounded white cards with
+  a subtle border/shadow on the cream page (was bare white blocks with a 160px
+  gap); serif "Your cart" heading; redesigned empty state (green icon badge,
+  serif heading, friendly copy, brand-green CTA). _Done 2026-07-13; empty state
+  verified in browser. (Cart dropdown polish still open under P2.4.)_
 - [ ] **P2.4** Global polish: typography scale, spacing, buttons, product cards,
   hover/transitions, dark-mode-safe where the design commits to it.
 - [x] **P2.5** Product image **carousel** — new `ProductGallery` renders every

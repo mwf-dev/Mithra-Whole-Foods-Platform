@@ -1,23 +1,29 @@
-import { Heading, Text } from "@medusajs/ui"
-
-import InteractiveLink from "@modules/common/components/interactive-link"
+import { ShoppingBag } from "lucide-react"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const EmptyCartMessage = () => {
   return (
-    <div className="py-48 px-2 flex flex-col justify-center items-start" data-testid="empty-cart-message">
-      <Heading
-        level="h1"
-        className="flex flex-row text-3xl-regular gap-x-2 items-baseline"
-      >
-        Cart
-      </Heading>
-      <Text className="text-base-regular mt-4 mb-6 max-w-[32rem]">
-        You don&apos;t have anything in your cart. Let&apos;s change that, use
-        the link below to start browsing our products.
-      </Text>
-      <div>
-        <InteractiveLink href="/store">Explore products</InteractiveLink>
+    <div
+      className="flex flex-col items-center justify-center text-center py-24 px-4"
+      data-testid="empty-cart-message"
+    >
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F3F7F4] text-[#2E5C31] mb-6">
+        <ShoppingBag size={32} strokeWidth={1.6} />
       </div>
+      <h1 className="font-display text-3xl md:text-4xl text-ui-fg-base">
+        Your cart is empty
+      </h1>
+      <p className="text-ui-fg-subtle mt-3 max-w-md">
+        Looks like you haven&apos;t added anything yet. Explore our premium
+        traditional foods and fill it up.
+      </p>
+      <LocalizedClientLink
+        href="/store"
+        className="mt-8 inline-flex items-center justify-center rounded-full bg-[#2E5C31] px-7 py-3 text-sm font-semibold text-white hover:bg-[#264d29] transition-colors"
+        data-testid="empty-cart-explore-link"
+      >
+        Explore products
+      </LocalizedClientLink>
     </div>
   )
 }
