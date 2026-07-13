@@ -10,12 +10,15 @@ export const metadata: Metadata = {
 }
 
 export default async function Cart() {
-  const cart = await retrieveCart().catch((error) => {
-    console.error(error)
-    return notFound()
-  })
-
-  const customer = await retrieveCustomer()
+  // Fetch cart + customer in parallel — they don't depend on each other, so
+  // there's no reason to pay two sequential backend round-trips.
+  const [cart, customer] = await Promise.all([
+    retrieveCart().catch((error) => {
+      console.error(error)
+      return notFound()
+    }),
+    retrieveCustomer(),
+  ])
 
   return <CartTemplate cart={cart} customer={customer} />
 }
