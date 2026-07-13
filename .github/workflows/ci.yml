@@ -1,12 +1,22 @@
 name: CI
 
-# Lint + typecheck + build + tests on every PR and on pushes to main.
+# CI runs on every PR and on pushes to the long-lived branches.
+#
+# Branch model (see .github/workflows/README.md):
+#   dev      — the ACTIVE deploy branch today. Railway + Vercel watch `dev`.
+#              Runs lint + typecheck + backend build (the compile gate) so a
+#              push that reaches the platforms is known to compile. Tests are
+#              intentionally SKIPPED here to keep the deploy loop fast.
+#   staging  — pre-production. Full pipeline incl. tests.
+#   main     — production-grade target. Full pipeline incl. tests.
+# PRs always run the full pipeline (tests included) regardless of target.
+#
 # Railway's "Wait for CI" and Vercel's Git integration gate deploys on this
-# workflow succeeding on main.
+# workflow succeeding on the branch they watch.
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, staging, dev]
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
@@ -103,16 +113,22 @@ jobs:
       # rather than reading DATABASE_URL. Create that role in the CI postgres so
       # it can create/drop per-test databases without a "role does not exist" error.
       - name: Create "runner" postgres role for pg-god
+        if: github.ref != 'refs/heads/dev'
         run: psql -h localhost -U postgres -c "CREATE ROLE runner SUPERUSER LOGIN;"
 
       - name: Build (medusa build — compile gate)
         run: pnpm --filter @dtc/backend build
 
+      # Tests run on PRs and on staging/main pushes, but are skipped on direct
+      # pushes to `dev` (the fast deploy loop) — build above is the gate there.
       - name: Unit tests
+        if: github.ref != 'refs/heads/dev'
         run: pnpm --filter @dtc/backend test:unit
 
       - name: Integration tests (HTTP)
+        if: github.ref != 'refs/heads/dev'
         run: pnpm --filter @dtc/backend test:integration:http
 
       - name: Integration tests (modules)
+        if: github.ref != 'refs/heads/dev'
         run: pnpm --filter @dtc/backend test:integration:modules
