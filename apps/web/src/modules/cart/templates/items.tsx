@@ -1,4 +1,7 @@
+"use client"
+
 import repeat from "@lib/util/repeat"
+import { useCartOptional } from "@lib/context/cart-context"
 import { HttpTypes } from "@medusajs/types"
 import { Heading, Table } from "@medusajs/ui"
 
@@ -10,7 +13,11 @@ type ItemsTemplateProps = {
 }
 
 const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
-  const items = cart?.items
+  // Prefer the optimistic cart so quantity changes / removals reflect on the
+  // cart page instantly; fall back to the server-rendered prop.
+  const ctx = useCartOptional()
+  const activeCart = ctx?.cart ?? cart
+  const items = activeCart?.items
   return (
     <div>
       <div className="pb-3 flex items-center">
@@ -32,7 +39,7 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
         </Table.Header>
         <Table.Body>
           {items
-            ? items
+            ? [...items]
                 .sort((a, b) => {
                   return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
                 })
@@ -41,7 +48,7 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
                     <Item
                       key={item.id}
                       item={item}
-                      currencyCode={cart?.currency_code}
+                      currencyCode={activeCart?.currency_code}
                     />
                   )
                 })

@@ -1,6 +1,6 @@
 "use client"
 
-import { addToCart } from "@lib/data/cart"
+import { useCart } from "@lib/context/cart-context"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
@@ -35,6 +35,7 @@ export default function ProductActions({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { addItem } = useCart()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
@@ -120,17 +121,29 @@ export default function ProductActions({
 
   const inView = useIntersection(actionsRef, "0px")
 
-  // add the selected variant to the cart
+  // add the selected variant to the cart — optimistically. The nav badge and
+  // dropdown update instantly via the cart context; the server round-trip runs
+  // behind it and reconciles (or rolls back + surfaces an error) on response.
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) return null
 
     setIsAdding(true)
 
     try {
-      await addToCart({
+      await addItem({
         variantId: selectedVariant.id,
         quantity: 1,
         countryCode,
+        seed: {
+          title: selectedVariant.title ?? product.title,
+          product_title: product.title,
+          product_handle: product.handle,
+          thumbnail: product.thumbnail ?? product.images?.[0]?.url ?? null,
+          unit_price:
+            (selectedVariant as any)?.calculated_price?.calculated_amount ??
+            undefined,
+          variant: selectedVariant,
+        },
       })
     } catch (error: any) {
       console.error("Error adding to cart:", error)

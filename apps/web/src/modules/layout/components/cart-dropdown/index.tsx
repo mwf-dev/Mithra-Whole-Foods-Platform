@@ -108,7 +108,7 @@ const CartDropdown = ({
             {cartState && cartState.items?.length ? (
               <>
                 <div className="overflow-y-scroll max-h-[402px] px-4 grid grid-cols-1 gap-y-8 no-scrollbar p-px">
-                  {cartState.items
+                  {[...cartState.items]
                     .sort((a, b) => {
                       return (a.created_at ?? "") > (b.created_at ?? "")
                         ? -1

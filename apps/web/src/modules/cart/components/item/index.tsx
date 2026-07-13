@@ -1,6 +1,7 @@
 "use client"
 
 import { Table, Text, clx } from "@medusajs/ui"
+import { useCartOptional } from "@lib/context/cart-context"
 import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
@@ -21,23 +22,27 @@ type ItemProps = {
 }
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
+  // Optional so this component also works in the checkout summary, which
+  // renders outside the CartProvider. With a provider (cart page / dropdown)
+  // the update is optimistic; without one we fall back to the plain action.
+  const cartCtx = useCartOptional()
   const [updating, setUpdating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
+  const error = cartCtx?.error ?? localError
 
   const changeQuantity = async (quantity: number) => {
-    setError(null)
+    // Optimistic: the quantity (and the derived nav badge) updates instantly
+    // via the cart context; the server reconciles on response.
+    setLocalError(null)
     setUpdating(true)
-
-    await updateLineItem({
-      lineId: item.id,
-      quantity,
-    })
-      .catch((err) => {
-        setError(err.message)
-      })
-      .finally(() => {
-        setUpdating(false)
-      })
+    if (cartCtx) {
+      await cartCtx.updateItem({ lineId: item.id, quantity })
+    } else {
+      await updateLineItem({ lineId: item.id, quantity }).catch((err) =>
+        setLocalError(err.message)
+      )
+    }
+    setUpdating(false)
   }
 
   // Respect real inventory when it's managed (and backorders are off);

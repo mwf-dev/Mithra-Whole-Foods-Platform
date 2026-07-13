@@ -113,6 +113,9 @@ export default function ProductPreview({
           variantId={product.variants?.[0]?.id}
           variantCount={product.variants?.length ?? 0}
           productHref={href}
+          title={product.title}
+          thumbnail={product.thumbnail || product.images?.[0]?.url || null}
+          unitPrice={price}
         />
       </div>
     </div>
