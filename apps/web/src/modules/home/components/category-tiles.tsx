@@ -67,7 +67,7 @@ export function CategoryTiles({
                   {tile.name}
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
-                  {count} Products
+                  {count === 1 ? "1 Product" : `${count} Products`}
                 </span>
               </LocalizedClientLink>
             )

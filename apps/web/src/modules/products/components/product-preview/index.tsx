@@ -1,4 +1,4 @@
-import { Star } from "lucide-react"
+import { Leaf } from "lucide-react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
@@ -38,12 +38,10 @@ export default function ProductPreview({
   const variantTitle = product.variants?.[0]?.title
   // "Default" is Medusa's auto-generated single-variant title — not a real size
   const weight = variantTitle && variantTitle !== "Default" ? variantTitle : null
-  const img =
-    product.thumbnail ||
-    product.images?.[0]?.url ||
-    "https://placehold.co/200x250/ffffff/d4d4d4?text=Product"
+  // Real image only — no external placeholder service. Falls back to an
+  // on-brand tile below so cards never render blank while a photo is missing.
+  const img = product.thumbnail || product.images?.[0]?.url || null
   const href = `/products/${product.handle}`
-  const reviews = 10 // Dummy value until reviews exist
 
   const badge = product.tags
     ?.map((t) => BADGE_TAGS[t.value?.toLowerCase() ?? ""])
@@ -68,28 +66,27 @@ export default function ProductPreview({
 
         {/* next/image (not a CSS background) so cards get AVIF/WebP,
             responsive srcset and lazy-loading out of the box. */}
-        <Image
-          src={img}
-          alt={product.title}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
-          quality={60}
-          className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
-        />
+        {img ? (
+          <Image
+            src={img}
+            alt={product.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+            quality={60}
+            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-primary/25">
+            <Leaf className="w-9 h-9" strokeWidth={1.5} />
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-grey-40">
+              Mithra
+            </span>
+          </div>
+        )}
       </LocalizedClientLink>
 
       {/* Content */}
       <div className="flex-1 flex flex-col">
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-2">
-          <div className="flex text-[#E8A93C]">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-current" />
-            ))}
-          </div>
-          <span className="text-[10px] text-grey-50">({reviews})</span>
-        </div>
-
         {/* Title & Weight */}
         <LocalizedClientLink href={href} className="flex-1 mb-2">
           <h4 className="font-semibold text-charcoal leading-snug mb-1 group-hover:text-primary transition-colors line-clamp-2 text-sm">

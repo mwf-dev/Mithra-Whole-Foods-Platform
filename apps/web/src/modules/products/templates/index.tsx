@@ -65,10 +65,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <div className="w-full md:w-1/2 flex flex-col">
             <div className="mb-6">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-3">{product.title}</h1>
-              
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-bold">In Stock</span>
-              </div>
+
               <div className="text-3xl font-bold text-gray-900">
                 {priceFormatter.format(price)}
               </div>
