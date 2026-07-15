@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import { Minus, Plus } from "lucide-react"
 import { isEqual } from "lodash"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -39,6 +40,7 @@ export default function ProductActions({
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
 
   // If there is only 1 variant, preselect the options
@@ -132,7 +134,7 @@ export default function ProductActions({
     try {
       await addItem({
         variantId: selectedVariant.id,
-        quantity: 1,
+        quantity,
         countryCode,
         seed: {
           title: selectedVariant.title ?? product.title,
@@ -179,6 +181,35 @@ export default function ProductActions({
         </div>
 
         <ProductPrice product={product} variant={selectedVariant} />
+
+        {inStock && (
+          <div className="flex flex-col gap-2 mt-2">
+            <span className="text-sm font-medium text-gray-700">Quantity</span>
+            <div className="inline-flex items-center rounded-md border border-gray-300 w-fit">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1 || isAdding}
+                aria-label="Decrease quantity"
+                className="px-3 py-2 text-gray-600 hover:text-primary disabled:opacity-40 disabled:hover:text-gray-600 transition-colors"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="w-10 text-center text-sm font-semibold tabular-nums">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                disabled={isAdding}
+                aria-label="Increase quantity"
+                className="px-3 py-2 text-gray-600 hover:text-primary disabled:opacity-40 transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <Button
           onClick={handleAddToCart}

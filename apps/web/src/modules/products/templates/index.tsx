@@ -8,7 +8,6 @@ import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import ProductGallery from "@modules/products/components/product-gallery"
-import { getProductPrice } from "@lib/util/get-product-price"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -26,19 +25,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (!product || !product.id) {
     return notFound()
   }
-
-  const { cheapestPrice } = getProductPrice({
-    product,
-  })
-
-  const price = cheapestPrice?.calculated_price_number || 0;
-  const currencyCode = region.currency_code || 'USD';
-  
-  const priceFormatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 0,
-  });
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
@@ -64,21 +50,14 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           {/* Details */}
           <div className="w-full md:w-1/2 flex flex-col">
             <div className="mb-6">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-3">{product.title}</h1>
-
-              <div className="text-3xl font-bold text-gray-900">
-                {priceFormatter.format(price)}
-              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-2">{product.title}</h1>
+              {product.subtitle && (
+                <p className="text-base text-gray-500">{product.subtitle}</p>
+              )}
             </div>
 
-            <p className="text-gray-600 leading-relaxed mb-8">
-              {product.description || "Premium quality traditional food sourced directly from nature. Rich in nutrients and perfect for a healthy lifestyle."}
-            </p>
-
-            <div className="h-px bg-gray-100 w-full mb-6"></div>
-
-            {/* Medusa Variants and Actions */}
-            <div className="mb-8">
+            {/* Price, quantity stepper and add-to-cart */}
+            <div className="mb-6">
               <Suspense
                 fallback={
                   <ProductActions
@@ -91,6 +70,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 <ProductActionsWrapper id={product.id} region={region} />
               </Suspense>
             </div>
+
+            <div className="h-px bg-gray-100 w-full mb-6"></div>
+
+            <p className="text-gray-600 leading-relaxed mb-8">
+              {product.description || "Premium quality traditional food sourced directly from nature. Rich in nutrients and perfect for a healthy lifestyle."}
+            </p>
 
             {/* Trust Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-auto">
