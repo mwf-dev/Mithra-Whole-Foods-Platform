@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { revalidateStorefront } from "../utils/revalidate-storefront"
 import { removeOrphanedCartItems } from "../utils/cart-cleanup"
+import { indexProduct, removeProduct } from "../utils/search-sync"
 
 const DELETION_EVENTS = new Set([
   "product.deleted",
@@ -25,6 +26,24 @@ export default async function catalogChangedHandler({
     } catch (e) {
       console.warn("[catalog-changed] orphaned cart item cleanup failed", e)
     }
+  }
+
+  // Keep the Meilisearch product index in sync with catalog changes. Best
+  // effort — never let a search-sync failure break the admin operation.
+  try {
+    const { id } = (event.data ?? {}) as { id?: string }
+    if (id) {
+      if (event.name === "product.deleted") {
+        await removeProduct(id)
+      } else if (
+        event.name === "product.created" ||
+        event.name === "product.updated"
+      ) {
+        await indexProduct(container, id)
+      }
+    }
+  } catch (e) {
+    console.warn("[catalog-changed] search index sync failed", e)
   }
 
   await revalidateStorefront("/", "layout")

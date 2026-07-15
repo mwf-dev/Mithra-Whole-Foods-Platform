@@ -43,6 +43,7 @@
     "cheerio": "^1.2.0",
     "cloudinary": "^2.10.0",
     "express-rate-limit": "^8.5.2",
+    "meilisearch": "^0.59.0",
     "pg": "^8.22.0",
     "react-i18next": "13.5.0",
     "react-router-dom": "6.30.3",

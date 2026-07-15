@@ -1,5 +1,7 @@
-import { listProductsWithSort } from "@lib/data/products"
+import { listProducts } from "@lib/data/products"
+import { searchProductIds } from "@lib/data/search"
 import { getRegion } from "@lib/data/regions"
+import { sortProducts } from "@lib/util/sort-products"
 import ProductPreview from "@modules/products/components/product-preview"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -25,20 +27,15 @@ export default async function SearchResults({
     return null
   }
 
-  const {
-    response: { products, count },
-  } = await listProductsWithSort({
-    page,
-    queryParams: {
-      limit: PRODUCT_LIMIT,
-      // Free-text search handled by the Medusa store products endpoint.
-      q: query,
-    } as any,
-    sortBy,
-    countryCode,
+  // Meilisearch ranks the matches (typo-tolerant, relevance-ordered); Medusa
+  // then hydrates those ids with region-correct pricing.
+  const { productIds, count } = await searchProductIds({
+    q: query,
+    limit: PRODUCT_LIMIT,
+    offset: (page - 1) * PRODUCT_LIMIT,
   })
 
-  if (count === 0) {
+  if (count === 0 || productIds.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-20 gap-4">
         <div className="bg-[#F3F7F4] text-[#2E5C31] rounded-full p-5">
@@ -62,6 +59,26 @@ export default async function SearchResults({
       </div>
     )
   }
+
+  // Hydrate the ranked ids with pricing. listProducts returns them in an
+  // arbitrary order, so re-order to Meilisearch's relevance ranking — unless
+  // the shopper explicitly chose a price sort.
+  const {
+    response: { products: hydrated },
+  } = await listProducts({
+    countryCode,
+    queryParams: { id: productIds, limit: productIds.length } as any,
+  })
+
+  const byId = new Map(hydrated.map((p) => [p.id, p]))
+  const orderedByRelevance = productIds
+    .map((id) => byId.get(id))
+    .filter((p): p is (typeof hydrated)[number] => Boolean(p))
+
+  const products =
+    sortBy === "price_asc" || sortBy === "price_desc"
+      ? sortProducts(orderedByRelevance, sortBy)
+      : orderedByRelevance
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
