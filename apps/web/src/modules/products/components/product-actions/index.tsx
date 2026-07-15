@@ -38,12 +38,22 @@ export default function ProductActions({
   const searchParams = useSearchParams()
   const { addItem } = useCart()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  // Preselect the single variant's options on the very first render (server +
+  // client), so a single-variant product resolves its variant immediately.
+  // Relying on a useEffect here left `options` empty until hydration, which
+  // made every single-variant PDP read "Out of stock".
+  const [options, setOptions] = useState<Record<string, string | undefined>>(
+    () =>
+      product.variants?.length === 1
+        ? optionsAsKeymap(product.variants[0].options) ?? {}
+        : {}
+  )
   const [isAdding, setIsAdding] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
 
-  // If there is only 1 variant, preselect the options
+  // Keep options in sync if the variant set changes (e.g. client-side nav
+  // reusing this component instance).
   useEffect(() => {
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
