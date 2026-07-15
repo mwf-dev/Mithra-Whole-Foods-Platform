@@ -38,7 +38,7 @@ export default function Logo({ className }: { className?: string }) {
         <img
           src={logoSrc}
           alt="Mithra Whole Foods"
-          className="h-11 w-auto object-contain"
+          className="h-14 w-auto object-contain"
         />
       ) : (
         <>

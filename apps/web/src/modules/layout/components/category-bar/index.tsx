@@ -1,5 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
-import { LayoutGrid } from "lucide-react"
+import { Menu } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
@@ -18,11 +18,11 @@ export default function CategoryBar({
       <div className="content-container flex items-center gap-6 h-12">
         <LocalizedClientLink
           href="/store"
-          className="flex items-center gap-2 bg-[#F3F7F4] text-[#2E5C31] px-4 py-2 rounded-full font-semibold text-[13px] hover:bg-[#E3EEE6] transition-colors shrink-0"
+          className="flex items-center gap-2 bg-[#F3F7F4] text-[#2E5C31] px-4 py-2 rounded-md font-semibold text-[14px] hover:bg-[#E3EEE6] transition-colors shrink-0"
           data-testid="nav-shop-all-link"
         >
-          <LayoutGrid size={16} strokeWidth={2.2} />
-          Shop All
+          <Menu size={18} strokeWidth={2.2} />
+          Shop by Category
         </LocalizedClientLink>
 
         <nav className="flex-1 flex items-center gap-7 overflow-x-auto no-scrollbar">

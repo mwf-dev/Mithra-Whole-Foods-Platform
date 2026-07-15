@@ -21,7 +21,9 @@ export default async function Home(props: {
   const params = await props.params
 
   const { countryCode } = params
-  const [region, settings, productsResult] = await Promise.all([
+  const { listCategories } = await import("@lib/data/categories")
+
+  const [region, settings, productsResult, categories] = await Promise.all([
     getRegion(countryCode),
     getHomepageSettings(),
     listProducts({
@@ -32,6 +34,7 @@ export default async function Home(props: {
       console.error("LIST PRODUCTS ERROR:", e)
       return { response: { products: [] } }
     }),
+    listCategories().catch(() => []),
   ])
 
   const { response: { products } } = productsResult
@@ -43,7 +46,7 @@ export default async function Home(props: {
   return (
     <>
       <Hero settings={settings} />
-      <CategoryTiles tiles={settings?.category_tiles} />
+      <CategoryTiles tiles={settings?.category_tiles} categories={categories} />
       <OfferCards cards={settings?.offer_cards} />
       <PromoCards settings={settings} />
       <BestSellers products={products} region={region} />

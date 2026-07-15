@@ -14,6 +14,7 @@ import LineItemOptions from "@modules/common/components/line-item-options"
 import LineItemPrice from "@modules/common/components/line-item-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
+import { ShoppingCart } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
 
@@ -82,10 +83,20 @@ const CartDropdown = ({
       <Popover className="relative h-full">
         <PopoverButton className="h-full">
           <LocalizedClientLink
-            className="hover:text-ui-fg-base"
+            className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors"
             href="/cart"
             data-testid="nav-cart-link"
-          >{`Cart (${totalItems})`}</LocalizedClientLink>
+          >
+            <div className="relative bg-[#f8f8f8] p-2.5 rounded-full">
+              <ShoppingCart size={20} strokeWidth={1.5} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#2E5C31] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </div>
+            <span className="hidden lg:inline">Cart</span>
+          </LocalizedClientLink>
         </PopoverButton>
         <Transition
           show={cartDropdownOpen}
