@@ -5,6 +5,7 @@ import { Button, Heading } from "@medusajs/ui"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import FreeShippingNudge from "@modules/cart/components/free-shipping-nudge"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
 
@@ -32,6 +33,7 @@ const Summary = ({ cart }: SummaryProps) => {
       <Heading level="h2" className="text-[2rem] leading-[2.75rem]">
         Summary
       </Heading>
+      <FreeShippingNudge cart={cart} />
       <DiscountCode cart={cart} />
       <Divider />
       <CartTotals totals={cart} />
