@@ -5,12 +5,13 @@ import { listLocales } from "@lib/data/locales"
 import { getLocale } from "@lib/data/locale-actions"
 import { listCategories } from "@lib/data/categories"
 import { StoreRegion } from "@medusajs/types"
-import { Heart, Search, User, ShoppingCart } from "lucide-react"
+import { Heart, User, ShoppingCart } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
 import Logo from "@modules/layout/components/logo"
 import CategoryBar from "@modules/layout/components/category-bar"
+import SearchBar from "@modules/search/components/search-bar"
 
 export default async function Nav() {
   const [regions, locales, currentLocale, categories] = await Promise.all([
@@ -65,12 +66,7 @@ export default async function Nav() {
           {/* Right: search + account + wishlist + cart */}
           <div className="flex items-center gap-x-4 md:gap-x-6 flex-1 justify-end">
              {/* Search Bar */}
-             <div className="hidden lg:flex items-center max-w-md w-full bg-[#f8f8f8] rounded-full pl-5 pr-1.5 py-1.5">
-                <input type="text" placeholder="Search for millets, oils, rice, health mixes..." className="bg-transparent border-none outline-none flex-1 text-sm text-gray-700 placeholder-gray-400" />
-                <button className="bg-[#2E5C31] text-white p-2 rounded-full flex items-center justify-center h-9 w-9 hover:bg-[#244a27] transition-colors">
-                  <Search size={16} />
-                </button>
-             </div>
+             <SearchBar />
 
              {/* Icons */}
              <div className="flex items-center gap-x-4">
