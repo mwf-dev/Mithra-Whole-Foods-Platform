@@ -81,6 +81,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
     phone: values.phone,
   }
 
+  let createdCustomer
   try {
     const token = await sdk.auth.register("customer", "emailpass", {
       email: customerForm.email,
@@ -93,11 +94,12 @@ export async function signup(_currentState: unknown, formData: FormData) {
       ...(await getAuthHeaders()),
     }
 
-    const { customer: createdCustomer } = await sdk.store.customer.create(
+    const created = await sdk.store.customer.create(
       customerForm,
       {},
       headers
     )
+    createdCustomer = created.customer
 
     const loginToken = await sdk.auth.login("customer", "emailpass", {
       email: customerForm.email,
@@ -114,11 +116,18 @@ export async function signup(_currentState: unknown, formData: FormData) {
     await transferCart().catch((error) => {
       console.error("Cart transfer after signup failed:", error)
     })
-
-    return createdCustomer
   } catch (error: any) {
     return error.toString()
   }
+
+  // Return the new customer to wherever they came from (e.g. checkout).
+  // Outside the try/catch so redirect()'s control-flow signal isn't swallowed.
+  const redirectTo = formData.get("redirect")
+  if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
+    redirect(redirectTo)
+  }
+
+  return createdCustomer
 }
 
 export async function login(_currentState: unknown, formData: FormData) {
@@ -150,6 +159,12 @@ export async function login(_currentState: unknown, formData: FormData) {
   await transferCart().catch((error) => {
     console.error("Cart transfer after login failed:", error)
   })
+
+  // Return the shopper to wherever they came from (e.g. checkout).
+  const redirectTo = formData.get("redirect")
+  if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
+    redirect(redirectTo)
+  }
 }
 
 export async function signout(countryCode: string) {
