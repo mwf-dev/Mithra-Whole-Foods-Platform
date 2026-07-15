@@ -20,9 +20,11 @@ export default async function Nav() {
     listCategories().catch(() => []),
   ])
 
+  // Surface every top-level category that actually has products, so the
+  // storefront exposes the full catalog (parity with the old site) instead
+  // of an arbitrary first-8. The category bar scrolls horizontally.
   const topLevel = (categories ?? [])
-    .filter((c) => !c.parent_category)
-    .slice(0, 8)
+    .filter((c) => !c.parent_category && (c.products?.length ?? 0) > 0)
 
   return (
     <div className="sticky top-0 inset-x-0 z-50">
