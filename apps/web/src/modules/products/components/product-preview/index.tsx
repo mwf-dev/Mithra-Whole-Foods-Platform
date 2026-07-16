@@ -56,7 +56,7 @@ export default function ProductPreview({
         href={href}
         className="relative aspect-[4/5] bg-cream rounded-xl mb-4 overflow-hidden flex items-center justify-center block"
       >
-        <WishlistHeart title={product.title} />
+        <WishlistHeart title={product.title} handle={product.handle} />
 
         {(badge || onSale) && (
           <span className="absolute bottom-3 left-3 z-10 rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
