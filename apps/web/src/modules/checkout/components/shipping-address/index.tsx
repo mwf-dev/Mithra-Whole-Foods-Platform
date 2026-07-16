@@ -18,6 +18,8 @@ const ShippingAddress = ({
   checked: boolean
   onChange: () => void
 }) => {
+  const [saveAddress, setSaveAddress] = useState(true)
+
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -71,15 +73,61 @@ const ShippingAddress = ({
   }
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
-    if (cart && cart.shipping_address) {
-      setFormAddress(cart?.shipping_address, cart?.email)
-    }
+    if (!cart) return
 
-    if (cart && !cart.email && customer?.email) {
-      setFormAddress(undefined, customer.email)
-    }
-  }, [cart]) // Add cart as a dependency
+    // Prefer the customer's default saved address, else the first one valid in
+    // this region.
+    const savedAddress =
+      addressesInRegion?.find((a) => a.is_default_shipping) ||
+      addressesInRegion?.[0]
+
+    const cartAddr = cart.shipping_address
+
+    // Fill each field from the first source that actually has a value:
+    //   cart address → saved account address → account identity.
+    // Merging field-by-field means an EMPTY cart address (Medusa often creates
+    // one) can't blank out what we already know about the customer.
+    const pick = (...vals: (string | null | undefined)[]) =>
+      vals.find((v) => v) || ""
+
+    setFormData((prevState) => ({
+      ...prevState,
+      "shipping_address.first_name": pick(
+        cartAddr?.first_name,
+        savedAddress?.first_name,
+        customer?.first_name
+      ),
+      "shipping_address.last_name": pick(
+        cartAddr?.last_name,
+        savedAddress?.last_name,
+        customer?.last_name
+      ),
+      "shipping_address.address_1": pick(
+        cartAddr?.address_1,
+        savedAddress?.address_1
+      ),
+      "shipping_address.company": pick(cartAddr?.company, savedAddress?.company),
+      "shipping_address.postal_code": pick(
+        cartAddr?.postal_code,
+        savedAddress?.postal_code
+      ),
+      "shipping_address.city": pick(cartAddr?.city, savedAddress?.city),
+      "shipping_address.country_code": pick(
+        cartAddr?.country_code,
+        savedAddress?.country_code
+      ),
+      "shipping_address.province": pick(
+        cartAddr?.province,
+        savedAddress?.province
+      ),
+      "shipping_address.phone": pick(
+        cartAddr?.phone,
+        savedAddress?.phone,
+        customer?.phone
+      ),
+      email: pick(cart.email, customer?.email),
+    }))
+  }, [cart, customer, addressesInRegion])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -212,6 +260,17 @@ const ShippingAddress = ({
           data-testid="shipping-phone-input"
         />
       </div>
+      {customer && (addressesInRegion?.length || 0) === 0 && (
+        <div className="mb-4">
+          <Checkbox
+            label="Save this delivery address to my account"
+            name="save_address"
+            checked={saveAddress}
+            onChange={() => setSaveAddress((prev) => !prev)}
+            data-testid="save-address-checkbox"
+          />
+        </div>
+      )}
     </>
   )
 }

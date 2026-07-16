@@ -16,6 +16,7 @@ import {
 import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
 import { addressRules, validateFormFields } from "@lib/util/form-validation"
+import { retrieveCustomer } from "./customer"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -405,6 +406,31 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       }
     }
     await updateCart(data)
+
+    // When a logged-in customer opts in, save this address to their account
+    // book (as default) so their next checkout is prefilled. Best-effort — a
+    // failure here must never break the checkout step.
+    if (formData.get("save_address") === "on") {
+      try {
+        const customer = await retrieveCustomer()
+        const hasSavedAddress = (customer?.addresses?.length || 0) > 0
+        if (customer && !hasSavedAddress) {
+          const authHeaders = await getAuthHeaders()
+          await sdk.store.customer.createAddress(
+            {
+              ...data.shipping_address,
+              is_default_shipping: true,
+              is_default_billing: true,
+            },
+            {},
+            authHeaders
+          )
+          revalidateTag(await getCacheTag("customers"))
+        }
+      } catch (e) {
+        console.error("Failed to save checkout address to account:", e)
+      }
+    }
   } catch (e: any) {
     return e.message
   }
