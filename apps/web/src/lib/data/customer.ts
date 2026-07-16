@@ -9,10 +9,14 @@ import {
   getAuthHeaders,
   getCacheOptions,
   getCacheTag,
+  getCartCacheTag,
   getCartId,
+  readCartMergeNotice,
   removeAuthToken,
   removeCartId,
   setAuthToken,
+  setCartId,
+  setCartMergeNotice,
 } from "./cookies"
 import { addressRules, validateFormFields } from "@lib/util/form-validation"
 
@@ -163,11 +167,38 @@ export async function login(_currentState: unknown, formData: FormData) {
   // Return the shopper to wherever they came from (e.g. checkout).
   const redirectTo = formData.get("redirect")
   if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
-    redirect(redirectTo)
+    redirect(await resolvePostLoginRedirect(redirectTo))
   }
 }
 
+/**
+ * Signing in can pull in items from the shopper's other device. When that
+ * happens on the way to checkout, send them to the cart instead: they must see
+ * what changed and choose to continue, rather than land on payment holding a
+ * total they never assembled.
+ */
+async function resolvePostLoginRedirect(redirectTo: string): Promise<string> {
+  const merged = await readCartMergeNotice()
+
+  if (!merged.length) {
+    return redirectTo
+  }
+
+  const path = redirectTo.split("?")[0]
+  const countryCode = redirectTo.split("/")[1]
+
+  if (!countryCode || !path.endsWith("/checkout")) {
+    return redirectTo
+  }
+
+  return `/${countryCode}/cart`
+}
+
 export async function signout(countryCode: string) {
+  // Captured before the cookie is dropped — afterwards there is no id left to
+  // build the cache tag from.
+  const cartId = await getCartId()
+
   await sdk.auth.logout()
 
   await removeAuthToken()
@@ -177,33 +208,285 @@ export async function signout(countryCode: string) {
 
   await removeCartId()
 
-  const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  await revalidateCarts(cartId)
 
   redirect(`/${countryCode}/account`)
 }
 
+/** A cart as returned by `GET /store/customers/me/carts`. */
+type OpenAccountCart = {
+  id: string
+  region_id: string | null
+  created_at: string | null
+  updated_at: string | null
+  items: {
+    id: string
+    variant_id: string | null
+    title: string | null
+    quantity: number
+    thumbnail: string | null
+  }[]
+}
+
+/**
+ * Reunites every device on a single cart at sign-in.
+ *
+ * Cart identity lives in the `_medusa_cart_id` cookie, and Medusa is happy to
+ * let one customer own several carts at once, so a shopper's phone and laptop
+ * each built their own and nothing reconciled them. Here we pick one survivor —
+ * the customer's most recently touched cart — fold every other cart they own
+ * into it, and point this browser at it. Sign in on each device and they all
+ * converge on the same cart, so a removal on one is a removal on all.
+ *
+ * Quantities take the higher of the two rather than summing: the same item
+ * added on two devices means "I want this", not "I want it twice", and silently
+ * doubling a grocery order is the more expensive mistake.
+ *
+ * Donor account carts are emptied once drained. Leaving their items behind
+ * would let the next sign-in fold them back in and resurrect items the shopper
+ * had deleted.
+ */
 export async function transferCart() {
   const cartId = await getCartId()
+  const headers = await getAuthHeaders()
 
-  if (!cartId) {
+  const localCart = cartId ? await fetchCartLite(cartId, headers) : null
+
+  // A stale cookie pointing at a deleted or already-ordered cart: drop it so
+  // the next add-to-cart starts clean.
+  if (cartId && !localCart) {
+    await removeCartId()
+  }
+
+  const accountCarts = await listOpenAccountCarts(headers)
+
+  // Adopting a cart priced in another region would silently reprice the order.
+  const regionId = localCart?.region_id ?? null
+  const candidates = regionId
+    ? accountCarts.filter((cart) => cart.region_id === regionId)
+    : accountCarts
+
+  // The customer's oldest cart wins, as ordered by the backend. It has to be
+  // the same pick from every device and it has to not move: merging writes to
+  // carts, so anything derived from `updated_at` would let two devices choose
+  // differently and strand one on a cart the other had just drained.
+  const survivor = candidates[0] ?? null
+
+  // The customer owns no cart yet: this browser's becomes their account cart,
+  // which is what their other devices will find and adopt.
+  if (!survivor) {
+    if (!cartId || !localCart) {
+      return
+    }
+
+    try {
+      await sdk.store.cart.transferCart(cartId, {}, headers)
+    } catch (error: any) {
+      const recovered = await recoverFailedCartTransfer(cartId, headers, error)
+
+      if (!recovered) {
+        throw error
+      }
+    }
+
+    await revalidateCarts(cartId)
     return
   }
 
-  const headers = await getAuthHeaders()
+  const donorCarts = candidates.filter((cart) => cart.id !== survivor.id)
 
-  try {
-    await sdk.store.cart.transferCart(cartId, {}, headers)
-  } catch (error: any) {
-    const recovered = await recoverFailedCartTransfer(cartId, headers, error)
+  const localVariantIds = new Set(
+    (localCart?.items ?? [])
+      .map((item) => item.variant_id)
+      .filter((id): id is string => !!id)
+  )
 
-    if (!recovered) {
-      throw error
+  // What the shopper is about to see for the first time, measured against the
+  // cart this browser was actually showing them.
+  const appeared: { title: string; quantity: number; thumbnail: string | null }[] =
+    []
+  const appearedSeen = new Set<string>()
+
+  for (const item of [
+    ...survivor.items,
+    ...donorCarts.flatMap((cart) => cart.items),
+  ]) {
+    if (!item.variant_id || localVariantIds.has(item.variant_id)) {
+      continue
     }
+
+    if (appearedSeen.has(item.variant_id)) {
+      continue
+    }
+
+    appearedSeen.add(item.variant_id)
+    appeared.push({
+      title: item.title ?? "Item",
+      quantity: item.quantity,
+      thumbnail: item.thumbnail ?? null,
+    })
   }
 
-  const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  // Resolve every donor down to one quantity per variant before touching the
+  // backend, so each variant costs a single call no matter how many carts it
+  // appears in — and so a freshly created line never needs its id looked up.
+  const wanted = new Map<string, number>()
+
+  for (const item of [
+    ...(localCart?.items ?? []),
+    ...donorCarts.flatMap((cart) => cart.items),
+  ]) {
+    if (!item.variant_id) {
+      continue
+    }
+
+    wanted.set(
+      item.variant_id,
+      Math.max(wanted.get(item.variant_id) ?? 0, item.quantity)
+    )
+  }
+
+  await applyToSurvivor(survivor, wanted, headers)
+
+  for (const donor of donorCarts) {
+    await drainCart(donor, headers)
+    // Other devices are holding this cart; purge their cached read of it.
+    await revalidateCarts(donor.id)
+  }
+
+  await setCartId(survivor.id)
+  await setCartMergeNotice(appeared)
+
+  // The survivor, not the cookie: `setCartId` above is not guaranteed to be
+  // readable back within this same request.
+  await revalidateCarts(survivor.id)
+}
+
+/**
+ * Every open cart the customer owns, oldest first — the backend fixes that
+ * order deliberately so the survivor pick is identical on every device. Empty
+ * carts are included: an empty cart still carries identity, and ignoring one is
+ * what lets two devices drift apart again.
+ */
+async function listOpenAccountCarts(
+  headers: { authorization: string } | {}
+): Promise<OpenAccountCart[]> {
+  return await sdk.client
+    .fetch<{ carts: OpenAccountCart[] }>(`/store/customers/me/carts`, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    })
+    .then(({ carts }) => carts ?? [])
+    .catch((error) => {
+      console.error("Could not list the customer's carts:", error)
+      return [] as OpenAccountCart[]
+    })
+}
+
+/**
+ * Brings the survivor up to the merged quantities. Line items go through the
+ * store API rather than being copied, so pricing resolves in the survivor's own
+ * region context instead of being carried over stale.
+ *
+ * One unpurchasable item must not block a sign-in — a variant can lose its
+ * price between sessions — so failures are logged and skipped.
+ */
+async function applyToSurvivor(
+  survivor: OpenAccountCart,
+  wanted: Map<string, number>,
+  headers: { authorization: string } | {}
+) {
+  const existing = new Map(
+    survivor.items
+      .filter((item) => item.variant_id)
+      .map((item) => [item.variant_id as string, item])
+  )
+
+  for (const [variantId, quantity] of Array.from(wanted.entries())) {
+    const current = existing.get(variantId)
+
+    try {
+      if (!current) {
+        await sdk.store.cart.createLineItem(
+          survivor.id,
+          { variant_id: variantId, quantity },
+          {},
+          headers
+        )
+      } else if (quantity > current.quantity) {
+        await sdk.store.cart.updateLineItem(
+          survivor.id,
+          current.id,
+          { quantity },
+          {},
+          headers
+        )
+      }
+    } catch (error) {
+      console.error(
+        `Could not merge variant ${variantId} into cart ${survivor.id}:`,
+        error
+      )
+    }
+  }
+}
+
+/** Empties a donor cart once its items are safely on the survivor. */
+async function drainCart(
+  cart: OpenAccountCart,
+  headers: { authorization: string } | {}
+) {
+  for (const item of cart.items) {
+    try {
+      await sdk.store.cart.deleteLineItem(cart.id, item.id, {}, headers)
+    } catch (error) {
+      console.error(
+        `Could not drain item ${item.id} from cart ${cart.id}:`,
+        error
+      )
+    }
+  }
+}
+
+type CartLite = {
+  id: string
+  region_id: string | null
+  completed_at: string | null
+  items: { id: string; variant_id: string | null; quantity: number }[]
+}
+
+/**
+ * Fetched through `sdk.client` rather than `retrieveCart` from `./cart`, which
+ * already imports this module — importing it back would make the cycle real.
+ */
+async function fetchCartLite(
+  cartId: string,
+  headers: { authorization: string } | {}
+): Promise<CartLite | null> {
+  const cart = await sdk.client
+    .fetch<{ cart: CartLite }>(`/store/carts/${cartId}`, {
+      method: "GET",
+      query: { fields: "id,region_id,completed_at,*items" },
+      headers,
+      cache: "no-store",
+    })
+    .then(({ cart }) => cart)
+    .catch(() => null)
+
+  return cart && !cart.completed_at ? cart : null
+}
+
+/**
+ * Purges the cached read of one cart for every device holding it. Tagged by
+ * cart id, not by browser — see `getCartCacheTag`.
+ */
+async function revalidateCarts(cartId?: string) {
+  const tag = await getCartCacheTag(cartId)
+
+  if (tag) {
+    revalidateTag(tag)
+  }
 }
 
 /**

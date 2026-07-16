@@ -3,7 +3,12 @@
 import { sdk } from "@lib/config"
 import { revalidateTag } from "next/cache"
 import { cookies as nextCookies } from "next/headers"
-import { getAuthHeaders, getCacheTag, getCartId } from "./cookies"
+import {
+  getAuthHeaders,
+  getCacheTag,
+  getCartCacheTag,
+  getCartId,
+} from "./cookies"
 
 const LOCALE_COOKIE_NAME = "_medusa_locale"
 
@@ -48,7 +53,7 @@ export const updateLocale = async (localeCode: string): Promise<string> => {
 
     await sdk.store.cart.update(cartId, { locale: localeCode }, {}, headers)
 
-    const cartCacheTag = await getCacheTag("carts")
+    const cartCacheTag = await getCartCacheTag(cartId)
     if (cartCacheTag) {
       revalidateTag(cartCacheTag)
     }

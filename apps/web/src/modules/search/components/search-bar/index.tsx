@@ -41,7 +41,7 @@ export default function SearchBar({
         name="q"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
-        placeholder="Search for millets, oils, rice, health mixes..."
+        placeholder="Search for oils, rice, health mixes..."
         aria-label="Search products"
         className="bg-transparent border-none outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
       />

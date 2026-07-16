@@ -6,6 +6,7 @@ import {
   updateLineItem as updateLineItemAction,
 } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
+import { useRouter } from "next/navigation"
 import {
   createContext,
   useCallback,
@@ -127,8 +128,27 @@ export function CartProvider({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [cart, applyOptimistic] = useOptimistic(initialCart, cartReducer)
-
+  const router = useRouter()
   const clearError = useCallback(() => setError(null), [])
+
+  /**
+   * `revalidateTag` in the server action only invalidates the *server* fetch
+   * cache for the route that was active when the action was dispatched. If the
+   * shopper navigates while the request is in flight — add an item, immediately
+   * hit "Go to cart" — the destination's RSC payload is fetched mid-race and
+   * lands in the client router cache holding the pre-mutation cart. Nothing
+   * evicts it (`initialCart` comes from the layout, which does not re-render on
+   * client-side navigation), so the item stays invisible until a manual reload.
+   *
+   * `router.refresh()` clears the whole client router cache, which is what
+   * actually fixes it. It must be unconditional: gating it on "did the route
+   * change?" does not work, because the action typically resolves *before* the
+   * navigation commits, so the route still reads as the old one.
+   *
+   * Cost is one extra RSC payload per mutation, fetched in the background — the
+   * optimistic UI has already updated, so no one waits on it.
+   */
+  const refreshAfterMutation = useCallback(() => router.refresh(), [router])
 
   const addItem = useCallback<CartContextValue["addItem"]>(
     async ({ variantId, quantity, countryCode, seed }) => {
@@ -150,12 +170,13 @@ export function CartProvider({
         applyOptimistic({ type: "add", item: optimisticItem })
         try {
           await addToCartAction({ variantId, quantity, countryCode })
+          refreshAfterMutation()
         } catch (e: any) {
           setError(e?.message || "Couldn't add this item. Please try again.")
         }
       })
     },
-    [applyOptimistic]
+    [applyOptimistic, refreshAfterMutation]
   )
 
   const updateItem = useCallback<CartContextValue["updateItem"]>(
@@ -165,12 +186,13 @@ export function CartProvider({
         applyOptimistic({ type: "update", lineId, quantity })
         try {
           await updateLineItemAction({ lineId, quantity })
+          refreshAfterMutation()
         } catch (e: any) {
           setError(e?.message || "Couldn't update quantity. Please try again.")
         }
       })
     },
-    [applyOptimistic]
+    [applyOptimistic, refreshAfterMutation]
   )
 
   const deleteItem = useCallback<CartContextValue["deleteItem"]>(
@@ -180,12 +202,13 @@ export function CartProvider({
         applyOptimistic({ type: "delete", lineId })
         try {
           await deleteLineItemAction(lineId)
+          refreshAfterMutation()
         } catch (e: any) {
           setError(e?.message || "Couldn't remove this item. Please try again.")
         }
       })
     },
-    [applyOptimistic]
+    [applyOptimistic, refreshAfterMutation]
   )
 
   return (
@@ -205,6 +228,8 @@ export function CartProvider({
     </CartContext.Provider>
   )
 }
+// Force HMR recompile
+
 
 /**
  * App-wide toast for a failed cart mutation. When an optimistic add/update/

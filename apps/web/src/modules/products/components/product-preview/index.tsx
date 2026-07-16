@@ -25,6 +25,10 @@ export default function ProductPreview({
     product,
   })
 
+  // A variant with no price in this region cannot be added to a cart — Medusa
+  // rejects the line item outright. Treat those as unavailable rather than
+  // rendering a "$0" tile behind a button that is guaranteed to fail.
+  const isPurchasable = !!cheapestPrice
   const price = cheapestPrice?.calculated_price_number || 0
   const originalPrice = cheapestPrice?.original_price_number || null
   const currencyCode = region.currency_code || "USD"
@@ -54,7 +58,7 @@ export default function ProductPreview({
       {/* Image */}
       <LocalizedClientLink
         href={href}
-        className="relative aspect-[4/5] bg-cream rounded-xl mb-4 overflow-hidden flex items-center justify-center block"
+        className="relative aspect-[4/5] bg-[#F4EFE6] rounded-xl mb-4 overflow-hidden flex items-center justify-center block"
       >
         <WishlistHeart title={product.title} handle={product.handle} />
 
@@ -73,7 +77,7 @@ export default function ProductPreview({
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
             quality={60}
-            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-primary/25">
@@ -99,25 +103,42 @@ export default function ProductPreview({
 
         {/* Price */}
         <div className="mb-4 flex items-baseline gap-2">
-          <span className="text-lg font-bold text-charcoal">
-            {priceFormatter.format(price)}
-          </span>
-          {onSale && (
-            <span className="text-xs text-grey-40 line-through">
-              {priceFormatter.format(originalPrice)}
+          {isPurchasable ? (
+            <>
+              <span className="text-lg font-bold text-charcoal">
+                {priceFormatter.format(price)}
+              </span>
+              {onSale && (
+                <span className="text-xs text-grey-40 line-through">
+                  {priceFormatter.format(originalPrice)}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-sm font-medium text-grey-50">
+              Price unavailable
             </span>
           )}
         </div>
 
         {/* Add to Cart */}
-        <AddToCartButton
-          variantId={product.variants?.[0]?.id}
-          variantCount={product.variants?.length ?? 0}
-          productHref={href}
-          title={product.title}
-          thumbnail={product.thumbnail || product.images?.[0]?.url || null}
-          unitPrice={price}
-        />
+        {isPurchasable ? (
+          <AddToCartButton
+            variantId={product.variants?.[0]?.id}
+            variantCount={product.variants?.length ?? 0}
+            productHref={href}
+            title={product.title}
+            thumbnail={product.thumbnail || product.images?.[0]?.url || null}
+            unitPrice={price}
+          />
+        ) : (
+          <button
+            disabled
+            className="w-full bg-grey-5 text-grey-40 py-2.5 rounded-lg text-xs font-semibold cursor-not-allowed border border-beige"
+          >
+            Currently unavailable
+          </button>
+        )}
       </div>
     </div>
   )

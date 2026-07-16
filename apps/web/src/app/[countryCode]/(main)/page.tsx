@@ -48,8 +48,8 @@ export default async function Home(props: {
       <Hero settings={settings} />
       <CategoryTiles tiles={settings?.category_tiles} categories={categories} />
       <OfferCards cards={settings?.offer_cards} />
-      <PromoCards settings={settings} />
       <BestSellers products={products} region={region} />
+      <PromoCards settings={settings} />
     </>
   )
 }

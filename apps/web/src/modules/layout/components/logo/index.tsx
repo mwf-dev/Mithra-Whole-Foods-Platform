@@ -1,30 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
  * Brand logo, top-left of the header.
  *
- * Renders a serif wordmark + leaf mark (brand green) by default, and swaps to
- * the user-supplied artwork the moment it successfully decodes. Drop a real
- * image at `apps/web/public/logo.png` (or change `LOGO_SRC` to `logo.svg`) and
- * it appears automatically — no code change, and no broken-image flash while
- * the file is absent (a probe Image is used so we only show it once it loads).
+ * Renders the artwork at `apps/web/public/logo.png`, falling back to a serif
+ * wordmark + leaf mark (brand green) if that file is missing or fails to
+ * decode. The artwork is emitted in the server HTML rather than probed for on
+ * the client, so it paints with the header instead of popping in after
+ * hydration; next/image downscales it to the size actually displayed.
  */
 const LOGO_SRC = "/logo.png"
+// The source art is ~1774×650; this is that ratio at its rendered height.
+const LOGO_WIDTH = 153
+const LOGO_HEIGHT = 56
 
 export default function Logo({ className }: { className?: string }) {
-  const [logoSrc, setLogoSrc] = useState<string | null>(null)
-
-  useEffect(() => {
-    const probe = new window.Image()
-    probe.onload = () => {
-      // Guard against a non-image 200 (e.g. an HTML 404 page) decoding to 0×0.
-      if (probe.naturalWidth > 0) setLogoSrc(LOGO_SRC)
-    }
-    probe.src = LOGO_SRC
-  }, [])
+  const [failed, setFailed] = useState(false)
 
   return (
     <LocalizedClientLink
@@ -33,11 +28,15 @@ export default function Logo({ className }: { className?: string }) {
       className={`flex items-center gap-2.5 shrink-0 ${className ?? ""}`}
       data-testid="nav-logo-link"
     >
-      {logoSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={logoSrc}
+      {!failed ? (
+        <Image
+          src={LOGO_SRC}
           alt="Mithra Whole Foods"
+          width={LOGO_WIDTH}
+          height={LOGO_HEIGHT}
+          priority
+          quality={75}
+          onError={() => setFailed(true)}
           className="h-14 w-auto object-contain"
         />
       ) : (

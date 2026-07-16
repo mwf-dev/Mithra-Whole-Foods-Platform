@@ -8,6 +8,7 @@ import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import ProductGallery from "@modules/products/components/product-gallery"
+import ProductReviews from "@modules/products/components/reviews"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -104,6 +105,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             
           </div>
         </div>
+
+        {/* Reviews */}
+        <Suspense fallback={null}>
+          <ProductReviews
+            productId={product.id}
+            handle={product.handle ?? ""}
+            countryCode={countryCode}
+          />
+        </Suspense>
 
         {/* Related Products */}
         <div className="mt-20">

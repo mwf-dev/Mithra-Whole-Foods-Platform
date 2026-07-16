@@ -33,13 +33,12 @@ const Summary = ({ cart }: SummaryProps) => {
       <Heading level="h2" className="text-[2rem] leading-[2.75rem]">
         Summary
       </Heading>
-      <FreeShippingNudge cart={cart} />
-      <DiscountCode cart={cart} />
       <Divider />
       <CartTotals totals={cart} />
       <LocalizedClientLink
         href={"/checkout?step=" + step}
         data-testid="checkout-button"
+        className="hidden lg:block"
       >
         <Button className="w-full h-10">Go to checkout</Button>
       </LocalizedClientLink>

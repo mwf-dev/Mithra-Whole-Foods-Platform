@@ -1,4 +1,5 @@
 import { retrieveCart } from "@lib/data/cart"
+import { readCartMergeNotice } from "@lib/data/cookies"
 import { retrieveCustomer } from "@lib/data/customer"
 import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
@@ -12,13 +13,14 @@ export const metadata: Metadata = {
 export default async function Cart() {
   // Fetch cart + customer in parallel — they don't depend on each other, so
   // there's no reason to pay two sequential backend round-trips.
-  const [cart, customer] = await Promise.all([
+  const [cart, customer, mergedIn] = await Promise.all([
     retrieveCart().catch((error) => {
       console.error(error)
       return notFound()
     }),
     retrieveCustomer(),
+    readCartMergeNotice(),
   ])
 
-  return <CartTemplate cart={cart} customer={customer} />
+  return <CartTemplate cart={cart} customer={customer} mergedIn={mergedIn} />
 }

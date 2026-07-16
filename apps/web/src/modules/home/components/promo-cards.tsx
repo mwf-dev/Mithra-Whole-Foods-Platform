@@ -28,6 +28,9 @@ export function PromoCards({ settings }: { settings?: PromoSettings | null }) {
   return (
     <section className="py-12 bg-[#FBF7F0]">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">Exclusive Promos</h2>
+        </div>
         <div
           className={`grid grid-cols-1 gap-6 ${
             cards.length > 1 ? "md:grid-cols-2" : ""

@@ -1,18 +1,28 @@
+"use client"
+
 import { HttpTypes } from "@medusajs/types"
 import { Menu } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { usePathname } from "next/navigation"
 
 /**
  * Desktop category bar — the second header row. Replaces the old slide-out
  * left "Menu" popover as the primary navigation: a "Shop All" pill plus the
  * store's real top-level categories, laid out horizontally like the reference
  * grocery storefronts. Hidden on mobile, where the hamburger menu takes over.
+ * Hidden on the Store page where the dedicated left sidebar takes over.
  */
 export default function CategoryBar({
   categories,
 }: {
   categories: HttpTypes.StoreProductCategory[]
 }) {
+  const pathname = usePathname()
+
+  if (pathname?.includes("/store")) {
+    return null
+  }
+
   return (
     <div className="hidden md:block border-b border-ui-border-base bg-white/95 backdrop-blur">
       <div className="content-container flex items-center gap-6 h-12">

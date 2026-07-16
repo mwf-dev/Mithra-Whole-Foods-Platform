@@ -56,14 +56,14 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const maxQuantity = Math.max(1, Math.min(inventoryQty, QUANTITY_CAP))
 
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
+    <div
+      className="flex flex-col gap-4 border border-gray-200 rounded-xl p-4 bg-white shadow-sm mb-4"
+      data-testid="product-row"
+    >
+      <div className="flex gap-4 items-start w-full">
         <LocalizedClientLink
           href={`/products/${item.product_handle}`}
-          className={clx("flex", {
-            "w-16": type === "preview",
-            "small:w-24 w-12": type === "full",
-          })}
+          className="flex shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border border-gray-100"
         >
           <Thumbnail
             thumbnail={item.thumbnail}
@@ -71,74 +71,74 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             size="square"
           />
         </LocalizedClientLink>
-      </Table.Cell>
-
-      <Table.Cell className="text-left">
-        <Text
-          className="txt-medium-plus text-ui-fg-base"
-          data-testid="product-title"
-        >
-          {item.product_title}
-        </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
-      </Table.Cell>
-
-      {type === "full" && (
-        <Table.Cell>
-          <div className="flex gap-2 items-center w-28">
-            <DeleteButton id={item.id} data-testid="product-delete-button" />
-            <CartItemSelect
-              value={item.quantity}
-              onChange={(value) => changeQuantity(parseInt(value.target.value))}
-              className="w-14 h-10 p-4"
-              data-testid="product-select-button"
-            >
-              {Array.from({ length: maxQuantity }, (_, i) => (
-                <option value={i + 1} key={i}>
-                  {i + 1}
-                </option>
-              ))}
-            </CartItemSelect>
-            {updating && <Spinner />}
-          </div>
-          <ErrorMessage error={error} data-testid="product-error-message" />
-        </Table.Cell>
-      )}
-
-      {type === "full" && (
-        <Table.Cell className="hidden small:table-cell">
-          <LineItemUnitPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
-        </Table.Cell>
-      )}
-
-      <Table.Cell className="!pr-0">
-        <span
-          className={clx("!pr-0", {
-            "flex flex-col items-end h-full justify-center": type === "preview",
-          })}
-        >
-          {type === "preview" && (
-            <span className="flex gap-x-1 ">
-              <Text className="text-ui-fg-muted">{item.quantity}x </Text>
+        <div className="flex flex-col flex-1 gap-1">
+          <Text
+            className="txt-medium-plus text-ui-fg-base line-clamp-2"
+            data-testid="product-title"
+          >
+            {item.product_title}
+          </Text>
+          <LineItemOptions variant={item.variant} data-testid="product-variant" />
+          
+          <div className="flex flex-col mt-2">
+            <span className="font-semibold text-lg text-ui-fg-base">
               <LineItemUnitPrice
                 item={item}
                 style="tight"
                 currencyCode={currencyCode}
               />
             </span>
-          )}
+            <span className="text-xs text-green-700 font-medium">In stock</span>
+            <span className="text-xs text-ui-fg-subtle">Eligible for FREE shipping</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mt-1">
+        {type === "full" && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center border border-gray-200 rounded-full h-9 bg-white shadow-sm overflow-hidden">
+              <button 
+                type="button"
+                className="w-9 h-full flex items-center justify-center text-ui-fg-subtle hover:bg-gray-50 disabled:opacity-50"
+                onClick={() => changeQuantity(item.quantity - 1)}
+                disabled={item.quantity <= 1 || updating}
+              >
+                <span className="text-lg leading-none mb-[2px]">-</span>
+              </button>
+              <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+              <button 
+                type="button"
+                className="w-9 h-full flex items-center justify-center text-ui-fg-subtle hover:bg-gray-50 disabled:opacity-50"
+                onClick={() => changeQuantity(item.quantity + 1)}
+                disabled={item.quantity >= maxQuantity || updating}
+              >
+                <span className="text-lg leading-none mb-[2px]">+</span>
+              </button>
+            </div>
+            <DeleteButton id={item.id} data-testid="product-delete-button" />
+            {updating && <Spinner />}
+          </div>
+        )}
+        
+        {type === "preview" && (
+          <span className="flex items-center gap-2">
+            <Text className="text-ui-fg-muted font-medium">Qty: {item.quantity}</Text>
+          </span>
+        )}
+
+        {/* Display Total Price on the right side of the bottom row */}
+        <div className="ml-auto font-semibold text-ui-fg-base">
           <LineItemPrice
             item={item}
             style="tight"
             currencyCode={currencyCode}
           />
-        </span>
-      </Table.Cell>
-    </Table.Row>
+        </div>
+      </div>
+
+      {error && <ErrorMessage error={error} data-testid="product-error-message" />}
+    </div>
   )
 }
 

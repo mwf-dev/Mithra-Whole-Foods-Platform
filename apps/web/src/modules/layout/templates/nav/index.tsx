@@ -46,8 +46,16 @@ export default async function Nav() {
             </div>
 
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-ui-fg-subtle">
+              {/* Every route reads cookies, so it renders dynamically and
+                  Link's default prefetch only reaches the loading skeleton.
+                  These two are the highest-intent links on the site and both
+                  dedupe to a single URL, so paying for a full prefetch here
+                  buys an instant transition cheaply. Deliberately not applied
+                  to product grids: one full render per card would flood the
+                  backend for cards most shoppers never click. */}
               <LocalizedClientLink
                 href="/"
+                prefetch
                 className="hover:text-[#2E5C31] transition-colors"
                 data-testid="nav-home-link"
               >
@@ -55,6 +63,7 @@ export default async function Nav() {
               </LocalizedClientLink>
               <LocalizedClientLink
                 href="/store"
+                prefetch
                 className="hover:text-[#2E5C31] transition-colors"
                 data-testid="nav-store-link"
               >

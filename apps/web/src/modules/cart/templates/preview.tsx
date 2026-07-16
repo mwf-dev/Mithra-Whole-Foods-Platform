@@ -22,8 +22,7 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
           hasOverflow,
       })}
     >
-      <Table>
-        <Table.Body data-testid="items-table">
+      <div className="flex flex-col gap-3" data-testid="items-table">
           {items
             ? items
                 .sort((a, b) => {
@@ -42,8 +41,7 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
             : repeat(5).map((i) => {
                 return <SkeletonLineItem key={i} />
               })}
-        </Table.Body>
-      </Table>
+      </div>
     </div>
   )
 }

@@ -27,6 +27,9 @@ const modules: Record<string, any>[] = [
   {
     resolve: "./src/modules/homepage",
   },
+  {
+    resolve: "./src/modules/product-review",
+  },
 ]
 
 // S3-compatible file storage (GCS via HMAC interop, or AWS S3). Required on
@@ -148,6 +151,7 @@ module.exports = defineConfig({
         "import.meta.env.VITE_STOREFRONT_URL": JSON.stringify(
           process.env.STOREFRONT_URL || "http://localhost:8000"
         ),
+        __MAX_UPLOAD_FILE_SIZE__: 5 * 1024 * 1024,
       },
     }),
   },

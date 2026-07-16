@@ -75,6 +75,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               >
                 {orders && orders.length > 0 ? (
                   orders.slice(0, 5).map((order) => {
+                    const orderNumber = order.metadata?.order_number || order.display_id
                     return (
                       <li
                         key={order.id}
@@ -98,9 +99,9 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                               </span>
                               <span
                                 data-testid="order-id"
-                                data-value={order.display_id}
+                                data-value={orderNumber as string}
                               >
-                                #{order.display_id}
+                                #{orderNumber as string}
                               </span>
                               <span data-testid="order-amount">
                                 {convertToLocale({
@@ -114,7 +115,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                               data-testid="open-order-button"
                             >
                               <span className="sr-only">
-                                Go to order #{order.display_id}
+                                Go to order #{orderNumber as string}
                               </span>
                               <ChevronDown className="-rotate-90" />
                             </button>
