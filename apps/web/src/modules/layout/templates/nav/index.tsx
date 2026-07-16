@@ -75,7 +75,7 @@ export default async function Nav() {
                   <span className="hidden lg:inline">Login</span>
                 </LocalizedClientLink>
                 
-                <LocalizedClientLink href="/store" className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors">
+                <LocalizedClientLink href="/account/wishlist" className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors">
                   <div className="bg-[#f8f8f8] p-2.5 rounded-full"><Heart size={20} strokeWidth={1.5} /></div>
                   <span className="hidden lg:inline">Wishlist</span>
                 </LocalizedClientLink>
