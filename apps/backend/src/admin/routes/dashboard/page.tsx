@@ -17,9 +17,59 @@ type OrderRow = {
   created_at: string
   total: number
   currency_code: string
-  payment_status: string
-  fulfillment_status: string
+  // Derived on the client from the fulfillment/payment relations below,
+  // because the admin API returns the aggregated *_status fields empty when
+  // a narrow `fields=` selection omits those relations.
+  paymentLabel: string
+  fulfillmentLabel: string
 }
+
+type RawOrder = {
+  id: string
+  display_id: number
+  email?: string
+  created_at: string
+  total: number
+  currency_code: string
+  fulfillments?: {
+    packed_at?: string | null
+    shipped_at?: string | null
+    delivered_at?: string | null
+    canceled_at?: string | null
+  }[]
+  payment_collections?: { status?: string }[]
+}
+
+// Derive the fulfillment badge from the actual fulfillment records.
+const fulfillmentLabelOf = (o: RawOrder): string => {
+  const active = (o.fulfillments ?? []).filter((f) => !f.canceled_at)
+  if (active.length === 0) return "not fulfilled"
+  if (active.some((f) => f.delivered_at)) return "delivered"
+  if (active.some((f) => f.shipped_at)) return "shipped"
+  return "fulfilled"
+}
+
+// Derive the payment badge from the order's payment collections. Medusa marks
+// a fully-paid collection as "completed" (or "captured").
+const paymentLabelOf = (o: RawOrder): string => {
+  const statuses = (o.payment_collections ?? []).map((p) => p.status || "")
+  if (statuses.some((s) => s === "completed" || s === "captured")) return "paid"
+  if (statuses.includes("partially_captured")) return "partially paid"
+  if (statuses.some((s) => s.includes("authorized"))) return "authorized"
+  if (statuses.includes("awaiting")) return "awaiting"
+  return "not paid"
+}
+
+const toRow = (o: RawOrder): OrderRow => ({
+  id: o.id,
+  display_id: o.display_id,
+  email: o.email,
+  created_at: o.created_at,
+  total: o.total,
+  currency_code: o.currency_code,
+  paymentLabel: paymentLabelOf(o),
+  fulfillmentLabel: fulfillmentLabelOf(o),
+})
 
 type Stats = {
   ordersThisMonth: number
@@ -42,10 +92,16 @@ const fmtDate = (iso: string) =>
     day: "numeric",
   })
 
-// Medusa status → Badge color
+// Status label → Badge color
 const statusColor = (s: string): "green" | "orange" | "red" | "grey" => {
-  if (["captured", "fulfilled", "completed"].includes(s)) return "green"
-  if (["not_fulfilled", "awaiting", "not_paid"].includes(s)) return "orange"
+  if (["paid", "fulfilled", "shipped", "delivered", "completed"].includes(s))
+    return "green"
+  if (
+    ["not fulfilled", "not paid", "awaiting", "authorized", "partially paid"].includes(
+      s
+    )
+  )
+    return "orange"
   if (["canceled", "requires_action"].includes(s)) return "red"
   return "grey"
 }
@@ -71,33 +127,32 @@ const DashboardPage = () => {
     monthStart.setDate(1)
     monthStart.setHours(0, 0, 0, 0)
 
+    // Pull the fulfillment/payment relations so we can derive real statuses
+    // (the aggregated *_status fields come back empty under a narrow select).
     const orderFields =
-      "fields=id,display_id,email,created_at,total,currency_code,payment_status,fulfillment_status"
+      "fields=id,display_id,email,created_at,total,currency_code," +
+      "fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at," +
+      "fulfillments.canceled_at,payment_collections.status"
 
     Promise.all([
-      getJson(`/admin/orders?limit=8&order=-created_at&${orderFields}`),
-      getJson(
-        `/admin/orders?limit=200&created_at[$gte]=${monthStart.toISOString()}&fields=total,currency_code`
-      ),
-      getJson(
-        `/admin/orders?limit=1&fulfillment_status[]=not_fulfilled&fields=id`
-      ),
+      getJson(`/admin/orders?limit=200&order=-created_at&${orderFields}`),
       getJson(`/admin/products?limit=1&fields=id`),
     ])
-      .then(([recent, month, unfulfilled, products]) => {
-        const monthOrders = month.orders ?? []
+      .then(([all, products]) => {
+        const rawOrders: RawOrder[] = all.orders ?? []
+        const rows = rawOrders.map(toRow)
+        const monthRows = rows.filter(
+          (r) => new Date(r.created_at) >= monthStart
+        )
         setStats({
-          recent: recent.orders ?? [],
-          ordersThisMonth: monthOrders.length,
-          revenueThisMonth: monthOrders.reduce(
-            (sum: number, o: any) => sum + (o.total ?? 0),
-            0
-          ),
-          awaitingFulfillment: unfulfilled.count ?? 0,
+          recent: rows.slice(0, 8),
+          ordersThisMonth: monthRows.length,
+          revenueThisMonth: monthRows.reduce((sum, o) => sum + (o.total ?? 0), 0),
+          awaitingFulfillment: rows.filter(
+            (r) => r.fulfillmentLabel === "not fulfilled"
+          ).length,
           totalProducts: products.count ?? 0,
-          currency: (recent.orders?.[0]?.currency_code ||
-            monthOrders[0]?.currency_code ||
-            "usd") as string,
+          currency: (rows[0]?.currency_code || "usd") as string,
         })
       })
       .catch((e) => setError(e.message))
@@ -193,16 +248,16 @@ const DashboardPage = () => {
                   <Table.Cell>{fmtDate(o.created_at)}</Table.Cell>
                   <Table.Cell>{o.email ?? "—"}</Table.Cell>
                   <Table.Cell>
-                    <Badge size="2xsmall" color={statusColor(o.payment_status)}>
-                      {o.payment_status}
+                    <Badge size="2xsmall" color={statusColor(o.paymentLabel)}>
+                      {o.paymentLabel}
                     </Badge>
                   </Table.Cell>
                   <Table.Cell>
                     <Badge
                       size="2xsmall"
-                      color={statusColor(o.fulfillment_status)}
+                      color={statusColor(o.fulfillmentLabel)}
                     >
-                      {o.fulfillment_status}
+                      {o.fulfillmentLabel}
                     </Badge>
                   </Table.Cell>
                   <Table.Cell className="text-right">
