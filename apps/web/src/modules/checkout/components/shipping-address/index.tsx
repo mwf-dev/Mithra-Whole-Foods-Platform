@@ -6,6 +6,8 @@ import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
+import AddressAutofill from "./address-autofill"
+import { ResolvedAddress, lookupUsZip } from "@lib/util/address-lookup"
 
 const ShippingAddress = ({
   customer,
@@ -138,10 +140,46 @@ const ShippingAddress = ({
       ...formData,
       [e.target.name]: e.target.value,
     })
+
+    // ZIP -> city/state autofill (keyless). Only fills fields the user hasn't
+    // already typed, so we never clobber manual edits.
+    if (e.target.name === "shipping_address.postal_code") {
+      const zip = e.target.value
+      if (/^\d{5}$/.test(zip)) {
+        lookupUsZip(zip).then((res) => {
+          if (!res) return
+          setFormData((prev) => ({
+            ...prev,
+            "shipping_address.city": prev["shipping_address.city"] || res.city,
+            "shipping_address.province":
+              prev["shipping_address.province"] || res.state,
+            "shipping_address.country_code":
+              prev["shipping_address.country_code"] || "us",
+          }))
+        })
+      }
+    }
+  }
+
+  // Merge a resolved address (from autocomplete or geolocation) into the form.
+  const applyResolved = (address: ResolvedAddress) => {
+    setFormData((prev) => ({
+      ...prev,
+      "shipping_address.address_1":
+        address.address_1 || prev["shipping_address.address_1"],
+      "shipping_address.city": address.city || prev["shipping_address.city"],
+      "shipping_address.province":
+        address.province || prev["shipping_address.province"],
+      "shipping_address.postal_code":
+        address.postal_code || prev["shipping_address.postal_code"],
+      "shipping_address.country_code":
+        address.country_code || prev["shipping_address.country_code"],
+    }))
   }
 
   return (
     <>
+      <AddressAutofill onResolved={applyResolved} />
       {customer && (addressesInRegion?.length || 0) > 0 && (
         <Container className="mb-6 flex flex-col gap-y-4 p-5">
           <p className="text-small-regular">
