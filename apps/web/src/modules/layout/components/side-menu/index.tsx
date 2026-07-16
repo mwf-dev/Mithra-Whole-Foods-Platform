@@ -1,9 +1,10 @@
 "use client"
 
 import { Popover, PopoverPanel, Transition } from "@headlessui/react"
-import { ArrowRightMini, XMark } from "@medusajs/icons"
+import { ArrowRightMini } from "@medusajs/icons"
 import { Text, clx, useToggleState } from "@medusajs/ui"
 import { Fragment } from "react"
+import { Menu } from "lucide-react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountrySelect from "../country-select"
@@ -31,21 +32,21 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
   return (
     <div className="h-full">
       <div className="flex items-center h-full">
-        <Popover className="h-full flex">
+        <Popover className="h-full flex relative">
           {({ open, close }) => (
             <>
               <div className="relative flex h-full">
                 <Popover.Button
                   data-testid="nav-menu-button"
-                  className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-ui-fg-base"
+                  className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-[#2E5C31] px-2"
                 >
-                  Menu
+                  <Menu className="w-6 h-6 text-gray-800 hover:text-[#2E5C31] transition-colors" strokeWidth={1.5} />
                 </Popover.Button>
               </div>
 
               {open && (
                 <div
-                  className="fixed inset-0 z-[50] bg-black/0 pointer-events-auto"
+                  className="fixed inset-0 z-[50] bg-transparent pointer-events-auto"
                   onClick={close}
                   data-testid="side-menu-backdrop"
                 />
@@ -55,29 +56,24 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
                 show={open}
                 as={Fragment}
                 enter="transition ease-out duration-150"
-                enterFrom="opacity-0"
-                enterTo="opacity-100 backdrop-blur-2xl"
+                enterFrom="opacity-0 translate-y-1"
+                enterTo="opacity-100 translate-y-0"
                 leave="transition ease-in duration-150"
-                leaveFrom="opacity-100 backdrop-blur-2xl"
-                leaveTo="opacity-0"
+                leaveFrom="opacity-100 translate-y-0"
+                leaveTo="opacity-0 translate-y-1"
               >
-                <PopoverPanel className="flex flex-col absolute w-full pr-4 sm:pr-0 sm:w-1/3 2xl:w-1/4 sm:min-w-min h-[calc(100vh-1rem)] z-[51] inset-x-0 text-sm text-ui-fg-on-color m-2 backdrop-blur-2xl">
+                <PopoverPanel className="absolute top-full left-0 mt-4 w-64 z-[51] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden text-gray-900">
                   <div
                     data-testid="nav-menu-popup"
-                    className="flex flex-col h-full bg-[rgba(3,7,18,0.5)] rounded-rounded justify-between p-6"
+                    className="flex flex-col p-4"
                   >
-                    <div className="flex justify-end" id="xmark">
-                      <button data-testid="close-menu-button" onClick={close}>
-                        <XMark />
-                      </button>
-                    </div>
-                    <ul className="flex flex-col gap-6 items-start justify-start">
+                    <ul className="flex flex-col gap-1">
                       {Object.entries(SideMenuItems).map(([name, href]) => {
                         return (
                           <li key={name}>
                             <LocalizedClientLink
                               href={href}
-                              className="text-3xl leading-10 hover:text-ui-fg-disabled"
+                              className="block px-4 py-3 hover:bg-green-50 hover:text-green-800 rounded-lg text-lg font-medium transition-colors"
                               onClick={close}
                               data-testid={`${name.toLowerCase()}-link`}
                             >
@@ -87,12 +83,12 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
                         )
                       })}
                     </ul>
-                    <div className="flex flex-col gap-y-6">
+                    
+                    <div className="flex flex-col gap-y-4 mt-4 pt-4 border-t border-gray-100 px-4">
                       {!!locales?.length && (
                         <div
-                          className="flex justify-between"
-                          onMouseEnter={languageToggleState.open}
-                          onMouseLeave={languageToggleState.close}
+                          className="flex justify-between items-center text-sm cursor-pointer"
+                          onClick={languageToggleState.toggle}
                         >
                           <LanguageSelect
                             toggleState={languageToggleState}
@@ -102,33 +98,29 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
                           <ArrowRightMini
                             className={clx(
                               "transition-transform duration-150",
-                              languageToggleState.state ? "-rotate-90" : ""
+                              languageToggleState.state ? "rotate-90" : ""
                             )}
                           />
                         </div>
                       )}
-                      <div
-                        className="flex justify-between"
-                        onMouseEnter={countryToggleState.open}
-                        onMouseLeave={countryToggleState.close}
-                      >
-                        {regions && (
+                      
+                      {regions && (
+                        <div
+                          className="flex justify-between items-center text-sm cursor-pointer"
+                          onClick={countryToggleState.toggle}
+                        >
                           <CountrySelect
                             toggleState={countryToggleState}
                             regions={regions}
                           />
-                        )}
-                        <ArrowRightMini
-                          className={clx(
-                            "transition-transform duration-150",
-                            countryToggleState.state ? "-rotate-90" : ""
-                          )}
-                        />
-                      </div>
-                      <Text className="flex justify-between txt-compact-small">
-                        © {new Date().getFullYear()} Mithra Whole Foods. All rights
-                        reserved.
-                      </Text>
+                          <ArrowRightMini
+                            className={clx(
+                              "transition-transform duration-150",
+                              countryToggleState.state ? "rotate-90" : ""
+                            )}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </PopoverPanel>

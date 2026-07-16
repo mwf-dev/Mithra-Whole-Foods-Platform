@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import * as crypto from "crypto"
 
 /**
  * When an order is placed:
@@ -22,6 +23,20 @@ export default async function orderPlacedHandler({
   container,
 }: SubscriberArgs<{ id: string }>) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  // Generate unique order number (e.g. ORD-A3B9X2)
+  const orderModuleService = container.resolve(Modules.ORDER)
+  const randomSuffix = crypto.randomBytes(3).toString("hex").toUpperCase()
+  const customOrderNumber = `ORD-${randomSuffix}`
+
+  // Retrieve current order to get its metadata and update it
+  const currentOrder = await orderModuleService.retrieveOrder(data.id)
+  await orderModuleService.updateOrders(data.id, {
+    metadata: {
+      ...(currentOrder.metadata || {}),
+      order_number: customOrderNumber,
+    },
+  })
 
   let notifications: any
   try {
@@ -74,7 +89,7 @@ export default async function orderPlacedHandler({
   })
   const addr = order.shipping_address
   const templateData = {
-    order_id: `#${order.display_id}`,
+    order_id: `#${customOrderNumber}`,
     order_date: new Date(order.created_at as string).toLocaleDateString(
       "en-US",
       { year: "numeric", month: "long", day: "numeric" }

@@ -12,11 +12,16 @@ export const metadata: Metadata = {
 
 export default async function OverviewTemplate() {
   const customer = await retrieveCustomer().catch(() => null)
-  const orders = (await listOrders().catch(() => null)) || null
 
+  // Next renders both `@dashboard` and `@login` slots for /account and lets the
+  // layout pick one, so this runs for signed-out visitors too. Bail before
+  // touching /store/orders — unauthenticated it can only 401, which spams the
+  // console and spends a request against the store API's rate limit.
   if (!customer) {
     notFound()
   }
+
+  const orders = (await listOrders().catch(() => null)) || null
 
   return <Overview customer={customer} orders={orders} />
 }

@@ -1,5 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
-import { Text } from "@medusajs/ui"
+import { Text, Button } from "@medusajs/ui"
 
 type OrderDetailsProps = {
   order: HttpTypes.StoreOrder
@@ -32,8 +32,16 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
         </span>
       </Text>
       <Text className="mt-2 text-ui-fg-interactive">
-        Order number: <span data-testid="order-id">{order.display_id}</span>
+        Order number: <span data-testid="order-id">{order.metadata?.order_number as string || order.display_id}</span>
       </Text>
+
+      <div className="mt-4">
+        <a href={`/api/invoice/${order.id}`} target="_blank" rel="noreferrer">
+          <Button variant="secondary">
+            Download Invoice
+          </Button>
+        </a>
+      </div>
 
       <div className="flex items-center text-compact-small gap-x-4 mt-4">
         {showStatus && (

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import Image from "next/image";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import { safeCssUrl } from "@lib/util/safe-css-url";
 
 interface Banner {
@@ -20,7 +20,81 @@ interface HeroClientProps {
   backendUrl: string;
 }
 
-const SLIDE_INTERVAL_MS = 5000;
+const SLIDE_INTERVAL_MS = 6000;
+
+// Banner artwork is authored around a wide 16:9 crop. Pinning the box to that
+// ratio reserves the space before the image arrives, so the page below no
+// longer jumps once it decodes.
+const HERO_ASPECT = "aspect-[16/9]";
+
+/**
+ * Banner links are admin-authored. Internal paths must carry the country code
+ * — without it middleware answers with a 307, which the App Router cannot
+ * follow client-side and downgrades into a full document reload. Absolute URLs
+ * are left alone and sent through a plain anchor.
+ */
+function HeroLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  if (/^https?:\/\//i.test(href)) {
+    return (
+      <a href={href} className="block w-full" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+
+  // The hero is the primary entry point into the catalogue and the banners
+  // mostly resolve to the same handful of URLs (prefetches dedupe by href),
+  // so a full prefetch here is cheap and removes the wait on the main CTA.
+  return (
+    <LocalizedClientLink href={href} prefetch className="block w-full">
+      {children}
+    </LocalizedClientLink>
+  );
+}
+
+/**
+ * A single banner, routed through next/image so it is resized and served as
+ * AVIF/WebP rather than shipping the multi-megabyte original.
+ */
+function HeroImage({
+  src,
+  alt,
+  priority,
+  mounted,
+}: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+  mounted?: boolean;
+}) {
+  // Rejects anything that isn't http(s)/root-relative/data-image. next/image
+  // throws on an empty src, so fall back to the flat brand tile instead.
+  const safeSrc = safeCssUrl(src);
+
+  if (!safeSrc || !mounted) {
+    return <div className={`w-full ${HERO_ASPECT} bg-[#e6efe8]`} />;
+  }
+
+  return (
+    <div className={`relative w-full ${HERO_ASPECT}`}>
+      <Image
+        src={safeSrc}
+        alt={alt}
+        fill
+        sizes="100vw"
+        priority={priority}
+        quality={75}
+        className="object-cover"
+      />
+    </div>
+  );
+}
 
 function resolveImage(url: string, backendUrl: string): string {
   if (url && url.startsWith("/")) {
@@ -111,59 +185,66 @@ export function HeroClient({
     return () => clearInterval(id);
   }, [slideCount]);
 
-  const hasBanners = slideCount > 0;
-  const active = hasBanners ? banners[Math.min(slide, slideCount - 1)] : null;
+  // Every slide sits in the same grid cell and is merely faded out, so the
+  // browser treats them all as in-viewport and `loading="lazy"` would not
+  // defer them. Track the furthest slide reached and only mount images up to
+  // one ahead of it — the first paint then costs a single banner instead of
+  // the whole carousel, while the next one is always warm before it fades in.
+  const [maxSeen, setMaxSeen] = useState(0);
+  useEffect(() => {
+    setMaxSeen((m) => Math.max(m, slide));
+  }, [slide]);
 
-  const displayTitle = active ? active.title : title;
-  const displaySubtitle = active ? active.subtitle : subtitle;
-  const displayImage = active?.image || bgImage;
+  const hasBanners = slideCount > 0;
 
   return (
-    <section className="relative w-full h-[600px] md:h-[700px] flex items-center bg-gray-100 overflow-hidden">
-      {/* Background image (crossfades between slides) */}
-      <div
-        key={hasBanners ? slide : "static"}
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
-        style={{ backgroundImage: `url('${safeCssUrl(displayImage)}')` }}
-        role="img"
-        aria-label={displayTitle || "Farm fresh produce background"}
-      ></div>
-      <div className="absolute inset-0 bg-black/40"></div>
-
-      <div className="relative z-10 content-container mx-auto px-4 md:px-8 flex flex-col items-center text-center">
-        <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-6 leading-tight max-w-4xl drop-shadow-md">
-          {formatTitle(displayTitle)}
-        </h1>
-        <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl font-light tracking-wide drop-shadow">
-          {displaySubtitle}
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            href={active?.link || "/store"}
-            className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white bg-green-700 hover:bg-green-800 rounded-full transition-all duration-300 shadow-lg hover:shadow-green-900/20"
-          >
-            Shop Now
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Link>
-          {!hasBanners && (
-            <Link href="/about" className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-300">
-              <PlayCircle className="mr-2 w-5 h-5" />
-              Our Story
-            </Link>
-          )}
-        </div>
+    <section className="relative w-full flex flex-col items-center bg-[#f0f4f0] overflow-hidden">
+      <div className="relative w-full grid grid-cols-1 grid-rows-1">
+        {hasBanners ? (
+          banners.map((b, i) => (
+            <div
+              key={i}
+              className={`col-start-1 row-start-1 transition-all duration-1000 ease-in-out ${
+                i === slide
+                  ? "opacity-100 translate-x-0 z-10"
+                  : "opacity-0 translate-x-4 z-0 pointer-events-none"
+              }`}
+            >
+              <HeroLink href={b.link || "/store"}>
+                <HeroImage
+                  src={b.image}
+                  alt={b.title || "Hero background"}
+                  // The visible banner is the LCP element: fetch it eagerly.
+                  priority={i === 0}
+                  mounted={i <= maxSeen + 1}
+                />
+              </HeroLink>
+            </div>
+          ))
+        ) : (
+          <div className="col-start-1 row-start-1 opacity-100 z-10">
+            <HeroLink href="/store">
+              <HeroImage
+                src={bgImage}
+                alt={title || "Hero background"}
+                priority
+                mounted
+              />
+            </HeroLink>
+          </div>
+        )}
       </div>
 
       {/* Slide indicators */}
       {slideCount > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+        <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {banners.map((_, i) => (
             <button
               key={i}
               onClick={() => setSlide(i)}
               aria-label={`Go to banner ${i + 1}`}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                i === slide ? "bg-white" : "bg-white/40 hover:bg-white/70"
+              className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full transition-colors shadow-sm ${
+                i === slide ? "bg-white" : "bg-white/50 hover:bg-white/80"
               }`}
             />
           ))}
