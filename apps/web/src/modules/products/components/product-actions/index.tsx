@@ -1,11 +1,12 @@
 "use client"
 
-import { addToCart } from "@lib/data/cart"
+import { useCart } from "@lib/context/cart-context"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import { Minus, Plus } from "lucide-react"
 import { isEqual } from "lodash"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -35,12 +36,24 @@ export default function ProductActions({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { addItem } = useCart()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  // Preselect the single variant's options on the very first render (server +
+  // client), so a single-variant product resolves its variant immediately.
+  // Relying on a useEffect here left `options` empty until hydration, which
+  // made every single-variant PDP read "Out of stock".
+  const [options, setOptions] = useState<Record<string, string | undefined>>(
+    () =>
+      product.variants?.length === 1
+        ? optionsAsKeymap(product.variants[0].options) ?? {}
+        : {}
+  )
   const [isAdding, setIsAdding] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
 
-  // If there is only 1 variant, preselect the options
+  // Keep options in sync if the variant set changes (e.g. client-side nav
+  // reusing this component instance).
   useEffect(() => {
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
@@ -120,17 +133,29 @@ export default function ProductActions({
 
   const inView = useIntersection(actionsRef, "0px")
 
-  // add the selected variant to the cart
+  // add the selected variant to the cart — optimistically. The nav badge and
+  // dropdown update instantly via the cart context; the server round-trip runs
+  // behind it and reconciles (or rolls back + surfaces an error) on response.
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) return null
 
     setIsAdding(true)
 
     try {
-      await addToCart({
+      await addItem({
         variantId: selectedVariant.id,
-        quantity: 1,
+        quantity,
         countryCode,
+        seed: {
+          title: selectedVariant.title ?? product.title,
+          product_title: product.title,
+          product_handle: product.handle,
+          thumbnail: product.thumbnail ?? product.images?.[0]?.url ?? null,
+          unit_price:
+            (selectedVariant as any)?.calculated_price?.calculated_amount ??
+            undefined,
+          variant: selectedVariant,
+        },
       })
     } catch (error: any) {
       console.error("Error adding to cart:", error)
@@ -166,6 +191,35 @@ export default function ProductActions({
         </div>
 
         <ProductPrice product={product} variant={selectedVariant} />
+
+        {inStock && (
+          <div className="flex flex-col gap-2 mt-2">
+            <span className="text-sm font-medium text-gray-700">Quantity</span>
+            <div className="inline-flex items-center rounded-md border border-gray-300 w-fit">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1 || isAdding}
+                aria-label="Decrease quantity"
+                className="px-3 py-2 text-gray-600 hover:text-primary disabled:opacity-40 disabled:hover:text-gray-600 transition-colors"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="w-10 text-center text-sm font-semibold tabular-nums">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                disabled={isAdding}
+                aria-label="Increase quantity"
+                className="px-3 py-2 text-gray-600 hover:text-primary disabled:opacity-40 transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <Button
           onClick={handleAddToCart}

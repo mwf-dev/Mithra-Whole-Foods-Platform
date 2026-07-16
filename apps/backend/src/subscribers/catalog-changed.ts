@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { revalidateStorefront } from "../utils/revalidate-storefront"
 import { removeOrphanedCartItems } from "../utils/cart-cleanup"
+import { invalidateSearchIndex } from "../lib/product-search"
 
 const DELETION_EVENTS = new Set([
   "product.deleted",
@@ -26,6 +27,10 @@ export default async function catalogChangedHandler({
       console.warn("[catalog-changed] orphaned cart item cleanup failed", e)
     }
   }
+
+  // Drop the in-memory search index so the next search rebuilds from fresh
+  // catalog data (products/categories/tags just changed).
+  invalidateSearchIndex()
 
   await revalidateStorefront("/", "layout")
 }

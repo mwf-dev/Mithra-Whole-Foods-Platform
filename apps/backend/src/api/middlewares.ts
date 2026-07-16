@@ -1,4 +1,5 @@
 import { defineMiddlewares } from "@medusajs/medusa"
+import { authenticate } from "@medusajs/framework/http"
 import rateLimit from "express-rate-limit"
 import { clientIpKey } from "../utils/client-ip"
 
@@ -30,10 +31,22 @@ export default defineMiddlewares({
       matcher: "/store/*",
       middlewares: [storeLimiter],
     },
+    // Writing a review requires an account; reading them is public, so this is
+    // scoped to POST. Without it the route would accept anonymous writes.
+    {
+      matcher: "/store/products/*/reviews",
+      method: ["POST"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
     {
       matcher: "/admin/homepage",
       method: "GET",
       middlewares: [storeLimiter],
+    },
+    {
+      matcher: "/admin/uploads",
+      method: "POST",
+      bodyParser: { sizeLimit: "10mb" },
     }
   ],
 })

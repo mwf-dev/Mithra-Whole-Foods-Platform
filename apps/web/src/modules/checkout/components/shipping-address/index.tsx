@@ -6,6 +6,8 @@ import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
+import AddressAutofill from "./address-autofill"
+import { ResolvedAddress, lookupUsZip } from "@lib/util/address-lookup"
 
 const ShippingAddress = ({
   customer,
@@ -18,6 +20,8 @@ const ShippingAddress = ({
   checked: boolean
   onChange: () => void
 }) => {
+  const [saveAddress, setSaveAddress] = useState(true)
+
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -71,15 +75,61 @@ const ShippingAddress = ({
   }
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
-    if (cart && cart.shipping_address) {
-      setFormAddress(cart?.shipping_address, cart?.email)
-    }
+    if (!cart) return
 
-    if (cart && !cart.email && customer?.email) {
-      setFormAddress(undefined, customer.email)
-    }
-  }, [cart]) // Add cart as a dependency
+    // Prefer the customer's default saved address, else the first one valid in
+    // this region.
+    const savedAddress =
+      addressesInRegion?.find((a) => a.is_default_shipping) ||
+      addressesInRegion?.[0]
+
+    const cartAddr = cart.shipping_address
+
+    // Fill each field from the first source that actually has a value:
+    //   cart address → saved account address → account identity.
+    // Merging field-by-field means an EMPTY cart address (Medusa often creates
+    // one) can't blank out what we already know about the customer.
+    const pick = (...vals: (string | null | undefined)[]) =>
+      vals.find((v) => v) || ""
+
+    setFormData((prevState) => ({
+      ...prevState,
+      "shipping_address.first_name": pick(
+        cartAddr?.first_name,
+        savedAddress?.first_name,
+        customer?.first_name
+      ),
+      "shipping_address.last_name": pick(
+        cartAddr?.last_name,
+        savedAddress?.last_name,
+        customer?.last_name
+      ),
+      "shipping_address.address_1": pick(
+        cartAddr?.address_1,
+        savedAddress?.address_1
+      ),
+      "shipping_address.company": pick(cartAddr?.company, savedAddress?.company),
+      "shipping_address.postal_code": pick(
+        cartAddr?.postal_code,
+        savedAddress?.postal_code
+      ),
+      "shipping_address.city": pick(cartAddr?.city, savedAddress?.city),
+      "shipping_address.country_code": pick(
+        cartAddr?.country_code,
+        savedAddress?.country_code
+      ),
+      "shipping_address.province": pick(
+        cartAddr?.province,
+        savedAddress?.province
+      ),
+      "shipping_address.phone": pick(
+        cartAddr?.phone,
+        savedAddress?.phone,
+        customer?.phone
+      ),
+      email: pick(cart.email, customer?.email),
+    }))
+  }, [cart, customer, addressesInRegion])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -90,10 +140,46 @@ const ShippingAddress = ({
       ...formData,
       [e.target.name]: e.target.value,
     })
+
+    // ZIP -> city/state autofill (keyless). Only fills fields the user hasn't
+    // already typed, so we never clobber manual edits.
+    if (e.target.name === "shipping_address.postal_code") {
+      const zip = e.target.value
+      if (/^\d{5}$/.test(zip)) {
+        lookupUsZip(zip).then((res) => {
+          if (!res) return
+          setFormData((prev) => ({
+            ...prev,
+            "shipping_address.city": prev["shipping_address.city"] || res.city,
+            "shipping_address.province":
+              prev["shipping_address.province"] || res.state,
+            "shipping_address.country_code":
+              prev["shipping_address.country_code"] || "us",
+          }))
+        })
+      }
+    }
+  }
+
+  // Merge a resolved address (from autocomplete or geolocation) into the form.
+  const applyResolved = (address: ResolvedAddress) => {
+    setFormData((prev) => ({
+      ...prev,
+      "shipping_address.address_1":
+        address.address_1 || prev["shipping_address.address_1"],
+      "shipping_address.city": address.city || prev["shipping_address.city"],
+      "shipping_address.province":
+        address.province || prev["shipping_address.province"],
+      "shipping_address.postal_code":
+        address.postal_code || prev["shipping_address.postal_code"],
+      "shipping_address.country_code":
+        address.country_code || prev["shipping_address.country_code"],
+    }))
   }
 
   return (
     <>
+      <AddressAutofill onResolved={applyResolved} />
       {customer && (addressesInRegion?.length || 0) > 0 && (
         <Container className="mb-6 flex flex-col gap-y-4 p-5">
           <p className="text-small-regular">
@@ -212,6 +298,17 @@ const ShippingAddress = ({
           data-testid="shipping-phone-input"
         />
       </div>
+      {customer && (addressesInRegion?.length || 0) === 0 && (
+        <div className="mb-4">
+          <Checkbox
+            label="Save this delivery address to my account"
+            name="save_address"
+            checked={saveAddress}
+            onChange={() => setSaveAddress((prev) => !prev)}
+            data-testid="save-address-checkbox"
+          />
+        </div>
+      )}
     </>
   )
 }

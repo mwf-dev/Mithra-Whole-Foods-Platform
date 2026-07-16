@@ -1,8 +1,11 @@
+"use client"
+
 import { login } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
+import { useSearchParams } from "next/navigation"
 import { useActionState } from "react"
 
 type Props = {
@@ -11,6 +14,7 @@ type Props = {
 
 const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
+  const redirectTo = useSearchParams().get("redirect")
 
   return (
     <div
@@ -22,6 +26,9 @@ const Login = ({ setCurrentView }: Props) => {
         Sign in to access an enhanced shopping experience.
       </p>
       <form className="w-full" action={formAction}>
+        {redirectTo && (
+          <input type="hidden" name="redirect" value={redirectTo} />
+        )}
         <div className="flex flex-col w-full gap-y-2">
           <Input
             label="Email"

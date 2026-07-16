@@ -23,7 +23,7 @@ export const listCategories = async (query?: Record<string, any>) => {
         cache: "force-cache",
       }
     )
-    .then(({ product_categories }) => product_categories)
+    .then(({ product_categories }) => product_categories.filter(c => c.name !== "Millets"))
 }
 
 export const getCategoryByHandle = async (categoryHandle: string[]) => {
