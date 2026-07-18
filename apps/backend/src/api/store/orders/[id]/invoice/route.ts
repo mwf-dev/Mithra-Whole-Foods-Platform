@@ -33,7 +33,6 @@ export async function GET(
       entity: "order",
       fields: [
         "*",
-        "customer_id",
         "items.*",
         "shipping_address.*",
         "shipping_methods.*",
