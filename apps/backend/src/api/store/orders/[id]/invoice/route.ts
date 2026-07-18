@@ -3,6 +3,7 @@ import {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { existsSync } from "fs"
 import PDFDocument from "pdfkit"
 
 /**
@@ -59,11 +60,23 @@ export async function GET(
   doc.pipe(res)
 
   // --- Header ---
-  const logoPath = "/Users/macbook/Downloads/Library/PROJECTS/Mithra-WholeFoods/apps/web/public/logo.png"
-  try {
-    doc.image(logoPath, 50, 45, { width: 120 })
-  } catch (e) {
-    // fallback if logo is missing
+  // Was hardcoded to an absolute path inside one developer's home directory,
+  // which of course resolves nowhere else. The deployed image only contains
+  // `.medusa/server` (see apps/backend/Dockerfile), so there is no logo file
+  // in production at all and every invoice quietly used the text fallback
+  // below. Point INVOICE_LOGO_PATH at a readable file to get the image back;
+  // absent that, the wordmark is a deliberate, working default rather than an
+  // accident.
+  const logoPath = process.env.INVOICE_LOGO_PATH
+
+  if (logoPath && existsSync(logoPath)) {
+    try {
+      doc.image(logoPath, 50, 45, { width: 120 })
+    } catch (e) {
+      console.warn(`[invoice] could not render logo at ${logoPath}:`, e)
+      doc.fontSize(20).text("Mithra Whole Foods", 50, 57)
+    }
+  } else {
     doc.fontSize(20).text("Mithra Whole Foods", 50, 57)
   }
 
