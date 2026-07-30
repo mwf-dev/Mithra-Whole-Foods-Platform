@@ -116,6 +116,34 @@ export const removeCartId = async () => {
   })
 }
 
+const WELCOME_PROMPT_COOKIE = "_mithra_welcome_dismissed"
+
+/**
+ * Whether this visitor has already waved away the sign-in invite. Read on the
+ * server so a dismissed prompt is never sent to the browser at all — rendering
+ * it and hiding it client-side would flash it again on every page.
+ */
+export const hasDismissedWelcomePrompt = async (): Promise<boolean> => {
+  try {
+    const cookies = await nextCookies()
+    return cookies.get(WELCOME_PROMPT_COOKIE)?.value === "1"
+  } catch {
+    return false
+  }
+}
+
+export const setWelcomePromptDismissed = async () => {
+  const cookies = await nextCookies()
+  cookies.set(WELCOME_PROMPT_COOKIE, "1", {
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    // `lax`, not `strict`: a shopper arriving from Google or an email link
+    // would otherwise not send the cookie and would be greeted all over again.
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  })
+}
+
 const MERGE_NOTICE_COOKIE = "_medusa_cart_merge_notice"
 
 export type MergedInItem = {
