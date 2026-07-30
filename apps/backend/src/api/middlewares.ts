@@ -38,6 +38,17 @@ export default defineMiddlewares({
       method: ["POST"],
       middlewares: [authenticate("customer", ["session", "bearer"])],
     },
+    // An invoice carries the shopper's name, full shipping address and every
+    // line they bought. Without this the route resolved an order straight from
+    // the id in the URL, so anyone could read anyone's — checkout already
+    // requires an account, so there is no guest flow to preserve here.
+    // The route itself still has to confirm the caller *owns* the order;
+    // authentication alone only proves they own *an* account.
+    {
+      matcher: "/store/orders/*/invoice",
+      method: ["GET"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
     {
       matcher: "/admin/homepage",
       method: "GET",

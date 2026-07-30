@@ -19,6 +19,7 @@ import {
   setCartMergeNotice,
 } from "./cookies"
 import { addressRules, validateFormFields } from "@lib/util/form-validation"
+import { safeRedirectPath } from "@lib/util/safe-redirect"
 
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
@@ -126,8 +127,8 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   // Return the new customer to wherever they came from (e.g. checkout).
   // Outside the try/catch so redirect()'s control-flow signal isn't swallowed.
-  const redirectTo = formData.get("redirect")
-  if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
+  const redirectTo = safeRedirectPath(formData.get("redirect"))
+  if (redirectTo) {
     redirect(redirectTo)
   }
 
@@ -165,8 +166,8 @@ export async function login(_currentState: unknown, formData: FormData) {
   })
 
   // Return the shopper to wherever they came from (e.g. checkout).
-  const redirectTo = formData.get("redirect")
-  if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
+  const redirectTo = safeRedirectPath(formData.get("redirect"))
+  if (redirectTo) {
     redirect(await resolvePostLoginRedirect(redirectTo))
   }
 }

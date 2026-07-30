@@ -1,13 +1,32 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { existsSync } from "fs"
 import PDFDocument from "pdfkit"
 
+/**
+ * Renders one order's invoice as a PDF.
+ *
+ * `authenticate("customer")` is registered for this matcher in
+ * `src/api/middlewares.ts`, so `actor_id` below is the caller and cannot be
+ * spoofed. That is only half the check: authentication proves they own an
+ * account, not that they own *this* order, so the ownership comparison below
+ * is what actually stops one shopper reading another's name, address and
+ * order history out of a guessed id.
+ */
 export async function GET(
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) {
   try {
     const { id } = req.params
+    const customerId = req.auth_context?.actor_id
+
+    if (!customerId) {
+      return res.status(401).json({ message: "Not authenticated" })
+    }
 
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
     const { data: [order] } = await query.graph({
@@ -22,7 +41,10 @@ export async function GET(
       filters: { id }
     })
 
-  if (!order) {
+  // Deliberately the same 404 for "no such order" and "not yours": a distinct
+  // 403 would confirm that an order id exists, which is exactly the probe an
+  // attacker enumerating ids is making.
+  if (!order || order.customer_id !== customerId) {
     return res.status(404).json({ message: "Order not found" })
   }
 
@@ -37,11 +59,23 @@ export async function GET(
   doc.pipe(res)
 
   // --- Header ---
-  const logoPath = "/Users/macbook/Downloads/Library/PROJECTS/Mithra-WholeFoods/apps/web/public/logo.png"
-  try {
-    doc.image(logoPath, 50, 45, { width: 120 })
-  } catch (e) {
-    // fallback if logo is missing
+  // Was hardcoded to an absolute path inside one developer's home directory,
+  // which of course resolves nowhere else. The deployed image only contains
+  // `.medusa/server` (see apps/backend/Dockerfile), so there is no logo file
+  // in production at all and every invoice quietly used the text fallback
+  // below. Point INVOICE_LOGO_PATH at a readable file to get the image back;
+  // absent that, the wordmark is a deliberate, working default rather than an
+  // accident.
+  const logoPath = process.env.INVOICE_LOGO_PATH
+
+  if (logoPath && existsSync(logoPath)) {
+    try {
+      doc.image(logoPath, 50, 45, { width: 120 })
+    } catch (e) {
+      console.warn(`[invoice] could not render logo at ${logoPath}:`, e)
+      doc.fontSize(20).text("Mithra Whole Foods", 50, 57)
+    }
+  } else {
     doc.fontSize(20).text("Mithra Whole Foods", 50, 57)
   }
 
@@ -173,10 +207,22 @@ export async function GET(
 
   doc.end()
   } catch (error: any) {
-    return res.status(500).json({ 
-      message: "An error occurred while generating the invoice", 
-      error: error.message, 
-      stack: error.stack 
+    // Logged in full server-side; the client is told nothing beyond "it
+    // failed". The stack used to go out in the response body, which handed a
+    // caller the server's file paths and dependency layout.
+    console.error(`[store/orders/invoice] failed for ${req.params.id}:`, error)
+
+    // Everything above streams into `res` via `doc.pipe(res)`, so by the time
+    // a render error lands here the status and headers are usually already
+    // committed. Writing a JSON body then throws ERR_HTTP_HEADERS_SENT and the
+    // client gets a truncated PDF instead of an error — destroy the socket so
+    // it sees a failed transfer rather than a corrupt file.
+    if (res.headersSent) {
+      return res.destroy()
+    }
+
+    return res.status(500).json({
+      message: "An error occurred while generating the invoice",
     })
   }
 }
