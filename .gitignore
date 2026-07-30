@@ -30,6 +30,11 @@ yarn-error.log*
 !.env.template
 !.env.*.template
 
+# Database dumps. A pg_dump of this schema carries customer rows, addresses,
+# auth_identity/provider_identity (password hashes) and api_key — treat it
+# exactly like a credentials file and never commit one.
+*.sql
+
 # IDEs
 .idea/
 .vscode/
