@@ -24,11 +24,23 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 # slightly slower build. Set as env rather than an .npmrc because the install
 # below runs from a different working directory, and `--ignore-workspace` stops
 # pnpm walking up to find a root .npmrc.
-ENV NPM_CONFIG_FETCH_RETRIES=5 \
+#
+# `network-concurrency` is the setting that actually matters here: an earlier
+# attempt at 4 still 429'd after ~9 minutes of retrying. Verified against a
+# COLD pnpm store (the state a Railway builder is in): concurrency 2 with these
+# retries completes the step in ~62s.
+#
+# Do NOT "optimise" this to `--offline`. Measured 2026-08-07: the install below
+# resolves version ranges freshly and picks transitive packages the workspace
+# lockfile never pinned (glob@13.0.6 → minimatch@10.2.6), so a store warmed from
+# the lockfile does not contain everything it needs and `--offline` fails with
+# ERR_PNPM_NO_OFFLINE_TARBALL. That same fact means this image is not fully
+# reproducible — see the note on the install step.
+ENV NPM_CONFIG_FETCH_RETRIES=8 \
     NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=10000 \
-    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=60000 \
     NPM_CONFIG_FETCH_TIMEOUT=300000 \
-    NPM_CONFIG_NETWORK_CONCURRENCY=4
+    NPM_CONFIG_NETWORK_CONCURRENCY=2
 
 # Workspace manifests first for layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
@@ -51,6 +63,16 @@ RUN cd apps/backend && pnpm build
 # and metadata cache in this same stage, so most of what this step needs is
 # already on disk. Preferring it collapses the bulk of the registry traffic that
 # triggered the 429 — see the ENV block at the top of this stage.
+#
+# ⚠️ KNOWN LIMITATION, not yet fixed. `medusa build` emits a package.json with no
+# lockfile beside it, so this step re-resolves every version range against the
+# live registry. Measured 2026-08-07: it reused 1,062 of 1,226 packages from a
+# lockfile-warmed store and pulled ~164 fresh — including transitive versions
+# the workspace lockfile never pinned. Consequence: **the deployed image can
+# ship dependency versions that were never tested in CI**, and the build stays
+# coupled to registry availability. The proper fix is to install from the
+# workspace lockfile (e.g. `pnpm deploy`) rather than re-resolving; the settings
+# above only make the current approach survive throttling.
 WORKDIR /app/apps/backend/.medusa/server
 RUN pnpm install --prod --ignore-workspace --prefer-offline
 
