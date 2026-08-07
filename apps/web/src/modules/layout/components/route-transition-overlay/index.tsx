@@ -53,6 +53,13 @@ export default function RouteTransitionOverlay() {
   const [visible, setVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  /**
+   * Mirrors `visible` so `hide()` can branch on it without doing side effects
+   * inside a `setState` updater — React may run an updater more than once, and
+   * calling `setMounted` from inside one is not safe.
+   */
+  const visibleRef = useRef(false)
+
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unmountTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -78,24 +85,21 @@ export default function RouteTransitionOverlay() {
       maxTimer.current = null
     }
 
-    setVisible((wasVisible) => {
-      if (!wasVisible) {
-        // Never made it past SHOW_AFTER_MS — tear down with no flash at all.
-        setMounted(false)
-        return false
-      }
+    if (!visibleRef.current) {
+      // Never made it past SHOW_AFTER_MS — tear down with no flash at all.
+      setMounted(false)
+      return
+    }
 
-      const elapsed = Date.now() - shownAt.current
-      const wait = Math.max(0, MIN_VISIBLE_MS - elapsed)
+    const elapsed = Date.now() - shownAt.current
+    const wait = Math.max(0, MIN_VISIBLE_MS - elapsed)
 
-      hideTimer.current = setTimeout(() => {
-        setVisible(false)
-        // Keep it mounted through the fade so the opacity transition can run.
-        unmountTimer.current = setTimeout(() => setMounted(false), FADE_MS)
-      }, wait)
-
-      return true
-    })
+    hideTimer.current = setTimeout(() => {
+      visibleRef.current = false
+      setVisible(false)
+      // Keep it mounted through the fade so the opacity transition can run.
+      unmountTimer.current = setTimeout(() => setMounted(false), FADE_MS)
+    }, wait)
   }, [])
 
   const start = useCallback(() => {
@@ -104,10 +108,12 @@ export default function RouteTransitionOverlay() {
 
     showTimer.current = setTimeout(() => {
       shownAt.current = Date.now()
+      visibleRef.current = true
       setVisible(true)
     }, SHOW_AFTER_MS)
 
     maxTimer.current = setTimeout(() => {
+      visibleRef.current = false
       setVisible(false)
       setMounted(false)
     }, MAX_VISIBLE_MS)
@@ -117,11 +123,19 @@ export default function RouteTransitionOverlay() {
    * Navigation *finished*: the App Router has committed the new route, which is
    * the point at which `pathname` / `searchParams` change. Running on mount too
    * is harmless — there is nothing to hide.
+   *
+   * Depends on the *serialised* search string, never the `useSearchParams()`
+   * object. That object gets a fresh identity on every re-render, and this
+   * component re-renders whenever it shows or hides — so depending on it made
+   * the effect re-run continuously, calling `hide()` in a loop and clearing the
+   * show timer before it could ever fire. Measured symptom: the overlay mounted
+   * on time but sat at opacity 0 for the whole navigation, i.e. invisible.
    */
+  const search = searchParams.toString()
   useEffect(() => {
     hide()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, searchParams])
+  }, [pathname, search])
 
   /**
    * Navigation *started*. The App Router exposes no router events, so this is
