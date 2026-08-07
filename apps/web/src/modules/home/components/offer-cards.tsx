@@ -1,4 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { cloudinaryUrl } from "@lib/util/cloudinary"
 import { safeCssUrl } from "@lib/util/safe-css-url"
 import { HomepageCard, resolveBackendImage } from "@lib/data/homepage"
 
@@ -30,8 +31,12 @@ export function OfferCards({ cards }: { cards?: HomepageCard[] | null }) {
                 <div
                   className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
                   style={{
+                    // Tile is at most a quarter of a 1280px grid, so 640 covers
+                    // it with room for `dpr_auto` to serve retina.
                     backgroundImage: `url('${safeCssUrl(
-                      resolveBackendImage(card.image_url)
+                      cloudinaryUrl(resolveBackendImage(card.image_url), {
+                        width: 640,
+                      })
                     )}')`,
                   }}
                   role="img"

@@ -1,4 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { cloudinaryUrl } from "@lib/util/cloudinary"
 import { safeCssUrl } from "@lib/util/safe-css-url"
 import { resolveBackendImage as resolveImage } from "@lib/data/homepage"
 import { ArrowRight } from "lucide-react"
@@ -45,7 +46,13 @@ export function PromoCards({ settings }: { settings?: PromoSettings | null }) {
               {card.image && (
                 <div
                   className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
-                  style={{ backgroundImage: `url('${safeCssUrl(card.image)}')` }}
+                  // Half-width banner on a 1280px grid; 960 leaves headroom for
+                  // `dpr_auto` without shipping the 2 MB original.
+                  style={{
+                    backgroundImage: `url('${safeCssUrl(
+                      cloudinaryUrl(card.image, { width: 960 })
+                    )}')`,
+                  }}
                   role="img"
                   aria-label={card.title || "Promotional offer"}
                 />

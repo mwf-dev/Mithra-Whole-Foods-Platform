@@ -1,4 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { cloudinaryUrl } from "@lib/util/cloudinary"
 import { safeCssUrl } from "@lib/util/safe-css-url"
 import {
   HomepageCategoryTile,
@@ -54,8 +55,11 @@ export function CategoryTiles({
                   style={
                     tile.image_url
                       ? {
+                          // Painted into a 128px circle at most.
                           backgroundImage: `url('${safeCssUrl(
-                            resolveBackendImage(tile.image_url)
+                            cloudinaryUrl(resolveBackendImage(tile.image_url), {
+                              width: 256,
+                            })
                           )}')`,
                         }
                       : undefined
