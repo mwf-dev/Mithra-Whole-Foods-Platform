@@ -102,13 +102,34 @@ module.exports = {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
-        // Indeterminate progress sweep under the logo in the route-transition
-        // overlay. Indeterminate on purpose: navigation length is not knowable
-        // up front, and a bar that pretends to know is worse than one that
-        // just shows activity.
-        routeLoaderSweep: {
-          "0%": { transform: "translateX(-100%)" },
-          "100%": { transform: "translateX(200%)" },
+        // Route-transition loading mark: the brand's tree glyph sprouting on a
+        // loop — stem draws upward, both leaves unfurl staggered, then the
+        // whole thing retracts and regrows. Three keyframes below animate one
+        // element each (stem, left leaf, right leaf) on the same cycle length
+        // so they stay in lockstep. Indeterminate on purpose — navigation
+        // length is not knowable up front, and a bar that pretends to know is
+        // worse than one that just shows activity.
+        routeLoaderStem: {
+          "0%": { strokeDashoffset: "18" },
+          "35%": { strokeDashoffset: "0" },
+          "75%": { strokeDashoffset: "0" },
+          "100%": { strokeDashoffset: "18" },
+        },
+        routeLoaderLeafLeft: {
+          "0%": { opacity: "0", transform: "scale(0.3)" },
+          "35%": { opacity: "0", transform: "scale(0.3)" },
+          "50%": { opacity: "0.9", transform: "scale(1)" },
+          "78%": { opacity: "0.9", transform: "scale(1)" },
+          "92%": { opacity: "0", transform: "scale(0.3)" },
+          "100%": { opacity: "0", transform: "scale(0.3)" },
+        },
+        routeLoaderLeafRight: {
+          "0%": { opacity: "0", transform: "scale(0.3)" },
+          "45%": { opacity: "0", transform: "scale(0.3)" },
+          "60%": { opacity: "0.55", transform: "scale(1)" },
+          "78%": { opacity: "0.55", transform: "scale(1)" },
+          "88%": { opacity: "0", transform: "scale(0.3)" },
+          "100%": { opacity: "0", transform: "scale(0.3)" },
         },
         "fade-in-right": {
           "0%": {

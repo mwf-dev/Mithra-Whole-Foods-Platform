@@ -254,25 +254,64 @@ export default function RouteTransitionOverlay() {
         visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
     >
-      <div className="flex flex-col items-center gap-5">
+      <div className="flex flex-col items-center gap-7">
+        {/*
+          The dominant element on screen while this is up, by design — a small
+          logo here reads as decoration, a large one reads as the page telling
+          you something is happening. `clamp()` keeps it a fixed *proportion*
+          of the viewport (min 6rem, max 11.5rem) rather than jumping between
+          breakpoints, and it never animates: it is the calm anchor the sprout
+          mark below plays against.
+        */}
         <Image
           src="/logo.png"
           alt=""
-          width={153}
-          height={56}
+          width={355}
+          height={130}
           priority
-          // `motion-safe` only: a pulsing brand mark is exactly the kind of
-          // motion that triggers discomfort for people who have asked the OS to
-          // reduce it. They still get the overlay, just held still.
-          className="h-16 w-auto object-contain motion-safe:animate-pulse"
+          className="h-[clamp(6rem,18vw,11.5rem)] w-auto object-contain"
         />
         <span className="sr-only">Loading</span>
-        <div
+        {/*
+          Loading mark: the brand's own tree glyph (same paths as the Logo
+          component's text-fallback mark, so the two are visually the same
+          motif) sprouting on a loop instead of a generic spinner or bar — the
+          stem draws upward, the leaves unfurl staggered, then everything
+          retracts and regrows. Three keyframes animate in lockstep on one
+          element each; see tailwind.config.js for the full timeline.
+          `motion-safe` only: the glyph still shows under
+          prefers-reduced-motion, just fully grown and holding still, because
+          the base (non-animated) SVG values below already describe that state.
+        */}
+        <svg
           aria-hidden
-          className="h-0.5 w-24 overflow-hidden rounded-full bg-[#2E5C31]/15"
+          viewBox="0 0 40 40"
+          className="h-11 w-11 text-[#2E5C31]"
         >
-          <div className="h-full w-1/2 animate-[routeLoaderSweep_1.1s_ease-in-out_infinite] rounded-full bg-[#2E5C31]" />
-        </div>
+          <path
+            d="M20 34V17"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeDasharray="18"
+            className="motion-safe:animate-[routeLoaderStem_2.4s_ease-in-out_infinite]"
+          />
+          <path
+            d="M20 20C20 13 15 8 7 8c0 7 5 12 13 12Z"
+            fill="currentColor"
+            opacity="0.9"
+            style={{ transformOrigin: "20px 17px" }}
+            className="motion-safe:animate-[routeLoaderLeafLeft_2.4s_ease-in-out_infinite]"
+          />
+          <path
+            d="M20 24c0-6 4.5-10.5 12-10.5C32 19.5 27.5 24 20 24Z"
+            fill="currentColor"
+            opacity="0.55"
+            style={{ transformOrigin: "20px 20px" }}
+            className="motion-safe:animate-[routeLoaderLeafRight_2.4s_ease-in-out_infinite]"
+          />
+        </svg>
       </div>
     </div>
   )
