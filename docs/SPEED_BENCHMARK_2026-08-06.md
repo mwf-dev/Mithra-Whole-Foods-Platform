@@ -344,6 +344,62 @@ feeling you described.
 
 ---
 
+## 7a. Phase 0 shipped — measured result (2026-08-07)
+
+Deployed as commit `8e11d71`. Backend via Railway (auto-deploy from `dev`),
+storefront via `vercel --prod` — **Vercel's Git integration is dead**, its last
+auto-registered deployment was 2026-07-21, so every Production deploy since has
+been manual. Reconnect it or keep deploying by hand; pushing to `main` alone
+ships nothing.
+
+Homepage, real browser, cold load:
+
+| Metric | Before | After Phase 0 | Change |
+|---|---|---|---|
+| **Total transfer** | **21.1 MB** | **0.98 MB** | **21.5× smaller** |
+| CSS-loaded images | 20,586 KB | 347 KB | 59× smaller |
+| Largest single asset | 2,315 KB (PNG) | 130 KB (JS chunk) | no image is top-5 now |
+| Load complete | 4,257 ms | 3,411 ms | −20% |
+| TTFB (warm) | 850–900 ms | 580–770 ms | −25% |
+| Requests | 41 | 74 | ↑ (images no longer huge; +Sentry/PostHog chunks) |
+
+Route TTFB after deploy: `/us` 0.65–0.77s · `/us/store` 0.58–0.61s ·
+PDP 0.60–0.63s · `/us/search` 0.71s.
+
+Verified correct, not just smaller: all 9 CMS tiles now request sized
+transforms — a 128×128 tile gets `f_auto,q_auto,dpr_auto,w_256,c_limit`, a
+286×176 tile gets `w_640`. Hero and tiles render at full visual quality.
+Storefront `/health` returns `{"status":"healthy","commit":"8e11d71"}` with the
+backend reachable.
+
+**Note the shape of the remaining gap.** Bytes fell 21× but load time only 20%,
+because the bottleneck is no longer payload — it is round trips and latency.
+`/store/products` is unchanged at **2.3–2.6s**, exactly as expected: that is
+Phase 1 (geography), which this deploy did not touch. Phase 0 was the free win;
+the big remaining number needs the region fix.
+
+One cosmetic leftover: `/_vercel/insights/script.js` 404s because Vercel Web
+Analytics is not enabled on the project. Harmless — enable it in the dashboard
+or drop `@vercel/analytics`.
+
+### Deploy pipeline fix landed alongside
+
+The first two deploy attempts failed on `ERR_PNPM_FETCH_429` from
+registry.npmjs.org. Root cause: `medusa build` emits a package.json with **no
+lockfile**, so the `.medusa/server` install re-resolves ~1,150 packages against
+the live registry on every build. Railway's builders egress from shared IPs that
+npm throttles.
+
+Fixed by dropping `network-concurrency` to 2 with 8 retries plus
+`--prefer-offline` (verified against a *cold* pnpm store: ~62s). `--offline` is
+not an option — the re-resolution pulls transitive versions the lockfile never
+pinned (`glob@13.0.6` → `minimatch@10.2.6`).
+
+⚠️ **That re-resolution is also a reproducibility hole**: 1,062 of 1,226 packages
+came from the store and ~164 were fetched fresh, so a deploy can ship dependency
+versions CI never tested. Installing from the workspace lockfile (`pnpm deploy`)
+is the real fix and is not done yet.
+
 ## 8. Method note
 
 Everything here is reproducible:

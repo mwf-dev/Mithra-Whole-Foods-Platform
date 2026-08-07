@@ -103,11 +103,16 @@ before claiming anything is absent — the honest summary:
   change. ⚠️ §9b's "don't change deployment topology" ruling was about the
   **Vercel↔Railway** hop and is still correct — Railway↔Neon is a different
   link and was never measured. See `docs/SPEED_BENCHMARK_2026-08-06.md`.
-- **⚠️ Much of the 2026-08-01/02 optimization work is uncommitted** (44 modified
-  + 88 untracked files as of 2026-08-06; every branch's last commit is
-  2026-07-30). The live site does **not** have the Cloudinary image fix,
-  `resilient-fetch`, the health probe or the observability pipeline. Before
-  debugging "the optimizations didn't help", check whether they shipped.
+- **Deployment is manual on Vercel.** Vercel's GitHub integration stopped
+  registering deployments after 2026-07-21 — Production deploys since then have
+  all been `vercel --prod` from a laptop. Railway *does* auto-deploy from
+  `dev` (gated on CI). Pushing to `main` alone deploys **nothing**; fast-forward
+  `dev` too, then run `vercel --prod` for the storefront until the Git
+  integration is reconnected.
+- **The 2026-08-01/02 optimization work shipped 2026-08-07** (commit `8e11d71`).
+  Homepage transfer went **21.1 MB → 0.98 MB** as a result. Storefront
+  `/health` returns the deployed commit — use it to check what is actually live
+  before debugging "the optimizations didn't help".
 
 ## Frontend performance invariants (learned 2026-08-01)
 
