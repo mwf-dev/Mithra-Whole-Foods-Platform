@@ -69,4 +69,43 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+/**
+ * Sentry build integration.
+ *
+ * Source-map upload is gated on the org/project/token trio actually being
+ * present. Without them the plugin still runs but uploads nothing, so a build
+ * never fails because a secret is missing — which matters because CI and
+ * preview deploys legitimately won't have `SENTRY_AUTH_TOKEN`.
+ */
+const { withSentryConfig } = require("@sentry/nextjs")
+
+const hasSentryUploadCreds = Boolean(
+  process.env.SENTRY_ORG &&
+    process.env.SENTRY_PROJECT &&
+    process.env.SENTRY_AUTH_TOKEN
+)
+
+module.exports = withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Keep build logs readable; the plugin is chatty by default.
+  silent: !process.env.CI,
+
+  // Only do the expensive work when it can actually succeed.
+  sourcemaps: { disable: !hasSentryUploadCreds },
+
+  // Routes Sentry's browser requests through the app's own origin so ad
+  // blockers don't silently drop error reports — the exact failure mode that
+  // makes client-side error tracking untrustworthy. Requires the `monitoring`
+  // exclusion in src/middleware.ts, or the region redirect eats it.
+  tunnelRoute: "/monitoring",
+
+  webpack: {
+    // Strips Sentry's own debug logging from the client bundle.
+    treeshake: { removeDebugLogging: true },
+    // Vercel Cron / uptime monitors are not in use yet; skip the extra work.
+    automaticVercelMonitors: false,
+  },
+})

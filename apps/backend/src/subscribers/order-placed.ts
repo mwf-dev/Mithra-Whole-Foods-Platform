@@ -1,12 +1,20 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import * as crypto from "crypto"
+import { trackOrderCompleted } from "../lib/analytics"
+import { reportError } from "../lib/observability"
 
 /**
  * When an order is placed:
- *  1. the customer gets a confirmation email (SENDGRID_ORDER_PLACED_TEMPLATE_ID)
- *  2. the admin gets a "new order" alert (ADMIN_NOTIFICATION_EMAIL) so
+ *  1. the authoritative `order_completed` analytics event is emitted
+ *  2. the customer gets a confirmation email (SENDGRID_ORDER_PLACED_TEMPLATE_ID)
+ *  3. the admin gets a "new order" alert (ADMIN_NOTIFICATION_EMAIL) so
  *     non-technical staff never have to poll the dashboard
+ *
+ * Ordering matters: analytics runs **before** the notification module is
+ * resolved. That module is absent whenever `SENDGRID_API_KEY` is unset — the
+ * state this project currently ships in — and it used to `return` early, which
+ * would have silently taken revenue reporting down with the emails.
  *
  * Emails require the SendGrid notification module (SENDGRID_API_KEY). Without
  * it — or without template ids — this logs and returns; order placement is
@@ -38,16 +46,6 @@ export default async function orderPlacedHandler({
     },
   })
 
-  let notifications: any
-  try {
-    notifications = container.resolve(Modules.NOTIFICATION)
-  } catch {
-    logger.warn(
-      "[order-placed] notification module not configured (set SENDGRID_API_KEY); skipping order emails"
-    )
-    return
-  }
-
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const {
     data: [order],
@@ -57,6 +55,7 @@ export default async function orderPlacedHandler({
       "id",
       "display_id",
       "email",
+      "customer_id",
       "currency_code",
       "created_at",
       "total",
@@ -66,6 +65,7 @@ export default async function orderPlacedHandler({
       "items.product_title",
       "items.quantity",
       "items.total",
+      "shipping_methods.name",
       "shipping_address.first_name",
       "shipping_address.last_name",
       "shipping_address.address_1",
@@ -80,6 +80,57 @@ export default async function orderPlacedHandler({
 
   if (!order) {
     logger.error(`[order-placed] order ${data.id} not found`)
+    reportError(new Error(`Order ${data.id} not found after order.placed`), {
+      scope: "subscriber.order-placed",
+      extra: { orderId: data.id },
+    })
+    return
+  }
+
+  // ---- authoritative revenue event ------------------------------------
+  // Awaited so the flush completes before the handler returns — a worker
+  // process can exit immediately afterwards and drop a buffered event.
+  // Wrapped because analytics must never affect order placement.
+  try {
+    await trackOrderCompleted(order.customer_id || order.id, {
+      order_id: order.id,
+      order_number: customOrderNumber,
+      display_id: order.display_id ?? null,
+      total: Number(order.total ?? 0),
+      subtotal: Number(order.subtotal ?? 0),
+      shipping_total: Number(order.shipping_total ?? 0),
+      currency: order.currency_code || "usd",
+      item_count:
+        order.items?.reduce(
+          (acc: number, i: any) => acc + Number(i?.quantity ?? 0),
+          0
+        ) ?? 0,
+      items:
+        order.items?.map((i: any) => ({
+          title: i?.product_title || i?.title,
+          quantity: Number(i?.quantity ?? 0),
+        })) ?? [],
+      shipping_option: order.shipping_methods?.[0]?.name ?? null,
+      // Coarse location only — feeds the Exton local-delivery zone sizing in
+      // docs/SHIPPING_AUTOMATION_RESEARCH.md. No street address, no name.
+      postal_code: order.shipping_address?.postal_code ?? null,
+    })
+  } catch (e) {
+    reportError(e, {
+      scope: "subscriber.order-placed.analytics",
+      level: "warning",
+      extra: { orderId: order.id },
+    })
+  }
+
+  // ---- emails ---------------------------------------------------------
+  let notifications: any
+  try {
+    notifications = container.resolve(Modules.NOTIFICATION)
+  } catch {
+    logger.warn(
+      "[order-placed] notification module not configured (set SENDGRID_API_KEY); skipping order emails"
+    )
     return
   }
 

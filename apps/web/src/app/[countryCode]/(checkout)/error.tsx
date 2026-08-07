@@ -1,5 +1,6 @@
 "use client"
 
+import { reportError } from "@lib/observability/report"
 import Link from "next/link"
 import { useEffect } from "react"
 
@@ -11,7 +12,11 @@ export default function CheckoutError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("Checkout error boundary:", error)
+    // Highest-severity boundary in the app: whatever landed here cost a sale.
+    reportError(error, {
+      scope: "boundary.checkout",
+      extra: { digest: error.digest },
+    })
   }, [error])
 
   return (

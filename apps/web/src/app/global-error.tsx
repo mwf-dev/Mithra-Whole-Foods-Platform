@@ -1,7 +1,14 @@
 "use client"
 
+import * as Sentry from "@sentry/nextjs"
+import { useEffect } from "react"
+
 // Last-resort boundary: replaces the root layout when it crashes, so this
 // must render a complete HTML document with no app dependencies.
+//
+// Reports via the Sentry SDK directly rather than through
+// `@lib/observability/report` — if the root layout is broken, the fewer of our
+// own modules this file depends on, the better its odds of running at all.
 export default function GlobalError({
   error,
   reset,
@@ -9,7 +16,14 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  console.error("Global error boundary:", error)
+  useEffect(() => {
+    console.error("Global error boundary:", error)
+    Sentry.captureException(error, {
+      level: "fatal",
+      tags: { scope: "boundary.global" },
+      extra: { digest: error.digest },
+    })
+  }, [error])
 
   return (
     <html lang="en">

@@ -1,5 +1,6 @@
 "use client"
 
+import { reportError } from "@lib/observability/report"
 import Link from "next/link"
 import { useEffect } from "react"
 
@@ -11,7 +12,12 @@ export default function MainError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("Storefront error boundary:", error)
+    // `digest` is the only handle on the corresponding server-side error, so it
+    // has to travel with the report or the two can't be matched up.
+    reportError(error, {
+      scope: "boundary.main",
+      extra: { digest: error.digest },
+    })
   }, [error])
 
   return (
