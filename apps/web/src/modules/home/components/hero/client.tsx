@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import { safeCssUrl } from "@lib/util/safe-css-url";
 
@@ -98,20 +99,32 @@ function HeroImage({
   }
 
   return (
-    <div className={`relative w-full ${HERO_ASPECT}`}>
+    <div
+      className={`relative w-full ${HERO_ASPECT} flex items-center justify-center`}
+    >
+      {/*
+        Intrinsically sized rather than `fill`, so the <img> element is exactly
+        the visible banner — which is what lets `rounded-2xl` round the real
+        image edges. With `fill` + `object-contain` the element still spans the
+        whole box, so the radius landed on empty letterbox area and the banner
+        itself stayed square-cornered.
+
+        `h-full w-auto` pins every slide to the same height and lets width
+        follow the image's own ratio: nothing is cropped, and the box never
+        resizes between slides. `max-w-full` is the guard for a banner uploaded
+        taller than the box; `object-contain` keeps it undistorted if it hits.
+        The width/height props are only the intrinsic hint next/image requires —
+        CSS decides the rendered size.
+      */}
       <Image
         src={safeSrc}
         alt={alt}
-        fill
+        width={1920}
+        height={1080}
         sizes="100vw"
         priority={priority}
         quality={75}
-        // `contain`, not `cover`. `cover` filled the box by cropping whatever
-        // did not fit, which ate the top and bottom of the artwork — including
-        // the logo lockup some banners carry. `contain` scales the banner to
-        // fit inside the fixed box instead, so every slide is shown whole and
-        // no slide changes the layout, whatever shape it was uploaded at.
-        className="object-contain"
+        className="h-full w-auto max-w-full object-contain rounded-2xl"
       />
     </div>
   );
@@ -222,10 +235,15 @@ export function HeroClient({
     // Full-bleed background, contained foreground. The banner is centred and
     // capped at the same max width the rest of the page uses, so on a wide
     // monitor it reads as a deliberate card rather than an edge-to-edge image
-    // that runs past the fold. Rounded + clipped from `md` up, where the box
-    // no longer spans the full width.
+    // that runs past the fold. The corner radius lives on the <img> itself
+    // (see HeroImage) — the banner does not fill this box, so rounding the box
+    // would round empty space instead of the artwork.
     <section className="relative w-full flex flex-col items-center bg-[#f0f4f0]">
-      <div className="relative mx-auto w-full max-w-[1440px] grid grid-cols-1 grid-rows-1 overflow-hidden md:px-6 md:py-6 [&>*]:md:rounded-2xl [&>*]:md:overflow-hidden">
+      <div
+        id="hero-carousel"
+        aria-live="polite"
+        className="relative mx-auto w-full max-w-[1440px] grid grid-cols-1 grid-rows-1 md:px-6 md:py-6"
+      >
         {hasBanners ? (
           banners.map((b, i) => (
             <div
@@ -260,6 +278,38 @@ export function HeroClient({
           </div>
         )}
       </div>
+
+      {/*
+        Manual prev/next. These sit in the gutters either side of the banner —
+        the space `object-contain` leaves when a slide is narrower than the box.
+        Auto-advance is untouched; this only adds a way to drive it by hand.
+
+        Rendered outside the slide grid so they are not inside the <a> that
+        wraps each banner: nested interactive elements are invalid, and a click
+        would otherwise navigate to the product page instead of changing slide.
+      */}
+      {slideCount > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setSlide((s) => (s - 1 + slideCount) % slideCount)}
+            aria-label="Previous banner"
+            aria-controls="hero-carousel"
+            className="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 md:h-11 md:w-11 place-items-center rounded-full bg-white/80 text-[#2E5C31] shadow-md backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5C31]"
+          >
+            <ChevronLeft size={22} strokeWidth={2} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSlide((s) => (s + 1) % slideCount)}
+            aria-label="Next banner"
+            aria-controls="hero-carousel"
+            className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 md:h-11 md:w-11 place-items-center rounded-full bg-white/80 text-[#2E5C31] shadow-md backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5C31]"
+          >
+            <ChevronRight size={22} strokeWidth={2} aria-hidden />
+          </button>
+        </>
+      )}
 
       {/* Slide indicators */}
       {slideCount > 1 && (
