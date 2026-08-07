@@ -182,10 +182,9 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  // Returns the updated cart so the client can adopt it directly. Medusa
-  // already sends the authoritative cart back on the mutation response —
-  // throwing it away is what forced `router.refresh()` in cart-context, and
-  // that refresh wipes the entire client Router Cache (every prefetch with it).
+  // Returns the updated cart so the client can adopt it directly, instead of
+  // the caller having to call `router.refresh()` — that refresh wipes the
+  // entire client Router Cache (every prefetch with it) and re-runs the layout.
   return sdk.store.cart
     .createLineItem(
       cart.id,
@@ -196,13 +195,20 @@ export async function addToCart({
       {},
       headers
     )
-    .then(async ({ cart: updated }) => {
+    .then(async () => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
 
-      return updated
+      // Re-read through `retrieveCart` rather than returning the mutation's own
+      // cart. Medusa answers a line-item mutation with the cart under its
+      // DEFAULT field selection, which omits the expansions this UI needs —
+      // `+items.total`, `*items.variant`, `+items.product_title`. Adopting that
+      // response directly rendered every line as "$0.00" with a blank variant
+      // while the summary showed the right total. `revalidateCart()` above has
+      // already dropped the cache entry, so this reads fresh.
+      return await retrieveCart(cart.id)
     })
     .catch(medusaError)
 }
@@ -232,13 +238,13 @@ export async function updateLineItem({
   // refetch the route to learn what happened.
   return sdk.store.cart
     .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async ({ cart: updated }) => {
+    .then(async () => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
 
-      return updated
+      return await retrieveCart(cartId)
     })
     .catch(medusaError)
 }
@@ -258,17 +264,16 @@ export async function deleteLineItem(lineId: string) {
     ...(await getAuthHeaders()),
   }
 
-  // `deleteLineItem` responds with `{ parent: cart }` rather than `{ cart }`.
   // See addToCart for why the cart is handed back to the caller at all.
   return sdk.store.cart
     .deleteLineItem(cartId, lineId, {}, headers)
-    .then(async ({ parent }) => {
+    .then(async () => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
 
-      return parent
+      return await retrieveCart(cartId)
     })
     .catch(medusaError)
 }
