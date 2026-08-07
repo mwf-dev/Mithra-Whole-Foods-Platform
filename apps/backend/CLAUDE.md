@@ -7,9 +7,15 @@ endpoint shapes in [/API_CONTRACTS.md](../../API_CONTRACTS.md).
 
 ## Load-bearing files
 
-- `medusa-config.ts` — DB (Neon, `ssl.rejectUnauthorized:false` — known flaw),
-  CORS from env, secrets (default to `supersecret` if unset — known flaw),
-  registers `./src/modules/homepage`. No Redis/file/payment modules.
+- `medusa-config.ts` — DB (Neon), CORS from env, secrets. ⚠️ **The three
+  "known flaw" notes that used to be here are fixed and the claim that there
+  are "No Redis/file/payment modules" is wrong.** Verified 2026-08-01: SSL uses
+  `rejectUnauthorized: true`; unset/`supersecret` secrets and missing CORS
+  **throw** outside development/test; and the `modules` array conditionally
+  registers homepage, product-review, file (Cloudinary or S3), Redis
+  cache/event-bus/workflow-engine (prod only), Stripe payment and SendGrid
+  notification. **No fulfillment module is registered** — that one really is
+  absent, so shipping falls back to `manual_manual`.
 - `src/modules/homepage/` — `models/homepage.ts` (HomepageSetting),
   `service.ts` (`MedusaService({ HomepageSetting })` auto-CRUD:
   `listHomepageSettings`, `createHomepageSettings`, `updateHomepageSettings`),
@@ -23,9 +29,17 @@ endpoint shapes in [/API_CONTRACTS.md](../../API_CONTRACTS.md).
   store/region(INR)/channel/key + 3 categories + `homepage-best-sellers`
   collection + 3 products.
 - `src/subscribers/` — `catalog-changed.ts` (storefront cache revalidation +
-  orphaned-cart cleanup), `order-placed.ts` (customer confirmation + admin
-  alert email), `shipment-created.ts` (tracking email). Email subscribers
-  no-op gracefully without SendGrid env vars.
+  orphaned-cart cleanup + search-index invalidation), `order-placed.ts`
+  (**authoritative `order_completed` analytics event**, then customer
+  confirmation + admin alert email), `shipment-created.ts` (tracking email).
+  Email subscribers no-op gracefully without SendGrid env vars.
+  ⚠️ In `order-placed.ts` the analytics call must stay **before** the
+  `Modules.NOTIFICATION` resolve — that resolve returns early whenever SendGrid
+  is unconfigured, which is the current state, and moving analytics after it
+  would silently take revenue reporting down with the emails.
+- `src/lib/observability.ts` / `src/lib/analytics.ts` — Sentry + PostHog sinks.
+  Both lazy-init and no-op without `SENTRY_DSN` / `POSTHOG_KEY`; neither ever
+  throws into a commerce flow. See `/docs/OBSERVABILITY_SETUP.md`.
 - Payments: Stripe via `@medusajs/payment-stripe` (env-gated on
   `STRIPE_API_KEY`, auto-capture, webhook `/hooks/payment/stripe_stripe`) —
   see `/docs/STRIPE_SETUP.md`. `pp_system_default` doubles as COD.
@@ -52,8 +66,12 @@ npx medusa db:generate homepage       # regenerate migration after model edit
   (no `id` injection), validates lengths/URLs, reads ordered `created_at ASC`
   and self-heals duplicate rows. GET and POST both return
   `{ homepage_settings }` (envelope normalized).
-- No `src/api/middlewares.ts` exists; admin protection is Medusa's implicit
-  `/admin/*` auth, and there is zero body validation anywhere.
+- ⚠️ **`src/api/middlewares.ts` does exist** (this line used to deny it).
+  It holds the `/auth/*` and `/store/*` rate limiters plus `authenticate()`
+  guards on review writes and invoice downloads. The store limiter is keyed by
+  `storeRateLimitKey` (`src/utils/client-ip.ts`) — read that function's comment
+  before touching it; plain IP keying makes the limit a site-wide ceiling
+  because the storefront is server-rendered.
 - Uploads land on local disk (`static/`) — ephemeral on Cloud Run until a
   GCS/S3 file module is added.
 - `test:integration:*` scripts reference a missing `integration-tests/` dir;

@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "web-prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "pnpm@9", "--filter", "medusa-next", "start"],
+      "port": 8000
+    },
+    {
       "name": "backend",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["-y", "pnpm@9", "--filter", "@dtc/backend", "dev"],

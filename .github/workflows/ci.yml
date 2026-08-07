@@ -57,6 +57,13 @@ jobs:
       - name: Typecheck
         run: pnpm --filter medusa-next run typecheck
 
+      # Unit tests only (no jsdom/component setup yet) — currently the
+      # retry/resilience layer, which is safety-critical: a wrong retry
+      # decision can duplicate a cart mutation or an order. See
+      # docs/OBSERVABILITY_SETUP.md "Known gap".
+      - name: Unit tests
+        run: pnpm --filter medusa-next test
+
   # ---------------------------------------------------------------------------
   # Backend (apps/backend): production build + unit + integration tests.
   # `medusa build` is the compile gate (same command the Railway Docker build
