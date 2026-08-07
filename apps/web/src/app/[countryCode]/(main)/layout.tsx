@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
 
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { hasDismissedWelcomePrompt } from "@lib/data/cookies"
@@ -15,6 +16,7 @@ import Chatbot from "@modules/layout/components/chatbot"
 import WelcomeSignInPrompt from "@modules/layout/components/welcome-sign-in-prompt"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
+import RouteTransitionOverlay from "@modules/layout/components/route-transition-overlay"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 
 export const metadata: Metadata = {
@@ -40,6 +42,11 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   return (
     <CartProvider initialCart={cart}>
       <CustomerProvider customer={customer}>
+      {/* Reads useSearchParams, so it needs its own Suspense boundary —
+          without one it opts the whole layout out of static rendering. */}
+      <Suspense fallback={null}>
+        <RouteTransitionOverlay />
+      </Suspense>
       <AnalyticsIdentify customerId={customer?.id} />
       <AnnouncementBar text={homepageSettings?.announcement_text} />
       <Nav />

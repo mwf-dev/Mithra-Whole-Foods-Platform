@@ -102,6 +102,14 @@ module.exports = {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        // Indeterminate progress sweep under the logo in the route-transition
+        // overlay. Indeterminate on purpose: navigation length is not knowable
+        // up front, and a bar that pretends to know is worse than one that
+        // just shows activity.
+        routeLoaderSweep: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(200%)" },
+        },
         "fade-in-right": {
           "0%": {
             opacity: "0",
