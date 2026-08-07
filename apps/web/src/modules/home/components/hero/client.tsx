@@ -22,21 +22,26 @@ interface HeroClientProps {
 
 const SLIDE_INTERVAL_MS = 6000;
 
-// Banner artwork is authored around a wide 16:9 crop. Pinning the box to that
-// ratio reserves the space before the image arrives, so the page below no
-// longer jumps once it decodes.
+// One fixed box for every slide, sized so the *whole* banner is visible.
+//
+// Two requirements pull against each other here. Banners are admin-uploaded, so
+// their aspect ratios are not guaranteed to match each other — but the carousel
+// must not resize between slides, or the page jumps on every rotation. So the
+// box height is static and the image is fitted inside it with `object-contain`
+// (see HeroImage). Nothing is ever cropped; a banner narrower or wider than the
+// box simply sits centred with the section background either side. That holds
+// however many slides get added, and whatever shape they are.
 //
 // On phones 16:9 is the right shape — the viewport is narrow, so the derived
-// height is modest. On a desktop it is not: at a 1920px-wide viewport, 16:9
-// works out to 1080px tall, so the hero alone overflowed the screen and pushed
-// everything below it out of view. From `md` up the box therefore switches to a
-// clamped height instead of a ratio: never shorter than 320px, never taller
-// than 60% of the viewport, and capped at 520px on very tall displays. That
-// keeps the whole hero — and a hint of the section beneath it — on screen at
-// any window size, which is what makes a landing page feel deliberate rather
-// than like a wall.
+// height is modest and matches how the artwork is authored. On a desktop it is
+// not: at a 1920px-wide viewport, 16:9 works out to 1080px tall, so the hero
+// alone overflowed the screen and pushed everything below it out of view. From
+// `md` up the box therefore switches to a clamped height instead of a ratio:
+// never shorter than 384px, never taller than 70% of the viewport, capped at
+// 640px on very tall displays. That is enough room to show a 16:9 banner nearly
+// full-width while still leaving the next section peeking above the fold.
 const HERO_ASPECT =
-  "aspect-[16/9] md:aspect-auto md:h-[clamp(20rem,60vh,32.5rem)]";
+  "aspect-[16/9] md:aspect-auto md:h-[clamp(24rem,70vh,40rem)]";
 
 /**
  * Banner links are admin-authored. Internal paths must carry the country code
@@ -101,7 +106,12 @@ function HeroImage({
         sizes="100vw"
         priority={priority}
         quality={75}
-        className="object-cover"
+        // `contain`, not `cover`. `cover` filled the box by cropping whatever
+        // did not fit, which ate the top and bottom of the artwork — including
+        // the logo lockup some banners carry. `contain` scales the banner to
+        // fit inside the fixed box instead, so every slide is shown whole and
+        // no slide changes the layout, whatever shape it was uploaded at.
+        className="object-contain"
       />
     </div>
   );
