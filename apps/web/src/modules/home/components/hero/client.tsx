@@ -206,7 +206,16 @@ export function HeroClient({
     return () => window.removeEventListener("message", handleMessage);
   }, [backendUrl]);
 
-  // Auto-advance the banner slider
+  // Auto-advance the banner slider.
+  //
+  // Depends on `slide` as well as `slideCount` so that *any* slide change tears
+  // the timer down and starts a fresh one. That matters for the arrows: the
+  // interval otherwise keeps running on its own schedule, so a click landing
+  // shortly before a tick got overridden almost immediately — observed live
+  // going 0 → 1 on click, then straight back to 0 about 300ms later, which
+  // reads as "the arrow is broken". Restarting means a manual change always
+  // gets the full interval before anything moves on its own. The cadence itself
+  // is unchanged.
   const slideCount = banners.length;
   useEffect(() => {
     if (slideCount < 2) {
@@ -217,7 +226,7 @@ export function HeroClient({
       SLIDE_INTERVAL_MS
     );
     return () => clearInterval(id);
-  }, [slideCount]);
+  }, [slideCount, slide]);
 
   // Every slide sits in the same grid cell and is merely faded out, so the
   // browser treats them all as in-viewport and `loading="lazy"` would not
