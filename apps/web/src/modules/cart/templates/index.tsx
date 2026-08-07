@@ -1,9 +1,13 @@
+"use client"
+
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
 import SignInPrompt from "../components/sign-in-prompt"
 import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
+import { useCart } from "@lib/context/cart-context"
+import { useCustomer } from "@lib/context/customer-context"
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Button } from "@medusajs/ui"
@@ -23,15 +27,16 @@ function getCheckoutStep(cart: HttpTypes.StoreCart) {
   }
 }
 
-const CartTemplate = ({
-  cart,
-  customer,
-  mergedIn = [],
-}: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
-  mergedIn?: MergedInItem[]
-}) => {
+/**
+ * Renders the cart from client context rather than server props.
+ *
+ * `useCart()` is the authoritative client cart — it is seeded by the `(main)`
+ * layout and updated in place by every mutation, so arriving on this page
+ * requires no backend call at all. See `src/app/[countryCode]/(main)/cart/page.tsx`.
+ */
+const CartTemplate = ({ mergedIn = [] }: { mergedIn?: MergedInItem[] }) => {
+  const { cart } = useCart()
+  const customer = useCustomer()
   const hasItems = !!cart?.items?.length
   const step = cart ? getCheckoutStep(cart) : "address"
   const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0

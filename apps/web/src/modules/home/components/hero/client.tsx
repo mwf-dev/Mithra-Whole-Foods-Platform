@@ -25,7 +25,18 @@ const SLIDE_INTERVAL_MS = 6000;
 // Banner artwork is authored around a wide 16:9 crop. Pinning the box to that
 // ratio reserves the space before the image arrives, so the page below no
 // longer jumps once it decodes.
-const HERO_ASPECT = "aspect-[16/9]";
+//
+// On phones 16:9 is the right shape — the viewport is narrow, so the derived
+// height is modest. On a desktop it is not: at a 1920px-wide viewport, 16:9
+// works out to 1080px tall, so the hero alone overflowed the screen and pushed
+// everything below it out of view. From `md` up the box therefore switches to a
+// clamped height instead of a ratio: never shorter than 320px, never taller
+// than 60% of the viewport, and capped at 520px on very tall displays. That
+// keeps the whole hero — and a hint of the section beneath it — on screen at
+// any window size, which is what makes a landing page feel deliberate rather
+// than like a wall.
+const HERO_ASPECT =
+  "aspect-[16/9] md:aspect-auto md:h-[clamp(20rem,60vh,32.5rem)]";
 
 /**
  * Banner links are admin-authored. Internal paths must carry the country code
@@ -198,8 +209,13 @@ export function HeroClient({
   const hasBanners = slideCount > 0;
 
   return (
-    <section className="relative w-full flex flex-col items-center bg-[#f0f4f0] overflow-hidden">
-      <div className="relative w-full grid grid-cols-1 grid-rows-1">
+    // Full-bleed background, contained foreground. The banner is centred and
+    // capped at the same max width the rest of the page uses, so on a wide
+    // monitor it reads as a deliberate card rather than an edge-to-edge image
+    // that runs past the fold. Rounded + clipped from `md` up, where the box
+    // no longer spans the full width.
+    <section className="relative w-full flex flex-col items-center bg-[#f0f4f0]">
+      <div className="relative mx-auto w-full max-w-[1440px] grid grid-cols-1 grid-rows-1 overflow-hidden md:px-6 md:py-6 [&>*]:md:rounded-2xl [&>*]:md:overflow-hidden">
         {hasBanners ? (
           banners.map((b, i) => (
             <div

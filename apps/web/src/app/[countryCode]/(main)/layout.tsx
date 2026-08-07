@@ -6,6 +6,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 import { getHomepageSettings } from "@lib/data/homepage"
 import { getBaseURL } from "@lib/util/env"
 import { CartProvider } from "@lib/context/cart-context"
+import { CustomerProvider } from "@lib/context/customer-context"
 import { AnalyticsIdentify } from "@lib/analytics/provider"
 import { StoreCartShippingOption } from "@medusajs/types"
 import { AnnouncementBar } from "@modules/home/components/announcement-bar"
@@ -38,6 +39,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <CartProvider initialCart={cart}>
+      <CustomerProvider customer={customer}>
       <AnalyticsIdentify customerId={customer?.id} />
       <AnnouncementBar text={homepageSettings?.announcement_text} />
       <Nav />
@@ -58,6 +60,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
       {/* Guests only, and only until they wave it away. */}
       {!customer && !welcomeDismissed && <WelcomeSignInPrompt />}
+      </CustomerProvider>
     </CartProvider>
   )
 }

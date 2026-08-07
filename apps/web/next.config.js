@@ -13,6 +13,27 @@ const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
  */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    /**
+     * How long a prefetched RSC payload stays usable in the client Router Cache.
+     *
+     * Next 15 defaults `dynamic` to 0, which means prefetched payloads for
+     * dynamic routes are thrown away the instant they arrive. Every route here
+     * is dynamic (the `(main)` layout reads cookies), so with the default the
+     * `<Link>` prefetching that Next does on hover/viewport was pure waste —
+     * the payload was fetched, discarded, then fetched again on click. That is
+     * a large part of why every click felt like a full page load.
+     *
+     * 30s is deliberately short: cart and customer state live in client
+     * context and are not read from these payloads, so the risk of showing
+     * stale data is low, while 30s comfortably covers "hover the link, then
+     * click it".
+     */
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   logging: {
     fetches: {
       fullUrl: true,

@@ -85,6 +85,12 @@ const CartDropdown = ({
           <LocalizedClientLink
             className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors"
             href="/cart"
+            // The cart page renders from client context, so its RSC payload is
+            // tiny and never goes stale in a way that matters. Prefetching it
+            // eagerly (rather than Next's viewport default) means the click has
+            // nothing left to fetch — combined with `staleTimes.dynamic` in
+            // next.config.js, this is what makes "go to cart" feel local.
+            prefetch
             data-testid="nav-cart-link"
           >
             <div className="relative bg-[#f8f8f8] p-2.5 rounded-full">

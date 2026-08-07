@@ -182,7 +182,11 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
+  // Returns the updated cart so the client can adopt it directly. Medusa
+  // already sends the authoritative cart back on the mutation response —
+  // throwing it away is what forced `router.refresh()` in cart-context, and
+  // that refresh wipes the entire client Router Cache (every prefetch with it).
+  return sdk.store.cart
     .createLineItem(
       cart.id,
       {
@@ -192,11 +196,13 @@ export async function addToCart({
       {},
       headers
     )
-    .then(async () => {
+    .then(async ({ cart: updated }) => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+
+      return updated
     })
     .catch(medusaError)
 }
@@ -222,13 +228,17 @@ export async function updateLineItem({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
+  // See addToCart — the updated cart is returned so the client never has to
+  // refetch the route to learn what happened.
+  return sdk.store.cart
     .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async () => {
+    .then(async ({ cart: updated }) => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+
+      return updated
     })
     .catch(medusaError)
 }
@@ -248,13 +258,17 @@ export async function deleteLineItem(lineId: string) {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
+  // `deleteLineItem` responds with `{ parent: cart }` rather than `{ cart }`.
+  // See addToCart for why the cart is handed back to the caller at all.
+  return sdk.store.cart
     .deleteLineItem(cartId, lineId, {}, headers)
-    .then(async () => {
+    .then(async ({ parent }) => {
       await revalidateCart()
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+
+      return parent
     })
     .catch(medusaError)
 }

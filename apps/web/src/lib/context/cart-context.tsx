@@ -8,7 +8,6 @@ import {
 import { track } from "@lib/analytics/client"
 import { messageOf, reportError, statusOf } from "@lib/observability/report"
 import { HttpTypes } from "@medusajs/types"
-import { useRouter } from "next/navigation"
 import {
   createContext,
   useCallback,
@@ -25,10 +24,13 @@ import {
  * The whole point: the UI reacts in milliseconds. Every mutation is applied to
  * a local optimistic copy of the cart *first* (so the nav badge, dropdown and
  * cart page update instantly), then the real Medusa server action runs behind
- * it. Server actions revalidate the `carts` cache tag, so once the request
- * resolves Next.js streams a fresh RSC payload and `initialCart` is replaced
- * with the authoritative cart — React's `useOptimistic` then drops the
- * optimistic diff automatically.
+ * it. The action returns the authoritative cart, which is adopted as the new
+ * base state — React's `useOptimistic` then drops the optimistic diff
+ * automatically.
+ *
+ * This context is the single source of truth for the cart on the client. Any
+ * surface that shows cart contents should read `useCart()` rather than take a
+ * server prop, so that navigating to it costs nothing.
  *
  * If the backend rejects the mutation, the optimistic state is discarded when
  * the transition ends (reverting the UI) and `error` is surfaced so the caller
@@ -132,28 +134,41 @@ export function CartProvider({
 }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [cart, applyOptimistic] = useOptimistic(initialCart, cartReducer)
-  const router = useRouter()
-  const clearError = useCallback(() => setError(null), [])
 
   /**
-   * `revalidateTag` in the server action only invalidates the *server* fetch
-   * cache for the route that was active when the action was dispatched. If the
-   * shopper navigates while the request is in flight — add an item, immediately
-   * hit "Go to cart" — the destination's RSC payload is fetched mid-race and
-   * lands in the client router cache holding the pre-mutation cart. Nothing
-   * evicts it (`initialCart` comes from the layout, which does not re-render on
-   * client-side navigation), so the item stays invisible until a manual reload.
+   * The client owns the cart.
    *
-   * `router.refresh()` clears the whole client router cache, which is what
-   * actually fixes it. It must be unconditional: gating it on "did the route
-   * change?" does not work, because the action typically resolves *before* the
-   * navigation commits, so the route still reads as the old one.
+   * This used to read `initialCart` (a layout prop) directly and call
+   * `router.refresh()` after every mutation to pull the new value back. That
+   * worked, but `router.refresh()` wipes the *entire* client Router Cache —
+   * every prefetched route with it — and re-runs the `(main)` layout, which
+   * costs 4-5 backend calls. It was roughly 6.5 `/store/*` requests per
+   * add-to-cart, and it is why clicking "Cart" right after adding an item paid
+   * a full server round trip instead of rendering from data the browser
+   * already had.
    *
-   * Cost is one extra RSC payload per mutation, fetched in the background — the
-   * optimistic UI has already updated, so no one waits on it.
+   * Instead the mutation actions now return Medusa's authoritative cart (it was
+   * always in the response, just discarded), and we adopt it here. No route
+   * refetch, no cache eviction, so prefetches survive and navigation is local.
    */
-  const refreshAfterMutation = useCallback(() => router.refresh(), [router])
+  const [serverCart, setServerCart] = useState<Cart | null>(initialCart)
+
+  /**
+   * A full page load (or any navigation that re-runs the layout) produces a
+   * fresh `initialCart`. Adopt it — but only when it is genuinely a different
+   * cart, otherwise this would clobber a newer cart we just got back from a
+   * mutation with a staler server render.
+   */
+  useEffect(() => {
+    setServerCart((current) => {
+      if (!initialCart) return current === null ? current : initialCart
+      if (!current) return initialCart
+      return initialCart.id !== current.id ? initialCart : current
+    })
+  }, [initialCart])
+
+  const [cart, applyOptimistic] = useOptimistic(serverCart, cartReducer)
+  const clearError = useCallback(() => setError(null), [])
 
   const currency = cart?.currency_code ?? "usd"
 
@@ -216,7 +231,12 @@ export function CartProvider({
       startTransition(async () => {
         applyOptimistic({ type: "add", item: optimisticItem })
         try {
-          await addToCartAction({ variantId, quantity, countryCode })
+          const updated = await addToCartAction({
+            variantId,
+            quantity,
+            countryCode,
+          })
+          if (updated) setServerCart(updated)
           track("cart_item_added", {
             variant_id: variantId,
             product_title: seed?.product_title ?? seed?.title ?? null,
@@ -226,14 +246,13 @@ export function CartProvider({
             currency,
             source,
           })
-          refreshAfterMutation()
         } catch (e: any) {
           const message = reportMutationFailure("add", e, { variantId })
           setError(message || "Couldn't add this item. Please try again.")
         }
       })
     },
-    [applyOptimistic, refreshAfterMutation, reportMutationFailure, currency]
+    [applyOptimistic, reportMutationFailure, currency]
   )
 
   const updateItem = useCallback<CartContextValue["updateItem"]>(
@@ -246,13 +265,13 @@ export function CartProvider({
       startTransition(async () => {
         applyOptimistic({ type: "update", lineId, quantity })
         try {
-          await updateLineItemAction({ lineId, quantity })
+          const updated = await updateLineItemAction({ lineId, quantity })
+          if (updated) setServerCart(updated)
           track("cart_quantity_changed", {
             line_id: lineId,
             quantity,
             previous_quantity: previousQuantity,
           })
-          refreshAfterMutation()
         } catch (e: any) {
           const message = reportMutationFailure("update", e, { lineId })
           setError(message || "Couldn't update quantity. Please try again.")
@@ -261,7 +280,6 @@ export function CartProvider({
     },
     [
       applyOptimistic,
-      refreshAfterMutation,
       reportMutationFailure,
       cart?.items,
     ]
@@ -275,13 +293,13 @@ export function CartProvider({
       startTransition(async () => {
         applyOptimistic({ type: "delete", lineId })
         try {
-          await deleteLineItemAction(lineId)
+          const updated = await deleteLineItemAction(lineId)
+          if (updated) setServerCart(updated)
           track("cart_item_removed", {
             line_id: lineId,
             variant_id: removed?.variant_id ?? null,
             quantity: removed?.quantity ?? 0,
           })
-          refreshAfterMutation()
         } catch (e: any) {
           const message = reportMutationFailure("delete", e, { lineId })
           setError(message || "Couldn't remove this item. Please try again.")
@@ -290,7 +308,6 @@ export function CartProvider({
     },
     [
       applyOptimistic,
-      refreshAfterMutation,
       reportMutationFailure,
       cart?.items,
     ]
