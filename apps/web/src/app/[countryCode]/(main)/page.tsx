@@ -8,6 +8,7 @@ import { PromoCards } from "@modules/home/components/promo-cards"
 import { getHomepageSettings } from "@lib/data/homepage"
 import { getRegion } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
+import { swallow } from "@lib/observability/report"
 
 export const metadata: Metadata = {
   title: "Mithra Whole Foods",
@@ -30,11 +31,13 @@ export default async function Home(props: {
       pageParam: 1,
       queryParams: { limit: 12 },
       countryCode,
-    }).catch((e) => {
-      console.error("LIST PRODUCTS ERROR:", e)
-      return { response: { products: [] } }
-    }),
-    listCategories().catch(() => []),
+    }).catch(
+      swallow(
+        { response: { products: [], count: 0 }, nextPage: null },
+        "home.listProducts"
+      )
+    ),
+    listCategories().catch(swallow([], "home.listCategories")),
   ])
 
   const { response: { products } } = productsResult

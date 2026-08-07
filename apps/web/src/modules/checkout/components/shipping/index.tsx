@@ -1,6 +1,8 @@
 "use client"
 
 import { Radio, RadioGroup } from "@headlessui/react"
+import { track } from "@lib/analytics/client"
+import { reportError } from "@lib/observability/report"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
@@ -123,6 +125,7 @@ const Shipping: React.FC<ShippingProps> = ({
   }
 
   const handleSubmit = () => {
+    track("checkout_step_completed", { step: "delivery", cart_id: cart.id })
     router.push(pathname + "?step=payment", { scroll: false })
   }
 
@@ -146,10 +149,27 @@ const Shipping: React.FC<ShippingProps> = ({
     })
 
     await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
+      .then(() => {
+        // Which delivery method shoppers actually pick is the input that
+        // decides the shipping roadmap — whether local delivery or national
+        // parcel is the real business. See docs/SHIPPING_AUTOMATION_RESEARCH.md.
+        const option = availableShippingMethods?.find((sm) => sm.id === id)
+        track("shipping_option_selected", {
+          cart_id: cart.id,
+          option_id: id,
+          option_name: option?.name ?? null,
+          price: option?.amount ?? calculatedPricesMap[id] ?? null,
+          is_pickup: variant === "pickup",
+        })
+      })
       .catch((err) => {
         setShippingMethodId(currentId)
 
         setError(err.message)
+        reportError(err, {
+          scope: "checkout.setShippingMethod",
+          extra: { cartId: cart.id, optionId: id },
+        })
       })
       .finally(() => {
         setIsLoading(false)

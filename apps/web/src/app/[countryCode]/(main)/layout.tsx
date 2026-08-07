@@ -6,6 +6,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 import { getHomepageSettings } from "@lib/data/homepage"
 import { getBaseURL } from "@lib/util/env"
 import { CartProvider } from "@lib/context/cart-context"
+import { AnalyticsIdentify } from "@lib/analytics/provider"
 import { StoreCartShippingOption } from "@medusajs/types"
 import { AnnouncementBar } from "@modules/home/components/announcement-bar"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
@@ -37,6 +38,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <CartProvider initialCart={cart}>
+      <AnalyticsIdentify customerId={customer?.id} />
       <AnnouncementBar text={homepageSettings?.announcement_text} />
       <Nav />
       {customer && cart && (

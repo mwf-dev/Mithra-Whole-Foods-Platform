@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import { listCategories } from "@lib/data/categories"
+import { swallow } from "@lib/observability/report"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RefinementList from "@modules/store/components/refinement-list"
 import MobileCategoryFilter from "@modules/store/components/refinement-list/mobile-category-filter"
@@ -23,7 +24,9 @@ const StoreTemplate = async ({
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
 
-  const categories = await listCategories().catch(() => [])
+  const categories = await listCategories().catch(
+    swallow([], "store.listCategories")
+  )
   const topLevel = (categories ?? [])
     .filter((c) => !c.parent_category)
     .map((c) => ({ id: c.id, name: c.name, count: c.products?.length ?? 0 }))

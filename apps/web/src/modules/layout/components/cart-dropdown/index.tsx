@@ -150,7 +150,12 @@ const CartDropdown = ({
                                     href={`/products/${item.product_handle}`}
                                     data-testid="product-link"
                                   >
-                                    {item.title}
+                                    {/* `item.title` is the *variant* title,
+                                        which is "Default" for every
+                                        single-variant product in this
+                                        catalogue. The cart page already uses
+                                        product_title; this matches it. */}
+                                    {item.product_title ?? item.title}
                                   </LocalizedClientLink>
                                 </h3>
                                 <LineItemOptions

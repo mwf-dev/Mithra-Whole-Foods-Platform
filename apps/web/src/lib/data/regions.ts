@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { reportError } from "@lib/observability/report"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies"
 
@@ -61,6 +62,13 @@ export const getRegion = async (countryCode: string) => {
 
     return region
   } catch (e: any) {
+    // A missing region is fatal for rendering — pages that call this bail to
+    // `notFound()` or return null, so an outage here is what turns the whole
+    // storefront into a blank page. Always report it.
+    reportError(e, {
+      scope: "lib/data/regions.getRegion",
+      extra: { countryCode },
+    })
     return null
   }
 }

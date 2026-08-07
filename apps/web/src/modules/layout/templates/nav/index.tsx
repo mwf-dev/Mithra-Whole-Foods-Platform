@@ -4,6 +4,7 @@ import { listRegions } from "@lib/data/regions"
 import { listLocales } from "@lib/data/locales"
 import { getLocale } from "@lib/data/locale-actions"
 import { listCategories } from "@lib/data/categories"
+import { swallow } from "@lib/observability/report"
 import { StoreRegion } from "@medusajs/types"
 import { Heart, User, ShoppingCart } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -18,7 +19,7 @@ export default async function Nav() {
     listRegions().then((regions: StoreRegion[]) => regions),
     listLocales(),
     getLocale(),
-    listCategories().catch(() => []),
+    listCategories().catch(swallow([], "nav.listCategories")),
   ])
 
   // Surface every top-level category that actually has products, so the

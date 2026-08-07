@@ -157,6 +157,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    // `monitoring` is Sentry's tunnel route (see `tunnelRoute` in
+    // next.config.js) and `health` is the uptime probe. Both must bypass the
+    // country-code redirect — rewriting them to `/us/monitoring` would break
+    // error reporting, and make the health check report on the redirect
+    // instead of the app.
+    "/((?!api|monitoring|health|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
   ],
 }

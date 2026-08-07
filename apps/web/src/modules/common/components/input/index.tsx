@@ -41,6 +41,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div className="flex relative z-0 w-full txt-compact-medium">
           <input
             type={inputType}
+            // `htmlFor` below resolves against `id`, not `name`. Without this
+            // every field in login, register, address and checkout reported a
+            // blank accessible name — screen readers announced "edit, blank"
+            // and password managers lost their strongest autofill signal.
+            id={name}
             name={name}
             placeholder=" "
             required={required}

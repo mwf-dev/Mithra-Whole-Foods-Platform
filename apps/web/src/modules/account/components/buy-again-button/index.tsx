@@ -33,6 +33,7 @@ export default function BuyAgainButton({ items }: { items: BuyAgainItem[] }) {
         variantId: item.variant_id,
         quantity: item.quantity,
         countryCode,
+        source: "buy_again",
         seed: {
           title: item.title ?? undefined,
           product_title: item.product_title ?? undefined,

@@ -3,6 +3,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import TrackEvent from "@lib/analytics/track-event"
 import { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 
@@ -39,6 +40,16 @@ export default async function Checkout({
 
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
+      <TrackEvent
+        name="checkout_started"
+        properties={{
+          cart_id: cart.id,
+          item_count:
+            cart.items?.reduce((acc, i) => acc + i.quantity, 0) ?? 0,
+          subtotal: cart.subtotal ?? null,
+          currency: cart.currency_code,
+        }}
+      />
       <PaymentWrapper cart={cart}>
         <CheckoutForm cart={cart} customer={customer} />
       </PaymentWrapper>

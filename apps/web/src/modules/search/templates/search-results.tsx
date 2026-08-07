@@ -6,6 +6,7 @@ import ProductPreview from "@modules/products/components/product-preview"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import TrackEvent from "@lib/analytics/track-event"
 import { SearchX } from "lucide-react"
 
 const PRODUCT_LIMIT = 12
@@ -27,8 +28,9 @@ export default async function SearchResults({
     return null
   }
 
-  // Meilisearch ranks the matches (typo-tolerant, relevance-ordered); Medusa
-  // then hydrates those ids with region-correct pricing.
+  // The in-process search engine (apps/backend/src/lib/product-search.ts)
+  // ranks the matches — typo-tolerant, relevance-ordered, with curated synonym
+  // groups. Medusa then hydrates those ids with region-correct pricing.
   const { productIds, count } = await searchProductIds({
     q: query,
     limit: PRODUCT_LIMIT,
@@ -38,6 +40,15 @@ export default async function SearchResults({
   if (count === 0 || productIds.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-20 gap-4">
+        {/* Zero-result queries are the highest-value signal this store can
+            collect: they say what to stock, and what to add to the backend's
+            SYNONYM_GROUPS. Reported as its own event so it's trivially
+            filterable, on top of the search_performed below. */}
+        <TrackEvent
+          name="search_performed"
+          properties={{ query, result_count: 0 }}
+        />
+        <TrackEvent name="search_no_results" properties={{ query }} />
         <div className="bg-[#F3F7F4] text-[#2E5C31] rounded-full p-5">
           <SearchX size={32} strokeWidth={1.5} />
         </div>
@@ -84,6 +95,10 @@ export default async function SearchResults({
 
   return (
     <>
+      <TrackEvent
+        name="search_performed"
+        properties={{ query, result_count: count }}
+      />
       <p className="text-ui-fg-subtle text-sm mb-6" aria-live="polite">
         {count} result{count === 1 ? "" : "s"}
       </p>

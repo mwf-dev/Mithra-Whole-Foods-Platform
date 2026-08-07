@@ -49,6 +49,7 @@ export default function AddToCartButton({
       variantId: variantId!,
       quantity: 1,
       countryCode,
+      source: "product_card",
       seed: {
         title,
         product_title: title,

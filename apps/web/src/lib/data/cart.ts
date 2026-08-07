@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { reportError, statusOf } from "@lib/observability/report"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -43,8 +44,12 @@ async function revalidateCart(cartId?: string) {
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
+  // `+subtotal` and `+items.product_title` are load-bearing for the header cart
+  // dropdown: without them it rendered the *variant* title ("Default") and a
+  // subtotal of 0 next to a non-zero line item. They are computed fields on a
+  // call the storefront already makes, so this costs no extra round trip.
   fields ??=
-    "*items, *region, *items.product, *items.variant, +items.variant.inventory_quantity, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *items.product, *items.variant, +items.variant.inventory_quantity, *items.thumbnail, *items.metadata, +items.total, +items.product_title, +subtotal, +currency_code, *promotions, +shipping_methods.name"
 
   if (!id) {
     return null
@@ -69,7 +74,22 @@ export async function retrieveCart(cartId?: string, fields?: string) {
       cache: "force-cache",
     })
     .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
-    .catch(() => null)
+    .catch((e) => {
+      // Returning null is still right — a shopper with an unreadable cart
+      // should see an empty cart, not a 500. But it must not be *silent*: a
+      // cart that fails to load is how "my cart vanished" reports start, and
+      // the usual cause is a 429 from the shared rate-limit budget.
+      // A 404 is ordinary (stale cookie pointing at a completed cart).
+      const status = statusOf(e)
+      if (status !== 404) {
+        reportError(e, {
+          scope: "lib/data/cart.retrieveCart",
+          level: "warning",
+          extra: { cartId: id },
+        })
+      }
+      return null
+    })
 }
 
 /**

@@ -5,6 +5,8 @@ import {
   deleteLineItem as deleteLineItemAction,
   updateLineItem as updateLineItemAction,
 } from "@lib/data/cart"
+import { track } from "@lib/analytics/client"
+import { messageOf, reportError, statusOf } from "@lib/observability/report"
 import { HttpTypes } from "@medusajs/types"
 import { useRouter } from "next/navigation"
 import {
@@ -111,6 +113,9 @@ type CartContextValue = {
     quantity: number
     countryCode: string
     seed?: OptimisticLineItemSeed
+    /** Which surface the add came from — lets the funnel compare PDP
+     * conversion against quick-add on product cards. */
+    source?: "pdp" | "product_card" | "buy_again"
   }) => Promise<void>
   updateItem: (input: { lineId: string; quantity: number }) => Promise<void>
   deleteItem: (lineId: string) => Promise<void>
@@ -150,8 +155,50 @@ export function CartProvider({
    */
   const refreshAfterMutation = useCallback(() => router.refresh(), [router])
 
+  const currency = cart?.currency_code ?? "usd"
+
+  /**
+   * A cart mutation the backend rejected.
+   *
+   * The optimistic change has already rolled back and the shopper gets a
+   * toast — but until now that was the end of it: the failure was never
+   * recorded anywhere. That mattered because the most likely cause is the
+   * site-wide `/store/*` rate limit (see
+   * `docs/AUDIT_2026-08-01_FRONTEND_PERF.md` §1), which is invisible from the
+   * outside and looks to the shopper like the cart is broken.
+   *
+   * Reported twice on purpose: to analytics so it shows up as funnel drop-off,
+   * and to error tracking so someone gets paged.
+   */
+  const reportMutationFailure = useCallback(
+    (
+      operation: "add" | "update" | "delete",
+      error: unknown,
+      ids: { variantId?: string; lineId?: string }
+    ) => {
+      const message = messageOf(error)
+      const status = statusOf(error)
+
+      track("cart_mutation_failed", {
+        operation,
+        variant_id: ids.variantId ?? null,
+        line_id: ids.lineId ?? null,
+        message,
+        status,
+      })
+
+      reportError(error, {
+        scope: `cart.${operation}`,
+        extra: { ...ids, status },
+      })
+
+      return message
+    },
+    []
+  )
+
   const addItem = useCallback<CartContextValue["addItem"]>(
-    async ({ variantId, quantity, countryCode, seed }) => {
+    async ({ variantId, quantity, countryCode, seed, source = "pdp" }) => {
       setError(null)
       const optimisticItem = {
         id: `optimistic-${variantId}-${Date.now()}`,
@@ -170,45 +217,83 @@ export function CartProvider({
         applyOptimistic({ type: "add", item: optimisticItem })
         try {
           await addToCartAction({ variantId, quantity, countryCode })
+          track("cart_item_added", {
+            variant_id: variantId,
+            product_title: seed?.product_title ?? seed?.title ?? null,
+            product_handle: seed?.product_handle ?? null,
+            quantity,
+            price: seed?.unit_price ?? null,
+            currency,
+            source,
+          })
           refreshAfterMutation()
         } catch (e: any) {
-          setError(e?.message || "Couldn't add this item. Please try again.")
+          const message = reportMutationFailure("add", e, { variantId })
+          setError(message || "Couldn't add this item. Please try again.")
         }
       })
     },
-    [applyOptimistic, refreshAfterMutation]
+    [applyOptimistic, refreshAfterMutation, reportMutationFailure, currency]
   )
 
   const updateItem = useCallback<CartContextValue["updateItem"]>(
     async ({ lineId, quantity }) => {
       setError(null)
+      const previousQuantity = cart?.items?.find(
+        (i) => i.id === lineId
+      )?.quantity
+
       startTransition(async () => {
         applyOptimistic({ type: "update", lineId, quantity })
         try {
           await updateLineItemAction({ lineId, quantity })
+          track("cart_quantity_changed", {
+            line_id: lineId,
+            quantity,
+            previous_quantity: previousQuantity,
+          })
           refreshAfterMutation()
         } catch (e: any) {
-          setError(e?.message || "Couldn't update quantity. Please try again.")
+          const message = reportMutationFailure("update", e, { lineId })
+          setError(message || "Couldn't update quantity. Please try again.")
         }
       })
     },
-    [applyOptimistic, refreshAfterMutation]
+    [
+      applyOptimistic,
+      refreshAfterMutation,
+      reportMutationFailure,
+      cart?.items,
+    ]
   )
 
   const deleteItem = useCallback<CartContextValue["deleteItem"]>(
     async (lineId) => {
       setError(null)
+      const removed = cart?.items?.find((i) => i.id === lineId)
+
       startTransition(async () => {
         applyOptimistic({ type: "delete", lineId })
         try {
           await deleteLineItemAction(lineId)
+          track("cart_item_removed", {
+            line_id: lineId,
+            variant_id: removed?.variant_id ?? null,
+            quantity: removed?.quantity ?? 0,
+          })
           refreshAfterMutation()
         } catch (e: any) {
-          setError(e?.message || "Couldn't remove this item. Please try again.")
+          const message = reportMutationFailure("delete", e, { lineId })
+          setError(message || "Couldn't remove this item. Please try again.")
         }
       })
     },
-    [applyOptimistic, refreshAfterMutation]
+    [
+      applyOptimistic,
+      refreshAfterMutation,
+      reportMutationFailure,
+      cart?.items,
+    ]
   )
 
   return (

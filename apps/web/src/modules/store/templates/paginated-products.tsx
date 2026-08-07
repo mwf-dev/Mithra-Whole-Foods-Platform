@@ -1,5 +1,6 @@
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import TrackEvent from "@lib/analytics/track-event"
 import ProductPreview from "@modules/products/components/product-preview"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -68,6 +69,22 @@ export default async function PaginatedProducts({
 
   return (
     <>
+      <TrackEvent
+        name="product_list_viewed"
+        properties={{
+          list_type: collectionId
+            ? "collection"
+            : categoryId
+            ? "category"
+            : productsIds
+            ? "search"
+            : "store",
+          item_count: products.length,
+          category_id: categoryId ?? null,
+          sort: sortBy ?? null,
+          page,
+        }}
+      />
       <p className="text-ui-fg-subtle text-sm mb-6" aria-live="polite">
         {count} product{count === 1 ? "" : "s"}
       </p>

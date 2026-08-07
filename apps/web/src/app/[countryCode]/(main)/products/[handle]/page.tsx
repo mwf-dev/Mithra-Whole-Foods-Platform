@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
+import TrackEvent from "@lib/analytics/track-event"
 import { HttpTypes } from "@medusajs/types"
 
 type Props = {
@@ -120,12 +121,35 @@ export default async function ProductPage(props: Props) {
 
   const images = getImagesForVariant(pricedProduct, selectedVariantId)
 
+  const trackedVariant =
+    pricedProduct.variants?.find((v) => v.id === selectedVariantId) ??
+    pricedProduct.variants?.[0]
+
   return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-      images={images}
-    />
+    <>
+      <TrackEvent
+        name="product_viewed"
+        properties={{
+          product_id: pricedProduct.id!,
+          product_handle: pricedProduct.handle,
+          product_title: pricedProduct.title!,
+          variant_id: trackedVariant?.id ?? null,
+          price:
+            (trackedVariant as any)?.calculated_price?.calculated_amount ??
+            null,
+          currency: region.currency_code,
+          in_stock:
+            !trackedVariant?.manage_inventory ||
+            !!trackedVariant?.allow_backorder ||
+            (trackedVariant?.inventory_quantity ?? 0) > 0,
+        }}
+      />
+      <ProductTemplate
+        product={pricedProduct}
+        region={region}
+        countryCode={params.countryCode}
+        images={images}
+      />
+    </>
   )
 }

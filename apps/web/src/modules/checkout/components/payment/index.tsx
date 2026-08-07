@@ -1,8 +1,10 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
+import { track } from "@lib/analytics/client"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
+import { reportError } from "@lib/observability/report"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Button, Container, Heading, Text, clx } from "@medusajs/ui"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -85,6 +87,12 @@ const Payment = ({
         })
       }
 
+      track("payment_method_selected", {
+        cart_id: cart.id,
+        provider_id: selectedPaymentMethod,
+      })
+      track("checkout_step_completed", { step: "payment", cart_id: cart.id })
+
       if (!shouldInputCard) {
         return router.push(
           pathname + "?" + createQueryString("step", "review"),
@@ -95,6 +103,12 @@ const Payment = ({
       }
     } catch (err: any) {
       setError(err.message)
+      // Payment setup failing is the most expensive error in the app — it is
+      // the last step before money moves, and the shopper is already committed.
+      reportError(err, {
+        scope: "checkout.initiatePaymentSession",
+        extra: { cartId: cart.id, providerId: selectedPaymentMethod },
+      })
     } finally {
       setIsLoading(false)
     }
