@@ -1,7 +1,8 @@
 import { defineMiddlewares } from "@medusajs/medusa"
 import { authenticate } from "@medusajs/framework/http"
 import rateLimit from "express-rate-limit"
-import { clientIpKey } from "../utils/client-ip"
+import { clientIpKey, storeRateLimitKey } from "../utils/client-ip"
+import { usageMetrics } from "../utils/usage-metrics"
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -12,17 +13,37 @@ const authLimiter = rateLimit({
   keyGenerator: clientIpKey,
 })
 
+/**
+ * Store API limiter.
+ *
+ * Keyed by `storeRateLimitKey`, which buckets per *shopper* when the storefront
+ * forwards an authenticated client IP, and falls back to the request IP
+ * otherwise. Read that function's comment before changing anything here —
+ * with plain IP keying this limit is a site-wide ceiling rather than a
+ * per-abuser control, and raising the number is not the fix.
+ */
 const storeLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 150, // Limit each IP to 150 requests per windowMs
+  max: 150,
   message: "Too many requests to the store API, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: clientIpKey,
+  keyGenerator: storeRateLimitKey,
+  // The uptime probe must never be rate limited — a limiter-induced 429 on the
+  // health check would page on-call for a healthy service.
+  skip: (req: any) => req.path === "/health",
 })
 
 export default defineMiddlewares({
   routes: [
+    // Must stay FIRST so it wraps every other middleware in the chain —
+    // including the rate limiters, whose 429s are themselves a signal worth
+    // counting. Purely observational: no I/O, no per-request allocation beyond
+    // a closure. See `src/lib/request-metrics.ts`.
+    {
+      matcher: "/*",
+      middlewares: [usageMetrics],
+    },
     {
       matcher: "/auth/*",
       middlewares: [authLimiter],

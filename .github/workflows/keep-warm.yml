@@ -9,6 +9,20 @@ name: Keep backend warm
 # Inert until you add the repo secret BACKEND_HEALTHCHECK_URL
 # (e.g. https://<your-railway-app>.up.railway.app/health). GitHub cron is
 # best-effort and can be delayed 5-15 min, which is fine for keep-warm.
+# Verified 2026-08-06: the secret is NOT set, so every scheduled run currently
+# exits early without pinging anything.
+#
+# ⚠️ COST WARNING — read before setting that secret.
+# Railway bills for allocated RAM/CPU per minute the container is *running*,
+# not per request. If the service ever has Railway's "Serverless" / app-sleeping
+# enabled, this workflow defeats it completely: a ping every 10 minutes keeps
+# the container awake 24/7 and you pay the full idle rate forever. Keep-warm and
+# scale-to-zero are mutually exclusive — pick one deliberately.
+#   - Pre-launch / staging: leave the secret UNSET, enable Serverless on Railway,
+#     accept a slow first request. This is the cheap option.
+#   - Live storefront: set the secret, disable Serverless, accept the always-on
+#     bill. Cold Medusa boots are far too slow to sit in front of a shopper.
+# See docs/COST_AUDIT_2026-08-06.md.
 
 on:
   schedule:
