@@ -44,3 +44,16 @@ yarn-error.log*
 # AI Configs (do not ignore .agents directory itself since we want to share instructions, just scratch/logs)
 brain/
 .system_generated/
+.vercel
+.env*.local
+
+# Installed agent skill packages + their lockfile. Tooling for whoever is
+# driving an agent locally, not part of the app — and `.claude/skills/*` are
+# just symlinks into `.agents/skills/`, which git would store as link files.
+.agents/skills/
+.claude/skills/
+skills-lock.json
+
+# Browser-QA artefacts (18 MB of screenshots as of 2026-08-06). Evidence for a
+# point-in-time audit; the findings live in docs/QA_2026-08-02_BROWSER_AUDIT.md.
+dogfood-output/
