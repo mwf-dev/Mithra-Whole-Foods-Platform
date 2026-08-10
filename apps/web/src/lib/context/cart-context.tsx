@@ -188,9 +188,12 @@ export function CartProvider({
   const reportMutationFailure = useCallback(
     (
       operation: "add" | "update" | "delete",
-      error: unknown,
+      error: any,
       ids: { variantId?: string; lineId?: string }
     ) => {
+      if (error?.name === "AbortError" || error?.message?.includes("aborted")) {
+        return "ABORTED"
+      }
       const message = messageOf(error)
       const status = statusOf(error)
 
@@ -248,7 +251,9 @@ export function CartProvider({
           })
         } catch (e: any) {
           const message = reportMutationFailure("add", e, { variantId })
-          setError(message || "Couldn't add this item. Please try again.")
+          if (message !== "ABORTED") {
+            setError(message || "Couldn't add this item. Please try again.")
+          }
         }
       })
     },
@@ -274,7 +279,9 @@ export function CartProvider({
           })
         } catch (e: any) {
           const message = reportMutationFailure("update", e, { lineId })
-          setError(message || "Couldn't update quantity. Please try again.")
+          if (message !== "ABORTED") {
+            setError(message || "Couldn't update quantity. Please try again.")
+          }
         }
       })
     },
@@ -302,7 +309,9 @@ export function CartProvider({
           })
         } catch (e: any) {
           const message = reportMutationFailure("delete", e, { lineId })
-          setError(message || "Couldn't remove this item. Please try again.")
+          if (message !== "ABORTED") {
+            setError(message || "Couldn't remove this item. Please try again.")
+          }
         }
       })
     },

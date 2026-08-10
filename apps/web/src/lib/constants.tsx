@@ -12,33 +12,15 @@ export const paymentInfoMap: Record<
   { title: string; icon: React.JSX.Element }
 > = {
   pp_stripe_stripe: {
-    title: "Credit card",
+    title: "Credit/Debit Card",
     icon: <CreditCard />,
-  },
-  "pp_medusa-payments_default": {
-    title: "Credit card",
-    icon: <CreditCard />,
-  },
-  "pp_stripe-ideal_stripe": {
-    title: "iDeal",
-    icon: <Ideal />,
-  },
-  "pp_stripe-bancontact_stripe": {
-    title: "Bancontact",
-    icon: <Bancontact />,
-  },
-  pp_paypal_paypal: {
-    title: "PayPal",
-    icon: <PayPal />,
   },
   // Presented as Cash on Delivery: the system-default provider authorizes
-  // without charging, and payment is collected on delivery. Swap in a real
-  // gateway (Razorpay/Stripe) before enabling online payments.
+  // without charging, and payment is collected on delivery.
   pp_system_default: {
     title: "Cash on Delivery (COD)",
     icon: <Banknote size={20} />,
   },
-  // Add more payment providers here
 }
 
 // This only checks if it is native stripe or medusa payments for card payments, it ignores the other stripe-based providers

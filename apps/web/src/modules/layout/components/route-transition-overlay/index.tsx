@@ -103,20 +103,24 @@ export default function RouteTransitionOverlay() {
   }, [])
 
   const start = useCallback(() => {
-    clearTimers()
-    setMounted(true)
+    // Defer execution to avoid React state update warnings when pushState
+    // is called synchronously by Next.js during an internal render phase.
+    setTimeout(() => {
+      clearTimers()
+      setMounted(true)
 
-    showTimer.current = setTimeout(() => {
-      shownAt.current = Date.now()
-      visibleRef.current = true
-      setVisible(true)
-    }, SHOW_AFTER_MS)
+      showTimer.current = setTimeout(() => {
+        shownAt.current = Date.now()
+        visibleRef.current = true
+        setVisible(true)
+      }, SHOW_AFTER_MS)
 
-    maxTimer.current = setTimeout(() => {
-      visibleRef.current = false
-      setVisible(false)
-      setMounted(false)
-    }, MAX_VISIBLE_MS)
+      maxTimer.current = setTimeout(() => {
+        visibleRef.current = false
+        setVisible(false)
+        setMounted(false)
+      }, MAX_VISIBLE_MS)
+    }, 0)
   }, [clearTimers])
 
   /**

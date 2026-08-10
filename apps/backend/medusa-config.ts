@@ -30,6 +30,9 @@ const modules: Record<string, any>[] = [
   {
     resolve: "./src/modules/product-review",
   },
+  {
+    resolve: "./src/modules/platform-monitor",
+  },
 ]
 
 // S3-compatible file storage (GCS via HMAC interop, or AWS S3). Required on

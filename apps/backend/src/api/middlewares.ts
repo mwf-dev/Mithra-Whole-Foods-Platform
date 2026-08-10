@@ -22,6 +22,24 @@ const authLimiter = rateLimit({
  * with plain IP keying this limit is a site-wide ceiling rather than a
  * per-abuser control, and raising the number is not the fix.
  */
+/**
+ * /tracking-demo/* is deliberately public (no session, no publishable key) —
+ * it's a standalone page for showing the ship→deliver pipeline to the client,
+ * see src/api/tracking-demo/. Being public means it's also guessable/
+ * enumerable (order numbers are small sequential ints), so this limiter is
+ * the only thing standing between it and someone scripting through every
+ * order. Tighter than storeLimiter on purpose — a human clicking through a
+ * demo never needs more than a few requests a minute.
+ */
+const trackingDemoLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 30,
+  message: "Too many requests, please slow down.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: clientIpKey,
+})
+
 const storeLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 150,
@@ -79,6 +97,19 @@ export default defineMiddlewares({
       matcher: "/admin/uploads",
       method: "POST",
       bodyParser: { sizeLimit: "10mb" },
-    }
+    },
+    // The FedEx webhook's HMAC is computed over the exact bytes FedEx sent.
+    // Without the raw body the route can only hash a re-serialized `req.body`,
+    // whose key order and whitespace need not match — so genuine payloads fail
+    // verification. The route fails closed if this is ever removed.
+    {
+      matcher: "/webhooks/fedex",
+      method: ["POST"],
+      bodyParser: { preserveRawBody: true },
+    },
+    {
+      matcher: "/tracking-demo/*",
+      middlewares: [trackingDemoLimiter],
+    },
   ],
 })
