@@ -32,6 +32,24 @@ export async function GET() {
     service: "storefront",
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+    // Self-reported config. Without this, a misconfigured MEDUSA_BACKEND_URL is
+    // indistinguishable from a dead backend from outside — both surface as a
+    // bare 404 and the middleware turns it into an opaque
+    // MIDDLEWARE_INVOCATION_FAILED. The backend host is public (it is in every
+    // browser's network tab), and the key is reported as prefix + length only,
+    // never in full.
+    config: {
+      backend_url: BACKEND_URL ?? null,
+      // A trailing slash produces `//store/regions`, which 404s. It is the
+      // single most common way this variable is set wrong.
+      backend_url_has_trailing_slash: BACKEND_URL?.endsWith("/") ?? null,
+      publishable_key: PUBLISHABLE_KEY
+        ? `${PUBLISHABLE_KEY.slice(0, 11)}… (${PUBLISHABLE_KEY.length} chars)`
+        : null,
+      // Vercel deployment id — proves whether a redeploy actually replaced the
+      // build serving this domain, or the alias still points at the old one.
+      deployment: process.env.VERCEL_DEPLOYMENT_ID ?? null,
+    },
   }
 
   if (!BACKEND_URL) {
@@ -57,6 +75,16 @@ export async function GET() {
     const latencyMs = Date.now() - startedAt
 
     if (!res.ok) {
+      // The body fingerprints *which* 404 this is, and they need opposite
+      // fixes: Railway's edge answers `{"message":"Application not found"}` for
+      // a host that no longer exists, whereas a live Medusa behind a bad path
+      // answers Express's `Cannot GET //store/regions`. Truncated — this is a
+      // diagnostic, not a log sink.
+      const detail = await res
+        .text()
+        .then((t) => t.slice(0, 200))
+        .catch(() => null)
+
       return NextResponse.json(
         {
           ...base,
@@ -65,7 +93,15 @@ export async function GET() {
           // Surfaced explicitly: this is the failure this app is most likely
           // to hit, and it needs to be obvious in a monitor's alert body.
           rate_limited: res.status === 429,
-          backend: { reachable: true, status: res.status, latencyMs },
+          backend: {
+            reachable: true,
+            status: res.status,
+            latencyMs,
+            railway_edge: res.headers.get("x-railway-edge"),
+            // Present only when Railway had no app to route to.
+            railway_fallback: res.headers.get("x-railway-fallback"),
+            detail,
+          },
         },
         { status: 503 }
       )
@@ -101,6 +137,10 @@ export async function GET() {
         reason: aborted
           ? `backend did not respond within ${PROBE_TIMEOUT_MS}ms`
           : "backend unreachable",
+        // A malformed MEDUSA_BACKEND_URL (missing scheme, stray whitespace)
+        // never gets as far as a status code — it throws here, and the message
+        // is the only thing that names the cause.
+        detail: error instanceof Error ? error.message : String(error),
         backend: { reachable: false, latencyMs: Date.now() - startedAt },
       },
       { status: 503 }
