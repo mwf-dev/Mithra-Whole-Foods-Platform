@@ -1,20 +1,20 @@
 # Mithra Whole Foods — Product Imagery Design System (PIDS v1)
 
 **Purpose:** turn one ordinary product photo (phone shot, supplier JPEG, legacy
-OpenCart image) into a **fixed, repeatable 6–8 slide PDP carousel** that looks
+OpenCart image) into a **fixed, repeatable 7–9 slide PDP carousel** that looks
 like it came from one brand, every time — using an AI image model.
 
 **Reference analysed:** Tata Simply Better cold-pressed mustard oil PDP
 (12-slide gallery). What makes it work is not the rendering quality — it is that
 **every product in the range uses the same slide grammar in the same order**.
-Slide 3 is always the benefits panel. Slide 4 is always the comparison. The
+Slide 4 is always the benefits panel. Slide 5 is always the comparison. The
 shopper learns the rhythm across products. That repeatability is the entire
 deliverable here; the prompts below exist to enforce it.
 
 > **Just want the prompt?** [`PIDS_OPERATOR_PROMPT.md`](./PIDS_OPERATOR_PROMPT.md)
 > is this whole system compressed into one paste-once block (7,995 chars — fits a
 > ChatGPT Custom GPT). It interviews you: you send a photo, it drafts the plan,
-> you approve, it builds slides 1→6 on "next". This document is the reference
+> you approve, it builds slides 1→7 on "next". This document is the reference
 > behind it — read it when you need to change the system, not to run it.
 
 > **Scope note:** these hex values are for **generated imagery only**. Do not add
@@ -33,8 +33,8 @@ Every generated slide obeys these. They never vary by product.
 
 | Role | Name | Hex | Where it is used |
 |---|---|---|---|
-| Ground A (primary) | Forest Deep | `#1E5B22` | Full-bleed background of slides 3, 5, 6 |
-| Ground B (light) | Cream | `#FAF7F1` | Background of slides 2, 7; banner strips on dark slides |
+| Ground A (primary) | Forest Deep | `#1E5B22` | Full-bleed background of slides 4, 5, 6, 7 |
+| Ground B (light) | Cream | `#FAF7F1` | Background of slides 3, 9; banner strips on dark slides |
 | Ground C (warm) | Beige | `#F3EDE2` | Inner cards/panels on cream slides |
 | Accent 1 | Terracotta | `#C86F45` | Comparison slide "ordinary" column, warning-side marks |
 | Accent 2 | Sprout* | `#B9CE63` | Headline pop on dark grounds, icon fills, torn-paper panels |
@@ -72,13 +72,16 @@ no drop shadows on text other than the one flat offset defined in slide 2.
 - **Bottom strip:** bottom 6% is reserved — disclaimer left, nothing else.
 - **Product anchor:** the pack occupies **48–62% of canvas height** and its
   optical centre sits on the horizontal third the slide specifies. Same pack
-  scale across slides 1–4 so the carousel doesn't "breathe".
+  scale across slides 2–5 so the carousel doesn't "breathe". Slide 1 is the
+  deliberate exception at **78%** — it is a lone packshot with nothing to
+  balance against.
 - **Light:** single soft key from **upper-left, ~35° elevation**, warm
   (5200K), soft contact shadow to lower-right. Identical on every slide, every
   product. This is the main thing that makes a set feel like one shoot.
 - **Corner motif:** thin Cream line-flourish in exactly one corner per slide,
-  rotating clockwise across the set (slide 2 → top-right, slide 3 → bottom-left,
-  …). Reference does this and it is why the set reads as a series.
+  rotating clockwise across the set (slide 3 → top-right, slide 4 → bottom-left,
+  …). Slides 1 and 2 carry none. Reference does this and it is why the set reads
+  as a series.
 
 ### 1.4 Hard prohibitions (these are what make AI output look cheap)
 
@@ -90,47 +93,56 @@ no drop shadows on text other than the one flat offset defined in slide 2.
    icons (leaf, drop, shield) only.
 3. **No health claims beyond the brief.** The brief is the only source of claim
    copy. The model never invents a benefit.
-4. **No people's faces** in slides 1–4. Hands only, from slide 5 onward.
+4. **No people's faces** in slides 1–5. Hands only, from slide 6 onward.
 5. **No lens flare, no bokeh confetti, no glowing rim light, no HDR halo, no
    3D-render plastic sheen.**
 6. **No competitor branding** in the comparison slide — the "ordinary" side is
    an unbranded generic container.
-7. **No text baked into slide 1 and slide 7.** Those two must stay clean for
-   category grids and zoom.
+7. **No text baked into slides 1, 2 and 8.** Those must stay clean for category
+   grids, zoom and the statutory panel.
 
 ---
 
 ## 2. The slide grammar
 
-Fixed order. Slides 1–6 are mandatory for every product; 7–8 are conditional.
+Fixed order. Slides 1–7 are mandatory for every product; 8–9 are conditional.
 "Next" always means the next number in this table — the operator never chooses.
 
 | # | Slide | Ground | Job | Text budget |
 |---|---|---|---|---|
-| 1 | **Hero in its world** | Ingredient texture bed | Make it desirable and show what it's made of | **Zero text** |
-| 2 | **Name & headline claim** | Cream | State the one thing this product is | Headline (≤5 words) |
-| 3 | **Benefits panel** | Forest Deep | 4 reasons to buy, scannable | Banner + 4 labels |
-| 4 | **Ordinary vs Mithra** | Forest Deep + Sprout panel | Justify the price | Title + 4 v 4 bullets |
-| 5 | **How to use / How it's made** | Forest Deep | Remove friction or prove process | Title + 3–4 numbered steps |
-| 6 | **Ways to enjoy** | Forest Deep | Expand use cases, drive basket size | 4 short verbs |
-| 7 | **Pack back / label** | Pure white | Nutrition, ingredients, statutory | Real label only |
-| 8 | **Scale & sourcing** | Cream | Size-in-hand, origin story | ≤8 words |
+| 1 | **Packshot** | Pure white | Catalog thumbnail, search result, Shopping feed | **Zero text** |
+| 2 | **Hero in its world** | Ingredient texture bed | Make it desirable and show what it's made of | **Zero text** |
+| 3 | **Name & headline claim** | Cream | State the one thing this product is | Headline (≤5 words) |
+| 4 | **Benefits panel** | Forest Deep | 4 reasons to buy, scannable | Banner + 4 labels |
+| 5 | **Ordinary vs Mithra** | Forest Deep + Sprout panel | Justify the price | Title + 4 v 4 bullets |
+| 6 | **How to use / How it's made** | Forest Deep | Remove friction or prove process | Title + 3–4 numbered steps |
+| 7 | **Ways to enjoy** | Forest Deep | Expand use cases, drive basket size | 4 short verbs |
+| 8 | **Pack back / label** | Pure white | Nutrition, ingredients, statutory | Real label only |
+| 9 | **Scale & sourcing** | Cream | Size-in-hand, origin story | ≤8 words |
+
+**Why slide 1 is a bare packshot.** It is the only image most shoppers ever see:
+the category grid, search results, the cart line item, and any Google Shopping
+feed all pull image 1. A styled hero looks great at full size and turns to mud at
+200 px, and an inconsistent one makes a category page look like a bring-your-own
+photo sale. Slide 1 is therefore deliberately the least interesting image in the
+set — white, level, centred, no props — and slide 2 is where the art direction
+starts.
 
 **Conditional rules**
-- **Slide 5 forks by family:** consumable-with-a-mechanism (oils, ghee, jars,
+- **Slide 6 forks by family:** consumable-with-a-mechanism (oils, ghee, jars,
   pourables) → *How to use*. Everything else (rice, millets, dals, flours,
   sweets) → *How it's made / sourced*.
-- **Slide 7** is only generated when a real back-panel photo exists. It is
+- **Slide 8** is only generated when a real back-panel photo exists. It is
   **never AI-generated** — a fabricated nutrition panel is a legal problem, not
   a design one. Photograph it or skip it.
-- **Slide 8** for anything where size is confusing (a 250 g pouch vs a 10 lb rice
+- **Slide 9** for anything where size is confusing (a 250 g pouch vs a 10 lb rice
   bag) or where origin is the selling point (Karupatti, Seeraga Samba, Kullakar).
 
 ### 2.1 Family presets
 
-The system stays fixed; only the *ingredient world* and slide-5 fork change.
+The system stays fixed; only the *ingredient world* and slide-6 fork change.
 
-| Family | Catalog examples | Ingredient bed (slide 1) | Garnish props | Slide 5 |
+| Family | Catalog examples | Ingredient bed (slide 2) | Garnish props | Slide 6 |
 |---|---|---|---|---|
 | **Cold-pressed oils** | Castor, Coconut, Sesame | Whole seeds/copra, edge-to-edge | Wooden scoop, flowering sprig, glass carafe of oil | How to use |
 | **Ghee** | Sastra Cow Ghee | Cream-white bed, ghee ripples | Brass spoon, banana leaf sliver | How to use |
@@ -198,7 +210,7 @@ uses:                                               # EXACTLY 4, one verb each
 
 scale_note:        "2 L — about a month for a family of four"   # slide 8, optional
 source_photo:      "./raw/sesame-oil-2l.jpg"
-back_panel_photo:  "./raw/sesame-oil-2l-back.jpg"   # or null → skip slide 7
+back_panel_photo:  "./raw/sesame-oil-2l-back.jpg"   # or null → skip slide 8
 disclaimer:        "Images are for illustration purposes only."
 ```
 
@@ -239,7 +251,8 @@ food, flat vector for graphic elements. Safe margin 8% on all sides. Bottom 6%
 reserved for the disclaimer line only.
 Light: one soft warm key from upper-left at ~35° elevation, 5200K, gentle
 falloff, soft contact shadow falling lower-right. Never change this.
-Pack scale: occupies 48–62% of canvas height, consistent across slides 1–4.
+Pack scale: occupies 48–62% of canvas height, consistent across slides 2–5
+(slide 1 is the exception at 78%).
 
 Palette — use these hex values exactly, nothing else:
   Forest Deep #1E5B22 (dark ground)   Cream #FAF7F1 (light ground / text on dark)
@@ -261,20 +274,22 @@ text cannot be rendered cleanly, render fewer elements rather than garbled ones.
 
 Corner motif: one thin Cream line-flourish (leaf-vine curl or four-point star)
 in exactly one corner, rotating clockwise through the set: slide 2 top-right,
-slide 3 bottom-left, slide 4 top-left, slide 5 bottom-right, slide 6 top-right.
+slide 4 bottom-left, slide 5 top-left, slide 6 bottom-right, slide 7 top-right;
+slides 1 and 2 carry none.
 
 === PROHIBITIONS ===
 No invented or altered packaging. No regulatory or certification marks (FSSAI,
 USDA, organic, FDA, ISO) unless visible on the supplied pack. No claim, number,
-or benefit that is not in the brief. No faces in slides 1–4 (hands only from 5).
+or benefit that is not in the brief. No faces in slides 1–5 (hands only from 6).
 No lens flare, no glow, no HDR halo, no plastic 3D sheen, no bokeh confetti.
 No competitor branding — the "ordinary" comparison item is unbranded and
-generic. No text at all on slides 1 and 7. No stock-photo watermarks.
+generic. No text at all on slides 1, 2 and 8. No stock-photo watermarks.
 
 === OUTPUT PROTOCOL ===
-The carousel is a fixed sequence: 1 Hero · 2 Name & Claim · 3 Benefits ·
-4 Ordinary vs Mithra · 5 How to Use / How It's Made · 6 Ways to Enjoy ·
-7 Pack Back (photo only, never generated) · 8 Scale & Sourcing (conditional).
+The carousel is a fixed sequence: 1 Packshot (white, no text) · 2 Hero ·
+3 Name & Claim · 4 Benefits · 5 Ordinary vs Mithra · 6 How to Use / How It's
+Made · 7 Ways to Enjoy · 8 Pack Back (photo only, never generated) ·
+9 Scale & Sourcing (conditional).
 When I say "next", produce the next slide in that order — never a variation of
 the previous one, never a slide of your own choosing. Before each image, print
 one line: `SLIDE n — <name> — <the exact text strings you are rendering>`.
@@ -290,10 +305,46 @@ Acknowledge with "PIDS v1 loaded" and wait for the brief and the photo.
 
 Send these one at a time after the master prompt. `{{…}}` comes from the brief.
 
-### Slide 1 — Hero in its world *(no text)*
+### Slide 1 — Packshot *(no text, no props)*
+
+The workhorse. This is the image the category grid, search results, cart line
+item and any Google Shopping feed will use, so it is intentionally the plainest
+one in the set.
 
 ```text
-SLIDE 1 — HERO. Zero text anywhere in this image.
+SLIDE 1 — PACKSHOT. Zero text and zero props anywhere in this image.
+
+Background: pure white #FFFFFF, edge to edge, completely flat — no gradient,
+no vignette, no backdrop sweep, no floor line, no border.
+
+The supplied pack alone, upright, photographed straight-on at eye level, dead
+centre, occupying 78% of the canvas height. Perfectly level: no tilt, no
+rotation, no perspective distortion, no part of it cropped. The entire front
+label faces the camera and is sharp corner to corner.
+
+Lighting: soft, even, near-shadowless studio light. A gentle vertical highlight
+runs down the centre of the pack with subtle falloff toward both edges, so a
+cylindrical tin or bottle still reads as round rather than flat. One faint,
+tight contact shadow directly beneath the base to seat it on the surface —
+no cast shadow to either side, no mirror reflection, no glow.
+
+Colours exactly as the source photo. Do not stylise, do not add a brand tint,
+do not warm it up.
+
+It must remain readable when scaled to 200px. Nothing else is permitted in
+this frame.
+```
+
+**The five rejection triggers**, in the order they actually occur: a grey or
+off-white background instead of pure `#FFFFFF`; a mirror reflection under the
+pack; the pack tilted or shot from slightly above; a cast shadow to one side;
+the pack floating with no contact shadow at all. Any one of those and the
+category grid stops looking uniform.
+
+### Slide 2 — Hero in its world *(no text)*
+
+```text
+SLIDE 2 — HERO. Zero text anywhere in this image.
 
 Overhead flat-lay, camera perpendicular to the surface. The supplied pack lies
 flat, centred, filling 60% of the frame height, rotated 0–6°.
@@ -317,10 +368,10 @@ Fill from the family preset: `ingredient_bed`, `garnish`, `prop` — e.g. sesame
 oil → "whole white and black sesame seeds", "sesame flower sprigs and a
 scattering of seeds", "carved wooden oil scoop".
 
-### Slide 2 — Name & headline claim
+### Slide 3 — Name & headline claim
 
 ```text
-SLIDE 2 — NAME & CLAIM.
+SLIDE 3 — NAME & CLAIM.
 
 Ground: flat Cream #FAF7F1, completely plain — no gradient, no texture.
 
@@ -350,10 +401,10 @@ block, one at its lower-right. Nothing else.
 Corner motif: top-right. Disclaimer bottom-left: {{disclaimer}}
 ```
 
-### Slide 3 — Benefits panel
+### Slide 4 — Benefits panel
 
 ```text
-SLIDE 3 — BENEFITS.
+SLIDE 4 — BENEFITS.
 
 Ground: flat Forest Deep #1E5B22 filling the canvas.
 
@@ -379,10 +430,10 @@ no 3D. Corner motif: bottom-left. Disclaimer bottom-left above the margin:
 {{disclaimer}}
 ```
 
-### Slide 4 — Ordinary vs Mithra
+### Slide 5 — Ordinary vs Mithra
 
 ```text
-SLIDE 4 — COMPARISON.
+SLIDE 5 — COMPARISON.
 
 Ground: flat Forest Deep #1E5B22.
 
@@ -416,10 +467,10 @@ premium in presentation.
 Corner motif: top-left. Disclaimer bottom-left: {{disclaimer}}
 ```
 
-### Slide 5a — How to use *(mode: `how_to_use`)*
+### Slide 6a — How to use *(mode: `how_to_use`)*
 
 ```text
-SLIDE 5 — HOW TO USE.
+SLIDE 6 — HOW TO USE.
 
 Ground: flat Forest Deep #1E5B22, with one large Sprout #B9CE63 arc sweeping
 from the lower-right corner up to the right edge, behind everything.
@@ -444,10 +495,10 @@ SemiBold ALL CAPS, Cream:
 Corner motif: bottom-right. Disclaimer bottom-left: {{disclaimer}}
 ```
 
-### Slide 5b — How it's made *(mode: `how_its_made`)*
+### Slide 6b — How it's made *(mode: `how_its_made`)*
 
 ```text
-SLIDE 5 — HOW IT'S MADE.
+SLIDE 6 — HOW IT'S MADE.
 
 Ground: flat Forest Deep #1E5B22.
 
@@ -470,10 +521,10 @@ label legible, sitting on a Sprout organic blob.
 Corner motif: bottom-right. Disclaimer bottom-left: {{disclaimer}}
 ```
 
-### Slide 6 — Ways to enjoy
+### Slide 7 — Ways to enjoy
 
 ```text
-SLIDE 6 — WAYS TO ENJOY.
+SLIDE 7 — WAYS TO ENJOY.
 
 Ground: flat Forest Deep #1E5B22, no headline banner.
 
@@ -496,10 +547,10 @@ Dishes must be recognisably South Indian and appropriate to the product.
 Corner motif: top-right. Disclaimer bottom-left: {{disclaimer}}
 ```
 
-### Slide 7 — Pack back *(never AI-generated)*
+### Slide 8 — Pack back *(never AI-generated)*
 
 ```text
-SLIDE 7 — PACK BACK. NOT a generative task.
+SLIDE 8 — PACK BACK. NOT a generative task.
 
 Take {{back_panel_photo}}. Cut out, place on pure white #FFFFFF, upright,
 centred, 78% of canvas height, straightened, colour-corrected, dust removed.
@@ -511,10 +562,10 @@ nutrition panel — fabricated nutrition or statutory information is a legal
 exposure, not a design choice.
 ```
 
-### Slide 8 — Scale & sourcing *(conditional)*
+### Slide 9 — Scale & sourcing *(conditional)*
 
 ```text
-SLIDE 8 — SCALE & SOURCING.
+SLIDE 9 — SCALE & SOURCING.
 
 Ground: flat Cream #FAF7F1.
 
@@ -543,15 +594,15 @@ Two ways to work, and the second one is what a production catalog should use:
 
 **Path A — pure prompt (fast, good enough for launch).**
 Generate, then read every string in the output against the brief. Regenerate the
-slide (don't patch it) when anything is wrong. Expect 2–3 attempts on slides 3
-and 4, one attempt on 1, 2, 5, 6. Best current models for embedded text:
+slide (don't patch it) when anything is wrong. Expect 2–3 attempts on slides 4
+and 5, one attempt on 1, 2, 3, 6, 7. Best current models for embedded text:
 Gemini image models ("Nano Banana"), GPT-Image, Ideogram.
 
 **Path B — split render (deterministic, recommended at scale).**
 Ask the AI **only for the artwork**: the relit cut-out pack, the ingredient bed,
 the lifestyle shot, the illustrations — with a blank area where copy goes. Then
 composite the type as HTML/SVG from the brief, so text is pixel-perfect and free
-to change. Slide 1 needs no compositing at all. This is how the reference set was
+to change. Slides 1 and 2 need no compositing at all. This is how the reference set was
 almost certainly made: photography plus a designer's template, not one AI pass.
 
 If you want Path B, the next build step is a small script that renders each
@@ -572,13 +623,14 @@ regenerated, not retouched.
 - [ ] Palette contains only §1.1 hexes
 - [ ] Two type families only
 - [ ] Key light from upper-left, shadow to lower-right — same as the other slides
-- [ ] Pack scale within 48–62% and consistent across slides 1–4
+- [ ] Pack scale within 48–62% and consistent across slides 2–5 (slide 1: 78%)
 - [ ] Nothing inside the 8% safe margin; bottom 6% clear except the disclaimer
 - [ ] Corner motif present, in the correct corner for this slide number
 - [ ] 2048×2048, sRGB, under 500 KB at q88
-- [ ] Viewed as a strip of 6 thumbnails, the set reads as one shoot
+- [ ] Viewed as a strip of 7 thumbnails, the set reads as one shoot
+- [ ] Slide 1 is pure #FFFFFF, level, prop-free, and legible at 200 px
 
-**Set-level check that catches most failures:** put the six thumbnails side by
+**Set-level check that catches most failures:** put the seven thumbnails side by
 side at 200 px. If any slide's background green, headline size, or pack scale
 jumps, the set is wrong even if each slide is individually fine.
 
@@ -612,7 +664,7 @@ uses: ["Temper", "Roast", "Bake", "Drizzle"]
 scale_note: "1 L — a South Indian kitchen's month"
 ```
 
-Slide 1 fills as: bed = "a smooth cream-white surface of solidified ghee with
+Slide 2 fills as: bed = "a smooth cream-white surface of solidified ghee with
 soft ripples"; garnish = "a scattering of whole cardamom and a torn banana-leaf
 strip"; prop = "a brass spoon holding melted golden ghee".
 
@@ -622,7 +674,7 @@ strip"; prop = "a brass spoon holding melted golden ghee".
 
 Do not regenerate all 55 products at once. In order:
 
-1. **One product, all 6 slides** — sesame oil or ghee. Get the set right.
+1. **One product, all 7 slides** — sesame oil or ghee. Get the set right.
 2. **One product per family** (11 products) — this is where the family presets
    in §2.1 get corrected against reality.
 3. **The top 10 sellers**, full sets.
@@ -632,7 +684,7 @@ Keep each product's `brief.yml`, source photo, and final slides together in one
 folder. When copy or packaging changes, you re-run the brief rather than hunting
 for "which prompt made slide 4".
 
-**Storefront note:** slides 3–6 are dense; they are read on a phone at ~390 px
+**Storefront note:** slides 4–7 are dense; they are read on a phone at ~390 px
 wide. Every check above assumed the 200 px thumbnail test for exactly this
 reason. Upload at 2048 and let Cloudinary serve the responsive variants — do not
 pre-shrink (see the homepage 21.1 MB → 0.98 MB work in `docs/`).
