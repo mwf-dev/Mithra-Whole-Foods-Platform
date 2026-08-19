@@ -18,7 +18,45 @@ export const getAuthHeaders = async (): Promise<
   }
 }
 
+/**
+ * Tags whose payload is identical for every shopper — the catalog.
+ *
+ * These deliberately do NOT carry the `_medusa_cache_id` suffix. That id is a
+ * random per-browser UUID (`src/middleware.ts`), but Next's Data Cache is keyed
+ * by request URL, so one shared entry ends up tagged with whichever browser
+ * happened to populate it. Nobody can then purge it: an admin edit invalidates
+ * `products-<someone-else's-uuid>` and the live entry survives. Combined with
+ * `cache: "force-cache"` that meant a product edit could never reach the
+ * storefront. Same reasoning as `getCartCacheTag` below — tag the thing, not
+ * the visitor.
+ *
+ * Tags only control invalidation, never cache keying, so sharing a tag across
+ * visitors cannot leak one shopper's data to another. Anything genuinely
+ * per-user (`customers`, `orders`) or per-cart (`fulfillment`,
+ * `shippingOptions`) stays keyed by the browser id below.
+ */
+const GLOBAL_CACHE_TAGS = [
+  "products",
+  "categories",
+  "collections",
+  "regions",
+  "variants",
+  "locales",
+  "payment_providers",
+] as const
+
+const isGlobalCacheTag = (tag: string): boolean =>
+  GLOBAL_CACHE_TAGS.some((t) => tag === t || tag.startsWith(`${t}-`)) ||
+  tag.startsWith("product-reviews-")
+
 export const getCacheTag = async (tag: string): Promise<string> => {
+  // Catalog data is the same for everyone, so it needs no browser id — and
+  // notably still works when the cookie is missing, where the per-browser
+  // branch below returns "" and leaves the fetch with no tag at all.
+  if (isGlobalCacheTag(tag)) {
+    return tag
+  }
+
   try {
     const cookies = await nextCookies()
     const cacheId = cookies.get("_medusa_cache_id")?.value
@@ -33,9 +71,19 @@ export const getCacheTag = async (tag: string): Promise<string> => {
   }
 }
 
+/**
+ * Safety net for catalog reads: every one of them is `cache: "force-cache"`,
+ * which without a TTL means an entry lives until something purges it by tag.
+ * Tag purging is now reliable (see above), but it still depends on the backend
+ * subscriber reaching this app — and if that request is ever dropped, five
+ * minutes stale beats stale forever. Do not lower this: catalog reads land on
+ * the shared `/store/*` rate-limit budget (CLAUDE.md, invariant 2).
+ */
+const CATALOG_REVALIDATE_SECONDS = 300
+
 export const getCacheOptions = async (
   tag: string
-): Promise<{ tags: string[] } | {}> => {
+): Promise<{ tags: string[]; revalidate?: number } | {}> => {
   if (typeof window !== "undefined") {
     return {}
   }
@@ -46,7 +94,13 @@ export const getCacheOptions = async (
     return {}
   }
 
-  return { tags: [`${cacheTag}`] }
+  // Per-user and per-cart payloads keep their purge-only behaviour; they are
+  // invalidated explicitly on every mutation that touches them.
+  if (!isGlobalCacheTag(tag)) {
+    return { tags: [cacheTag] }
+  }
+
+  return { tags: [cacheTag], revalidate: CATALOG_REVALIDATE_SECONDS }
 }
 
 /**

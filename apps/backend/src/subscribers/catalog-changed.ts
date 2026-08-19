@@ -1,5 +1,8 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { revalidateStorefront } from "../utils/revalidate-storefront"
+import {
+  revalidateStorefront,
+  revalidateStorefrontTags,
+} from "../utils/revalidate-storefront"
 import { removeOrphanedCartItems } from "../utils/cart-cleanup"
 import { invalidateSearchIndex } from "../lib/product-search"
 
@@ -32,6 +35,19 @@ export default async function catalogChangedHandler({
   // catalog data (products/categories/tags just changed).
   invalidateSearchIndex()
 
+  // Tags first: these reach the product detail pages, which the path-based
+  // purge below does not (they live behind a dynamic nested route, and their
+  // fetch entry is separate from the listing's). This is what makes an edited
+  // product's new images actually appear on its own page.
+  await revalidateStorefrontTags([
+    "products",
+    "categories",
+    "collections",
+    "variants",
+  ])
+
+  // Still purge the rendered "/" tree — the homepage CMS composes catalog data
+  // into its own route cache, which no fetch tag covers.
   await revalidateStorefront("/", "layout")
 }
 
