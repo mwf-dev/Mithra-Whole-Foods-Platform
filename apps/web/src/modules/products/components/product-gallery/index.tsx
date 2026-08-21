@@ -48,7 +48,7 @@ export default function ProductGallery({
     <div className="w-full">
       {/* Main image */}
       <div
-        className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#F7F4EE] group"
+        className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white group border border-gray-100"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         data-testid="product-gallery"
@@ -60,8 +60,8 @@ export default function ProductGallery({
             alt={`${title} — image ${i + 1}`}
             fill
             priority={i === 0}
-            sizes="(max-width: 768px) 100vw, 45vw"
-            className={`object-contain p-6 transition-opacity duration-300 ${
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 800px"
+            className={`object-contain p-2 sm:p-4 transition-opacity duration-300 ${
               i === active ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           />
@@ -73,17 +73,17 @@ export default function ProductGallery({
               type="button"
               aria-label="Previous image"
               onClick={() => go(active - 1)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-sm hover:bg-white transition md:opacity-0 md:group-hover:opacity-100"
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-md hover:bg-white hover:scale-105 transition md:opacity-0 md:group-hover:opacity-100"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={22} />
             </button>
             <button
               type="button"
               aria-label="Next image"
               onClick={() => go(active + 1)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-sm hover:bg-white transition md:opacity-0 md:group-hover:opacity-100"
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-md hover:bg-white hover:scale-105 transition md:opacity-0 md:group-hover:opacity-100"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={22} />
             </button>
 
             <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
@@ -94,7 +94,7 @@ export default function ProductGallery({
                   aria-label={`Go to image ${i + 1}`}
                   onClick={() => setActive(i)}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === active ? "w-5 bg-[#2E5C31]" : "w-1.5 bg-[#2E5C31]/30"
+                    i === active ? "w-6 bg-[#2E5C31]" : "w-1.5 bg-[#2E5C31]/30"
                   }`}
                 />
               ))}
@@ -113,17 +113,17 @@ export default function ProductGallery({
               onClick={() => setActive(i)}
               aria-label={`View image ${i + 1}`}
               aria-current={i === active}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-[#F7F4EE] transition ${
+              className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition ${
                 i === active
-                  ? "border-[#2E5C31]"
-                  : "border-transparent hover:border-[#2E5C31]/40"
+                  ? "border-[#2E5C31] shadow-sm"
+                  : "border-gray-200 hover:border-[#2E5C31]/40"
               }`}
             >
               <Image
                 src={image.url}
                 alt={`${title} thumbnail ${i + 1}`}
                 fill
-                sizes="64px"
+                sizes="(max-width: 640px) 64px, 80px"
                 className="object-contain p-1.5"
               />
             </button>

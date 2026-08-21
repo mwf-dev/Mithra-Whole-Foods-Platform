@@ -11,7 +11,7 @@ const SkeletonProductPage = () => {
     <div className="bg-[#FAFAFA] min-h-screen animate-pulse">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-100 py-4">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center gap-2">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center gap-2">
           <div className="h-3 w-12 bg-gray-200 rounded" />
           <div className="h-3 w-3 bg-gray-100 rounded" />
           <div className="h-3 w-12 bg-gray-200 rounded" />
@@ -20,20 +20,20 @@ const SkeletonProductPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-        <div className="bg-white rounded-2xl p-6 md:p-12 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-12">
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 md:py-10">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 xl:p-10 border border-gray-100 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14">
           {/* Image */}
-          <div className="w-full md:w-1/2">
-            <div className="aspect-[4/5] bg-gray-100 rounded-xl" />
+          <div className="w-full lg:col-span-7 xl:col-span-7">
+            <div className="aspect-square bg-gray-100 rounded-xl" />
             <div className="mt-4 flex gap-3">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-16 w-16 bg-gray-100 rounded-lg" />
+                <div key={i} className="h-16 w-16 sm:h-20 sm:w-20 bg-gray-100 rounded-xl" />
               ))}
             </div>
           </div>
 
           {/* Details */}
-          <div className="w-full md:w-1/2 flex flex-col">
+          <div className="w-full lg:col-span-5 xl:col-span-5 flex flex-col">
             <div className="h-9 w-3/4 bg-gray-200 rounded mb-4" />
             <div className="h-6 w-24 bg-gray-100 rounded mb-4" />
             <div className="h-8 w-32 bg-gray-200 rounded mb-8" />

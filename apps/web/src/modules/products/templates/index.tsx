@@ -31,7 +31,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     <div className="bg-[#FAFAFA] min-h-screen">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-100 py-4">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center gap-2 text-sm text-gray-500">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center gap-2 text-sm text-gray-500">
           <LocalizedClientLink href="/" className="hover:text-primary">Home</LocalizedClientLink>
           <ChevronRight size={16} />
           <LocalizedClientLink href="/store" className="hover:text-primary">Shop</LocalizedClientLink>
@@ -40,16 +40,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-        <div className="bg-white rounded-2xl p-6 md:p-12 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-12">
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 md:py-10">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 xl:p-10 border border-gray-100 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14">
           
           {/* Images */}
-          <div className="w-full md:w-1/2">
+          <div className="w-full lg:col-span-7 xl:col-span-7">
             <ProductGallery images={images} title={product.title} />
           </div>
 
           {/* Details */}
-          <div className="w-full md:w-1/2 flex flex-col">
+          <div className="w-full lg:col-span-5 xl:col-span-5 flex flex-col">
             <div className="mb-6">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-2">{product.title}</h1>
               {product.subtitle && (
