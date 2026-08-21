@@ -143,6 +143,32 @@ if (process.env.SENDGRID_API_KEY) {
   })
 }
 
+// Multi-carrier Fulfillment (Easyship + Manual Local/Pickup)
+modules.push({
+  resolve: "@medusajs/medusa/fulfillment",
+  options: {
+    providers: [
+      {
+        resolve: "./src/modules/fulfillment-easyship",
+        id: "easyship",
+        options: {
+          apiKey: process.env.EASYSHIP_API_KEY,
+          webhookSecret: process.env.EASYSHIP_WEBHOOK_SECRET,
+          shipFromZip: process.env.SHIP_FROM_ZIP || "19341",
+          shipFromCity: process.env.SHIP_FROM_CITY || "Exton",
+          shipFromState: process.env.SHIP_FROM_STATE || "PA",
+          shipFromCountry: process.env.SHIP_FROM_COUNTRY || "US",
+          shipFromAddress: process.env.SHIP_FROM_ADDRESS || "Mithra Whole Foods",
+        },
+      },
+      {
+        resolve: "@medusajs/fulfillment-manual",
+        id: "manual",
+      },
+    ],
+  },
+})
+
 module.exports = defineConfig({
   admin: {
     // Worker instances don't serve the admin UI.

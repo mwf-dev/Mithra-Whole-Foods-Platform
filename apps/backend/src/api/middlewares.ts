@@ -108,6 +108,11 @@ export default defineMiddlewares({
       bodyParser: { preserveRawBody: true },
     },
     {
+      matcher: "/webhooks/easyship",
+      method: ["POST"],
+      bodyParser: { preserveRawBody: true },
+    },
+    {
       matcher: "/tracking-demo/*",
       middlewares: [trackingDemoLimiter],
     },
