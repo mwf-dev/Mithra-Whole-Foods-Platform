@@ -28,6 +28,15 @@ endpoint shapes in [/API_CONTRACTS.md](../../API_CONTRACTS.md).
 - `src/migration-scripts/initial-data-seed.ts` — the wired seed (`pnpm seed`):
   store/region(INR)/channel/key + 3 categories + `homepage-best-sellers`
   collection + 3 products.
+- `src/modules/product-brief/` + `src/api/content-studio/` + `src/lib/content-studio.ts`
+  — the client-facing **Content Studio**: an unauthenticated, link-only intake
+  page (token in `?t=`, constant-time compared) where the client builds a
+  slide-by-slide content brief per product and uploads reference imagery
+  through the file module. Reviewed in admin → **Content briefs**
+  (`src/admin/routes/content-briefs/`, `src/api/admin/content-briefs/`), which
+  exports the brief as PIDS-shaped YAML. **No customer or order data is
+  reachable from these routes — keep it that way.** See
+  `/docs/CONTENT_STUDIO.md`.
 - `src/subscribers/` — `catalog-changed.ts` (storefront cache revalidation +
   orphaned-cart cleanup + search-index invalidation), `order-placed.ts`
   (**authoritative `order_completed` analytics event**, then customer

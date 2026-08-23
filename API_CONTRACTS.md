@@ -12,6 +12,15 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
 | GET | `/admin/homepage` | Admin session | — | `{ homepage_settings: HomepageSetting \| null }` |
 | POST | `/admin/homepage` | Admin session | Any subset of the 7 writable `HomepageSetting` fields. Whitelisted (`id` cannot be injected); strings only; titles ≤300/subtitle ≤500 chars; URL fields ≤2000 chars, must be http(s) or root-relative. Invalid → 400 `{ message, errors[] }` | `{ homepage_settings: HomepageSetting }` (same **plural** key as GET, normalized 2026-07-08). On success the backend also POSTs `${STOREFRONT_URL}/api/revalidate` with header `x-revalidate-secret` |
 | GET | `/admin/custom` | Admin session | — | empty 200 — dead starter stub, slated for deletion |
+| GET | `/content-studio` | **Link token** `?t=` (`CONTENT_STUDIO_TOKEN`, constant-time compare) | — | `text/html` — the client-facing content intake page. 503 when the env var is unset, 401 on a bad token |
+| GET | `/content-studio/products` | Link token | — | `{ products: [{ id, title, handle, thumbnail, image_count, product_status, status, slide_count, filled_slide_count, updated_at, updated_by }], count }` — `status` is `not_started \| draft \| submitted \| approved` (the first is derived, never stored) |
+| GET | `/content-studio/briefs/:productId` | Link token | — | `{ product: { id, title, handle, subtitle, description, thumbnail, images[] }, brief: { status, summary, slides, updated_at, updated_by, submitted_at, filled_slide_count } }` |
+| PUT | `/content-studio/briefs/:productId` | Link token | `{ summary, slides, updated_by }` — whole-document autosave, sanitised server-side. `status` is **ignored** here | Same shape as GET |
+| POST | `/content-studio/briefs/:productId/submit` | Link token | `{ submitted: boolean }` | `{ status, submitted_at }` |
+| POST | `/content-studio/uploads` | Link token | `{ filename, mimeType, data: base64, handle }` — images/PDF only, 10 MB cap | `{ url, key, filename }` (via the configured file module → Cloudinary) |
+| GET | `/admin/content-briefs` | Admin session | — | `{ briefs[], count, studio_url }` — `studio_url` embeds the token so the operator can re-send the client link |
+| GET | `/admin/content-briefs/:productId` | Admin session | `?format=yaml` optional | `{ brief: { …, yaml } }`, or `text/yaml` — the PIDS-shaped brief, paste-ready |
+| POST | `/admin/content-briefs/:productId` | Admin session | `{ status: draft \| submitted \| approved }` | `{ brief }` |
 | GET | `/store/custom` | Publishable key | — | empty 200 — dead starter stub, slated for deletion |
 
 ### HomepageSetting shape

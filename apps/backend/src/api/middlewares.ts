@@ -40,6 +40,22 @@ const trackingDemoLimiter = rateLimit({
   keyGenerator: clientIpKey,
 })
 
+/**
+ * /content-studio/* is the client's content intake — public by design (the
+ * client has a link, not an admin login), see src/api/content-studio/route.ts.
+ * Autosave means a working session is genuinely chatty, so this is looser than
+ * the tracking-demo limiter, but it is the only thing rate-limiting attempts
+ * against CONTENT_STUDIO_TOKEN and the only ceiling on the upload route.
+ */
+const contentStudioLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 240,
+  message: "Too many requests, please slow down.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: clientIpKey,
+})
+
 const storeLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 150,
@@ -111,6 +127,21 @@ export default defineMiddlewares({
       matcher: "/webhooks/easyship",
       method: ["POST"],
       bodyParser: { preserveRawBody: true },
+    },
+    {
+      matcher: "/content-studio",
+      middlewares: [contentStudioLimiter],
+    },
+    {
+      matcher: "/content-studio/*",
+      middlewares: [contentStudioLimiter],
+    },
+    // Base64 inflates a file by ~33%, so a 10 MB upload (the cap enforced in
+    // src/api/content-studio/uploads/route.ts) arrives as ~13.4 MB of JSON.
+    {
+      matcher: "/content-studio/uploads",
+      method: ["POST"],
+      bodyParser: { sizeLimit: "15mb" },
     },
     {
       matcher: "/tracking-demo/*",
