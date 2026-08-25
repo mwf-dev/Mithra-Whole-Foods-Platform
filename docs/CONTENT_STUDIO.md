@@ -88,6 +88,34 @@ Rotating `CONTENT_STUDIO_TOKEN` instantly kills every link already sent.
 
 ---
 
+## Products the client adds, and products they want gone
+
+Added 2026-08-25, after the client's first pass: the catalog they were handed
+contains products they no longer sell, and it misses products they do.
+
+**Create a new product** sits at the top of the grid. It writes a
+`product_brief` row with a synthetic `new_…` `product_id`, `origin: "client"`,
+and a `proposal` object (name, category, pack size, price, description,
+ingredients, notes, photos) — and **nothing else**. It does not create a Medusa
+product. The studio is authenticated by possession of a link; letting that link
+write into the live catalog is a different risk class, and a proposed product
+needs a price, a variant, inventory and a sales channel that only an operator
+can decide. The brief lands in the admin queue badged **New product** with the
+client's own photos attached; creating the real product stays a human step.
+
+**Remove** never deletes. It sets `archived_at` (plus a free-text reason) via
+`POST /content-studio/products/:productId/archive`. The card moves into a
+**Removed products** drawer at the bottom of the studio, where the client can
+put it back, and the row is badged **Removal requested** in admin → Content
+briefs. The catalog product is untouched — unpublishing or deleting it is a
+decision made here, with the client's reason visible. That asymmetry is the
+whole point: a link-authenticated page may *ask* for a product to come off the
+shop, it may not take it off.
+
+Both flows reuse the existing brief editor, so a proposed product is filled in
+exactly like a catalog one — the only difference is the extra **Product
+details** panel and its own photo uploader at the top.
+
 ## Working the queue
 
 Medusa admin → **Content briefs** lists every product the client has touched,
@@ -122,6 +150,14 @@ Copy-paste for the handover email:
 > makes sense to you), and then write the words you want on it, upload your own
 > photos, and paste links to any designs you like the look of.
 >
+> If you sell something that isn't on the list, press **+ Create a new product**
+> at the top — name it, add its photos, price and pack size, and fill it in the
+> same way. We'll add it to the website for you.
+>
+> If a product is one you no longer sell, press **Remove** on its card and tell
+> us why. Nothing is deleted — it moves to **Removed products** at the bottom,
+> we take it off the website, and you can put it back any time.
+>
 > Press **See an example** at the top right to see a product filled in end to end.
 >
 > Everything saves by itself — you can stop and come back any time, on your phone
@@ -155,6 +191,14 @@ table would cost a migration per field for integrity we don't need. Shape and
 reasoning are documented on the model itself
 (`apps/backend/src/modules/product-brief/models/product-brief.ts`).
 
+The row is also the carrier for the two flows above: `origin`
+(`catalog | client`), `proposal` (the client's description of a product that
+does not exist yet) and `archived_at` / `archive_reason` / `archived_by`. A
+product the client only ever *removed* still gets a row, purely to hold the
+flag; it derives as "not started" everywhere, which is correct — no copy was
+written for it. `deriveStatus()` is the single place that derivation lives, and
+the studio grid, the editor and the admin queue all call it.
+
 Sanitisation, the YAML renderer and the token check all live in
 `apps/backend/src/lib/content-studio.ts` and are covered by
-`src/lib/__tests__/content-studio.unit.spec.ts` (16 tests, in CI).
+`src/lib/__tests__/content-studio.unit.spec.ts` (22 tests, in CI).

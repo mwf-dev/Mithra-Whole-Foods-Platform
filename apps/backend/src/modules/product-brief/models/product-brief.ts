@@ -32,6 +32,11 @@ export const ProductBrief = model
   .define("product_brief", {
     id: model.id().primaryKey(),
     product_id: model.text(),
+    // "catalog" = a product that exists in Medusa; "client" = one the client
+    // proposed from scratch in the studio, whose product_id is a synthetic
+    // `new_…` key (isClientProductId() in src/lib/content-studio.ts) because
+    // no Medusa product exists for it yet.
+    origin: model.enum(["catalog", "client"]).default("catalog"),
     product_handle: model.text().nullable(),
     product_title: model.text().nullable(),
     status: model
@@ -40,6 +45,17 @@ export const ProductBrief = model
     summary: model.json().nullable(),
     slides: model.json().nullable(),
     submitted_at: model.dateTime().nullable(),
+    // Set when the client removes a product in the studio. Removal here NEVER
+    // touches the catalog — it moves the card into "Removed products" so the
+    // operator can decide what to do with the real product later. Restoring is
+    // just clearing this back to null, so nothing the client wrote is lost.
+    archived_at: model.dateTime().nullable(),
+    archive_reason: model.text().nullable(),
+    archived_by: model.text().nullable(),
+    // Only for origin === "client": the product itself as the client describes
+    // it (name, pack size, price, description, ingredients, photos). See
+    // normalizeProposal() for the shape.
+    proposal: model.json().nullable(),
     // Free-text "who filled this in" — the studio has no accounts, so this is
     // the only attribution available. Never treated as identity.
     updated_by: model.text().nullable(),

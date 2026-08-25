@@ -4,13 +4,15 @@ import { PRODUCT_BRIEF_MODULE } from "../../../../modules/product-brief"
 import type ProductBriefService from "../../../../modules/product-brief/service"
 import {
   countFilledSlides,
-  isEmptyBrief,
+  deriveStatus,
+  isClientProductId,
+  normalizeProposal,
   normalizeSlides,
   normalizeSummary,
 } from "../../../../lib/content-studio"
 import { guard, noStore } from "../../_shared"
 
-async function loadProduct(req: MedusaRequest, productId: string) {
+async function loadCatalogProduct(req: MedusaRequest, productId: string) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "product",
@@ -29,9 +31,29 @@ async function loadProduct(req: MedusaRequest, productId: string) {
   return (data as any[])[0]
 }
 
-function serialize(product: any, brief: any) {
+/**
+ * The editor works on one shape whether the product is real or proposed. For a
+ * client-created product there is no catalog row, so the "product" is built
+ * from the brief's own `proposal` — its uploaded photos stand in for the
+ * catalog images the client would otherwise be looking at.
+ */
+function productFromProposal(productId: string, brief: any) {
+  const proposal = normalizeProposal(brief?.proposal)
+  return {
+    id: productId,
+    title: proposal.title || brief?.product_title || "New product",
+    handle: null,
+    subtitle: null,
+    description: proposal.description || null,
+    thumbnail: proposal.images[0]?.url ?? null,
+    images: proposal.images.map((image) => ({ id: image.url, url: image.url })),
+  }
+}
+
+function serialize(product: any, brief: any, origin: "catalog" | "client") {
   const summary = normalizeSummary(brief?.summary)
   const slides = normalizeSlides(brief?.slides)
+  const proposal = normalizeProposal(brief?.proposal)
   return {
     product: {
       id: product.id,
@@ -46,9 +68,13 @@ function serialize(product: any, brief: any) {
       // "not_started" is a derived UI state, not a stored one — the card grid
       // computes it the same way, and the two must agree or a product looks
       // untouched in the list and half-started once opened.
-      status: !brief || isEmptyBrief(summary, slides) ? "not_started" : brief.status,
+      origin,
+      status: deriveStatus(brief, summary, slides, proposal),
       summary,
       slides,
+      proposal,
+      archived: !!brief?.archived_at,
+      archive_reason: brief?.archive_reason ?? null,
       updated_at: brief?.updated_at ?? null,
       updated_by: brief?.updated_by ?? null,
       submitted_at: brief?.submitted_at ?? null,
@@ -63,16 +89,25 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
   noStore(res)
 
   const productId = req.params.productId
-  const product = await loadProduct(req, productId)
+  const briefService: ProductBriefService = req.scope.resolve(PRODUCT_BRIEF_MODULE)
+  const [brief] = await briefService.listProductBriefs({ product_id: productId })
+
+  if (isClientProductId(productId)) {
+    if (!brief) {
+      res.status(404).json({ message: "That product no longer exists." })
+      return
+    }
+    res.json(serialize(productFromProposal(productId, brief), brief, "client"))
+    return
+  }
+
+  const product = await loadCatalogProduct(req, productId)
   if (!product) {
     res.status(404).json({ message: "Product not found" })
     return
   }
 
-  const briefService: ProductBriefService = req.scope.resolve(PRODUCT_BRIEF_MODULE)
-  const [brief] = await briefService.listProductBriefs({ product_id: productId })
-
-  res.json(serialize(product, brief))
+  res.json(serialize(product, brief, "catalog"))
 }
 
 /**
@@ -85,14 +120,25 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
  *
  * `status` is deliberately NOT accepted from this route; only /submit and the
  * admin move it, so an autosave can never quietly un-submit a finished brief.
+ * `archived_at` likewise belongs to /products/:id/archive alone — otherwise a
+ * stale tab autosaving would resurrect a product the client just removed.
  */
 export async function PUT(req: MedusaRequest, res: MedusaResponse): Promise<void> {
   if (!guard(req, res)) return
   noStore(res)
 
   const productId = req.params.productId
-  const product = await loadProduct(req, productId)
-  if (!product) {
+  const briefService: ProductBriefService = req.scope.resolve(PRODUCT_BRIEF_MODULE)
+  const [existing] = await briefService.listProductBriefs({ product_id: productId })
+  const isClient = isClientProductId(productId)
+
+  if (isClient && !existing) {
+    res.status(404).json({ message: "That product no longer exists." })
+    return
+  }
+
+  const product = isClient ? null : await loadCatalogProduct(req, productId)
+  if (!isClient && !product) {
     res.status(404).json({ message: "Product not found" })
     return
   }
@@ -100,18 +146,20 @@ export async function PUT(req: MedusaRequest, res: MedusaResponse): Promise<void
   const body = (req.body ?? {}) as Record<string, unknown>
   const summary = normalizeSummary(body.summary)
   const slides = normalizeSlides(body.slides)
+  // A catalog product's identity is the catalog's, not the client's — only a
+  // proposed product carries an editable proposal.
+  const proposal = isClient ? normalizeProposal(body.proposal) : normalizeProposal(existing?.proposal)
   const updatedBy =
     typeof body.updated_by === "string" ? body.updated_by.slice(0, 200) : summary.contact
 
-  const briefService: ProductBriefService = req.scope.resolve(PRODUCT_BRIEF_MODULE)
-  const [existing] = await briefService.listProductBriefs({ product_id: productId })
-
   const payload = {
     product_id: productId,
-    product_handle: product.handle ?? null,
-    product_title: product.title ?? null,
+    origin: isClient ? "client" : "catalog",
+    product_handle: isClient ? null : product.handle ?? null,
+    product_title: isClient ? proposal.title || existing?.product_title || null : product.title ?? null,
     summary,
     slides,
+    proposal: isClient ? proposal : existing?.proposal ?? null,
     updated_by: updatedBy || null,
   }
 
@@ -121,5 +169,12 @@ export async function PUT(req: MedusaRequest, res: MedusaResponse): Promise<void
     ? await briefService.updateProductBriefs({ id: existing.id, ...payload } as any)
     : await briefService.createProductBriefs(payload as any)
 
-  res.json(serialize(product, Array.isArray(brief) ? brief[0] : brief))
+  const saved = Array.isArray(brief) ? brief[0] : brief
+  res.json(
+    serialize(
+      isClient ? productFromProposal(productId, saved) : product,
+      saved,
+      isClient ? "client" : "catalog"
+    )
+  )
 }

@@ -3,7 +3,8 @@ import { PRODUCT_BRIEF_MODULE } from "../../../modules/product-brief"
 import type ProductBriefService from "../../../modules/product-brief/service"
 import {
   countFilledSlides,
-  isEmptyBrief,
+  deriveStatus,
+  normalizeProposal,
   normalizeSlides,
   normalizeSummary,
 } from "../../../lib/content-studio"
@@ -29,15 +30,25 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
   const items = briefs.map((brief: any) => {
     const summary = normalizeSummary(brief.summary)
     const slides = normalizeSlides(brief.slides)
+    const proposal = normalizeProposal(brief.proposal)
     return {
       id: brief.id,
       product_id: brief.product_id,
-      product_title: brief.product_title,
+      product_title: brief.product_title || proposal.title || null,
       product_handle: brief.product_handle,
-      status: isEmptyBrief(summary, slides) ? "not_started" : brief.status,
+      // "client" means the client invented this product in the studio — there
+      // is no catalog product behind it until someone here creates one.
+      origin: brief.origin ?? "catalog",
+      // The client asked for this product to come off the shop. Acting on it
+      // is a manual decision here; the studio only ever raises the flag.
+      archived: !!brief.archived_at,
+      archived_at: brief.archived_at ?? null,
+      archive_reason: brief.archive_reason ?? null,
+      status: deriveStatus(brief, summary, slides, proposal),
       slide_count: slides.length,
       filled_slide_count: countFilledSlides(slides),
-      image_count: slides.reduce((total, slide) => total + slide.images.length, 0),
+      image_count:
+        slides.reduce((total, slide) => total + slide.images.length, 0) + proposal.images.length,
       updated_at: brief.updated_at,
       updated_by: brief.updated_by,
       submitted_at: brief.submitted_at,

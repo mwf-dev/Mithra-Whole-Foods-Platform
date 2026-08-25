@@ -3,6 +3,7 @@ import { PRODUCT_BRIEF_MODULE } from "../../../../modules/product-brief"
 import type ProductBriefService from "../../../../modules/product-brief/service"
 import {
   briefToYaml,
+  normalizeProposal,
   normalizeSlides,
   normalizeSummary,
 } from "../../../../lib/content-studio"
@@ -34,6 +35,8 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
       ...brief,
       summary: normalizeSummary(brief.summary),
       slides: normalizeSlides(brief.slides),
+      proposal: normalizeProposal(brief.proposal),
+      archived: !!(brief as any).archived_at,
       yaml: briefToYaml(brief as any),
     },
   })

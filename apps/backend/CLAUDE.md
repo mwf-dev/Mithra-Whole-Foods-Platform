@@ -32,7 +32,10 @@ endpoint shapes in [/API_CONTRACTS.md](../../API_CONTRACTS.md).
   — the client-facing **Content Studio**: an unauthenticated, link-only intake
   page (token in `?t=`, constant-time compared) where the client builds a
   slide-by-slide content brief per product and uploads reference imagery
-  through the file module. Reviewed in admin → **Content briefs**
+  through the file module. It also accepts client-proposed products
+  (`origin: "client"`, synthetic `new_…` product id, `proposal` JSON) and
+  client removal requests (`archived_at` + reason) — **neither writes to the
+  catalog**; both are flags an operator acts on by hand. Reviewed in admin → **Content briefs**
   (`src/admin/routes/content-briefs/`, `src/api/admin/content-briefs/`), which
   exports the brief as PIDS-shaped YAML. **No customer or order data is
   reachable from these routes — keep it that way.** See

@@ -2,7 +2,11 @@ import {
   briefToYaml,
   checkStudioToken,
   countFilledSlides,
+  deriveStatus,
+  hasProposalContent,
+  isClientProductId,
   isEmptyBrief,
+  normalizeProposal,
   normalizeSlides,
   normalizeSummary,
   sanitizeLink,
@@ -154,5 +158,73 @@ describe("briefToYaml", () => {
     const yaml = briefToYaml({ product_title: "Thing" })
     expect(yaml).toContain("slides:")
     expect(yaml).toContain("  []")
+  })
+})
+
+describe("client-proposed products", () => {
+  it("recognises only the synthetic id prefix", () => {
+    expect(isClientProductId("new_ab12")).toBe(true)
+    expect(isClientProductId("prod_01J")).toBe(false)
+    expect(isClientProductId(undefined)).toBe(false)
+  })
+
+  it("keeps price as free text and rejects unsafe image urls", () => {
+    const proposal = normalizeProposal({
+      title: "Sesame Oil",
+      price: "$12.99 for the 500 ml",
+      images: [
+        { url: "javascript:alert(1)", filename: "bad" },
+        { url: "https://cdn.example.com/a.jpg", filename: "a.jpg", key: "k" },
+      ],
+      unknown_field: "dropped",
+    })
+
+    expect(proposal.price).toBe("$12.99 for the 500 ml")
+    expect(proposal.images).toEqual([
+      { url: "https://cdn.example.com/a.jpg", filename: "a.jpg", key: "k" },
+    ])
+    expect(proposal).not.toHaveProperty("unknown_field")
+  })
+
+  it("treats an empty proposal as no content", () => {
+    expect(hasProposalContent(normalizeProposal({}))).toBe(false)
+    expect(hasProposalContent(normalizeProposal({ title: "Sesame Oil" }))).toBe(true)
+  })
+
+  it("derives not_started only when nothing at all has been written", () => {
+    const empty = normalizeSummary({})
+    const noProposal = normalizeProposal({})
+
+    expect(deriveStatus(null, empty, [], noProposal)).toBe("not_started")
+    // A brief row created purely to carry a removal flag is still not started.
+    expect(deriveStatus({ status: "draft" }, empty, [], noProposal)).toBe("not_started")
+    // …but a proposed product with only its name filled in is in progress.
+    expect(
+      deriveStatus({ status: "draft" }, empty, [], normalizeProposal({ title: "Sesame Oil" }))
+    ).toBe("draft")
+  })
+
+  it("flags new products and removal requests in the YAML", () => {
+    const yaml = briefToYaml({
+      product_id: "new_ab12",
+      origin: "client",
+      product_title: "Sesame Oil",
+      archived_at: new Date("2026-08-25T00:00:00Z"),
+      archive_reason: "Discontinued\nby the supplier",
+      proposal: { title: "Sesame Oil", price: "$12.99", pack_size: "500 ml" },
+    })
+
+    expect(yaml).toContain("# NEW PRODUCT")
+    expect(yaml).toContain("# REMOVAL REQUESTED")
+    // The reason is a comment line, so a newline in it would corrupt the file.
+    expect(yaml).toContain("Discontinued by the supplier")
+    expect(yaml).toContain("new_product:")
+    expect(yaml).toContain('price:       "$12.99"')
+  })
+
+  it("leaves a plain catalog brief unchanged", () => {
+    const yaml = briefToYaml({ product_title: "Thing", proposal: { title: "ignored" } })
+    expect(yaml).not.toContain("new_product:")
+    expect(yaml).not.toContain("REMOVAL REQUESTED")
   })
 })

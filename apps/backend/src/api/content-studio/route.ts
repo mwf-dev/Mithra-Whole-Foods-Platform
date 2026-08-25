@@ -129,9 +129,30 @@ const HTML = /* html */ `<!doctype html>
   .count { font-size: 13px; color: var(--muted); }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(214px, 1fr)); gap: 16px; }
-  .card { text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 0; cursor: pointer; overflow: hidden; font: inherit; color: inherit; box-shadow: var(--shadow); transition: transform .12s ease, box-shadow .12s ease; display: flex; flex-direction: column; }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 0; overflow: hidden; box-shadow: var(--shadow); transition: transform .12s ease, box-shadow .12s ease; display: flex; flex-direction: column; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(30,45,25,.12); }
-  .card:focus-visible { outline: 2px solid var(--forest-mid); outline-offset: 2px; }
+  .card-open { text-align: left; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; display: flex; flex-direction: column; flex: 1; }
+  .card-open:focus-visible { outline: 2px solid var(--forest-mid); outline-offset: -2px; }
+  .cardfoot { border-top: 1px solid var(--line); padding: 7px 9px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .cardfoot .why { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card.is-removed { opacity: .72; }
+  .card.is-removed .thumb img { filter: grayscale(1); }
+
+  .newcard { border: 1.5px dashed var(--forest-mid); background: #f4f8f2; color: var(--forest); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 200px; cursor: pointer; font: inherit; border-radius: 14px; padding: 18px; text-align: center; }
+  .newcard:hover { background: #eaf2e7; }
+  .newcard .plus { font-size: 26px; line-height: 1; }
+  .newcard b { font-size: 14.5px; }
+  .newcard span { font-size: 12px; color: var(--muted); }
+
+  .removed-wrap { margin-top: 28px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); padding: 0 18px; box-shadow: var(--shadow); }
+  .removed-wrap > summary { cursor: pointer; padding: 14px 0; font-weight: 600; font-size: 14px; }
+  .removed-wrap > summary::marker { color: var(--muted); }
+  .removed-wrap .lede { margin: 0 0 14px; font-size: 13px; }
+  .removed-wrap .cards { padding-bottom: 18px; }
+
+  .banner { border-radius: 11px; padding: 12px 14px; margin-bottom: 16px; font-size: 13.5px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .banner.warn { background: #fdf0e4; color: #8c4a1c; }
+  .banner .spacer { flex: 1; }
   .thumb { aspect-ratio: 1/1; background: var(--beige); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .thumb .none { color: var(--muted); font-size: 12px; }
@@ -238,6 +259,7 @@ const HTML = /* html */ `<!doctype html>
     search: "",
     filter: "all",
     current: null,
+    showRemoved: false,
     data: null,
     dirty: false,
     saveTimer: null
@@ -330,25 +352,63 @@ const HTML = /* html */ `<!doctype html>
       });
   }
 
-  function renderIndex() {
+  function matchesFilter(product) {
     var term = state.search.trim().toLowerCase();
-    var list = state.products.filter(function (product) {
-      if (state.filter !== "all" && product.status !== state.filter) return false;
-      if (!term) return true;
-      return (product.title || "").toLowerCase().indexOf(term) > -1;
+    if (state.filter !== "all" && product.status !== state.filter) return false;
+    if (!term) return true;
+    return (product.title || "").toLowerCase().indexOf(term) > -1;
+  }
+
+  function productCard(product) {
+    var html = '<div class="card' + (product.archived ? " is-removed" : "") + '">';
+    html += '<button class="card-open" type="button" data-id="' + esc(product.id) + '">';
+    html += '<div class="thumb">' + (product.thumbnail
+      ? '<img loading="lazy" alt="" src="' + esc(product.thumbnail) + '" />'
+      : '<span class="none">No photo yet</span>') + "</div>";
+    html += '<div class="cardbody">';
+    html += '<div class="ctitle">' + esc(product.title) + "</div>";
+    html += pill(product.status);
+    if (product.origin === "client") html += '<span class="pill pill-example">Added by you</span>';
+    html += '<div class="cmeta">' + product.filled_slide_count + " of " + product.slide_count + " slides filled &middot; " + product.image_count + " photo" + (product.image_count === 1 ? "" : "s") + " on file</div>";
+    html += "</div></button>";
+
+    html += '<div class="cardfoot">';
+    if (product.archived) {
+      html += '<span class="why">' + esc(product.archive_reason || "Removed") + "</span>";
+      html += '<button class="btn subtle" type="button" data-restore="' + esc(product.id) + '">Put back</button>';
+    } else {
+      html += '<span class="why"></span>';
+      html += '<button class="btn danger" type="button" data-archive="' + esc(product.id) + '">Remove</button>';
+    }
+    html += "</div></div>";
+    return html;
+  }
+
+  function renderIndex() {
+    var active = [];
+    var removed = [];
+    state.products.forEach(function (product) {
+      (product.archived ? removed : active).push(product);
     });
 
-    var done = state.products.filter(function (p) { return p.status === "submitted" || p.status === "approved"; }).length;
+    var list = active.filter(matchesFilter);
+    var done = active.filter(function (p) { return p.status === "submitted" || p.status === "approved"; }).length;
 
     var html = "";
     html += '<h1>Product content</h1>';
     html += '<p class="lede">Pick a product, tell us what you want each slide of its image carousel to say, and upload any photos or reference pictures you have. Everything saves by itself as you type - you can stop and come back to it any time.</p>';
+
+    html += '<div class="toolbar">';
+    html += '<button class="btn" id="createTop" type="button">+ Create a new product</button>';
+    html += '<span class="count">Selling something that is not on this list? Add it here and fill it in the same way.</span>';
+    html += "</div>";
 
     html += '<div class="panel"><ol class="steps">';
     html += '<li><b>1. Open a product</b>Click its card. You will see the photos we already have for it.</li>';
     html += '<li><b>2. Add slides</b>Add a slide for each image you want in the carousel and give it a name.</li>';
     html += '<li><b>3. Fill it in</b>Write the words for that slide, upload photos, paste links to designs you like.</li>';
     html += '<li><b>4. Send it</b>Press "Send to Mithra" when a product is done. You can still edit it afterwards.</li>';
+    html += '<li><b>Not selling it any more?</b>Press "Remove" on the card. Nothing is lost - it moves to "Removed products" at the bottom and we take it off the website for you.</li>';
     html += "</ol></div>";
 
     html += '<div class="toolbar">';
@@ -360,25 +420,24 @@ const HTML = /* html */ `<!doctype html>
     });
     html += "</select>";
     html += '<span class="spacer"></span>';
-    html += '<span class="count">' + done + " of " + state.products.length + " products sent</span>";
+    html += '<span class="count">' + done + " of " + active.length + " products sent</span>";
     html += "</div>";
 
+    html += '<div class="cards">';
+    html += '<button class="newcard" id="createCard" type="button"><span class="plus">+</span><b>Create a new product</b><span>Upload its photos and write its content from scratch.</span></button>';
+    list.forEach(function (product) { html += productCard(product); });
+    html += "</div>";
     if (!list.length) {
       html += '<div class="empty">No products match that.</div>';
-    } else {
+    }
+
+    if (removed.length) {
+      html += '<details class="removed-wrap"' + (state.showRemoved ? " open" : "") + ' id="removedWrap">';
+      html += "<summary>Removed products (" + removed.length + ")</summary>";
+      html += '<p class="lede">These stay here so nothing is lost. We will take them off the website - press "Put back" if you change your mind.</p>';
       html += '<div class="cards">';
-      list.forEach(function (product) {
-        html += '<button class="card" type="button" data-id="' + esc(product.id) + '">';
-        html += '<div class="thumb">' + (product.thumbnail
-          ? '<img loading="lazy" alt="" src="' + esc(product.thumbnail) + '" />'
-          : '<span class="none">No photo yet</span>') + "</div>";
-        html += '<div class="cardbody">';
-        html += '<div class="ctitle">' + esc(product.title) + "</div>";
-        html += pill(product.status);
-        html += '<div class="cmeta">' + product.filled_slide_count + " of " + product.slide_count + " slides filled &middot; " + product.image_count + " photo" + (product.image_count === 1 ? "" : "s") + " on file</div>";
-        html += "</div></button>";
-      });
-      html += "</div>";
+      removed.forEach(function (product) { html += productCard(product); });
+      html += "</div></details>";
     }
 
     view.innerHTML = html;
@@ -398,11 +457,125 @@ const HTML = /* html */ `<!doctype html>
       state.filter = event.target.value;
       renderIndex();
     });
-    Array.prototype.forEach.call(view.querySelectorAll(".card"), function (card) {
+    var removedWrap = document.getElementById("removedWrap");
+    if (removedWrap) {
+      removedWrap.addEventListener("toggle", function () { state.showRemoved = removedWrap.open; });
+    }
+    Array.prototype.forEach.call(view.querySelectorAll(".card-open"), function (card) {
       card.addEventListener("click", function () {
         location.hash = "#/p/" + card.getAttribute("data-id");
       });
     });
+    Array.prototype.forEach.call(view.querySelectorAll("[data-archive]"), function (button) {
+      button.addEventListener("click", function () {
+        archiveProduct(button.getAttribute("data-archive"), true);
+      });
+    });
+    Array.prototype.forEach.call(view.querySelectorAll("[data-restore]"), function (button) {
+      button.addEventListener("click", function () {
+        archiveProduct(button.getAttribute("data-restore"), false);
+      });
+    });
+    document.getElementById("createTop").addEventListener("click", openCreateModal);
+    document.getElementById("createCard").addEventListener("click", openCreateModal);
+  }
+
+  /* ------------------------------------------------- remove / put back */
+
+  /**
+   * "Remove" never deletes anything - it flags the product so Mithra can take
+   * it off the shop. The reason is asked for once here because it is the only
+   * thing that tells us *why* (out of stock for good vs a bad photo).
+   */
+  function archiveProduct(productId, archived) {
+    var product = null;
+    state.products.forEach(function (item) { if (item.id === productId) product = item; });
+    var name = product ? product.title : "this product";
+    var reason = "";
+
+    if (archived) {
+      reason = prompt(
+        'Remove "' + name + '" from the shop?\\n\\nNothing is deleted - it moves to "Removed products" and we take it off the website.\\n\\nWhy are you removing it? (optional)',
+        ""
+      );
+      if (reason === null) return;
+    } else if (!confirm('Put "' + name + '" back?')) {
+      return;
+    }
+
+    var by = (state.data && state.data.brief.summary.contact) || "";
+    api("/products/" + encodeURIComponent(productId) + "/archive", {
+      method: "POST",
+      body: JSON.stringify({ archived: archived, reason: reason || "", by: by })
+    }).then(function (body) {
+      if (product) {
+        product.archived = body.archived;
+        product.archive_reason = body.archive_reason;
+      }
+      if (archived) state.showRemoved = true;
+      toast(archived ? "Removed - Mithra will take it off the website" : "Put back");
+      if (state.current === productId) {
+        if (state.data) {
+          state.data.brief.archived = body.archived;
+          state.data.brief.archive_reason = body.archive_reason;
+        }
+        renderProduct();
+      } else {
+        renderIndex();
+      }
+    }).catch(function (error) {
+      toast(error.message, true);
+    });
+  }
+
+  /* --------------------------------------------------- create a product */
+
+  function openCreateModal() {
+    var html = '<div class="modal-bg" id="modalBg"><div class="modal">';
+    html += "<h3>Create a new product</h3>";
+    html += '<p class="count">Give it a name to start. On the next screen you can add its photos, price, pack size and everything else.</p>';
+    html += '<div class="field" style="margin-top:16px"><label for="newTitle">Product name</label>';
+    html += '<div class="hint">Exactly as it should appear in the shop, e.g. \u201cSastra Pure Cow Ghee, 1 L\u201d.</div>';
+    html += '<input type="text" id="newTitle" placeholder="Product name" /></div>';
+    html += '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">';
+    html += '<button class="btn subtle" id="closeModal" type="button">Cancel</button>';
+    html += '<button class="btn" id="createGo" type="button">Create product</button>';
+    html += "</div></div></div>";
+    document.body.insertAdjacentHTML("beforeend", html);
+
+    var input = document.getElementById("newTitle");
+    input.focus();
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") createProduct();
+    });
+    document.getElementById("createGo").addEventListener("click", createProduct);
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    document.getElementById("modalBg").addEventListener("click", function (event) {
+      if (event.target.id === "modalBg") closeModal();
+    });
+  }
+
+  function createProduct() {
+    var input = document.getElementById("newTitle");
+    var button = document.getElementById("createGo");
+    if (!input) return;
+    var title = input.value.trim();
+    if (!title) { input.focus(); toast("Please give the product a name.", true); return; }
+
+    button.disabled = true;
+    button.textContent = "Creating...";
+    api("/products", { method: "POST", body: JSON.stringify({ title: title }) })
+      .then(function (body) {
+        closeModal();
+        // Straight into the editor - the product exists only as a brief until
+        // Mithra creates it for real, so this is where the rest is filled in.
+        location.hash = "#/p/" + body.product_id;
+      })
+      .catch(function (error) {
+        button.disabled = false;
+        button.textContent = "Create product";
+        toast(error.message, true);
+      });
   }
 
   /* -------------------------------------------------------------- product */
@@ -414,6 +587,8 @@ const HTML = /* html */ `<!doctype html>
         state.current = productId;
         state.data = body;
         if (!Array.isArray(body.brief.slides)) body.brief.slides = [];
+        if (!body.brief.proposal) body.brief.proposal = { images: [] };
+        if (!Array.isArray(body.brief.proposal.images)) body.brief.proposal.images = [];
         renderProduct();
       })
       .catch(function (error) {
@@ -434,14 +609,58 @@ const HTML = /* html */ `<!doctype html>
     var brief = state.data.brief;
     var summary = brief.summary || {};
 
+    var isNew = brief.origin === "client";
+    var proposal = brief.proposal || {};
+
     var html = "";
     html += '<button class="btn ghost" id="back" type="button">&larr; All products</button>';
     html += '<div style="height:14px"></div>';
 
-    html += '<div class="panel"><header><div><h1 style="margin:0">' + esc(product.title) + "</h1>";
-    html += '<div class="count">' + esc(product.handle || "") + "</div></div>" + pill(brief.status) + "</header>";
+    if (brief.archived) {
+      html += '<div class="banner warn"><b>Removed.</b> Mithra will take this product off the website. Nothing you wrote here is lost.';
+      html += '<span class="spacer"></span><button class="btn subtle" id="restoreProduct" type="button">Put it back</button></div>';
+    }
 
-    if (product.images && product.images.length) {
+    html += '<div class="panel"><header><div><h1 style="margin:0">' + esc(isNew ? (proposal.title || product.title) : product.title) + "</h1>";
+    html += '<div class="count">' + esc(isNew ? "Added by you - not on the website yet" : (product.handle || "")) + "</div></div>" + pill(brief.status) + "</header>";
+
+    if (isNew) {
+      html += '<p class="count" style="margin:0 0 14px">Fill this in and press "Send to Mithra". We will add it to the shop for you - the photos and words you put here are what we will use.</p>';
+    }
+
+    if (isNew) {
+      html += '<div class="field"><label>Photos of this product</label>';
+      html += '<div class="hint">The pack itself, front and back. JPG, PNG, WEBP, HEIC or PDF, up to 10 MB each.</div>';
+      html += '<div class="imgstrip" style="margin-bottom:10px">';
+      (proposal.images || []).forEach(function (image, imageIndex) {
+        html += '<div class="thumbcard">';
+        if (/\\.pdf($|\\?)/i.test(image.url)) {
+          html += '<a class="doc" href="' + esc(image.url) + '" target="_blank" rel="noopener">' + esc(image.filename || "PDF") + "</a>";
+        } else {
+          html += '<a href="' + esc(image.url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="" src="' + esc(image.url) + '" /></a>';
+        }
+        html += '<button class="rm" type="button" data-rmimg="' + imageIndex + '" data-imgslide="product" title="Remove">&times;</button>';
+        html += "</div>";
+      });
+      html += "</div>";
+      html += '<div class="drop" data-drop="product">Drag photos here, or click to choose</div>';
+      html += "</div>";
+      html += "</div>";
+
+      html += '<div class="panel"><header><h2>Product details</h2></header>';
+      html += field("proposal", "title", "Product name", "Exactly as it should appear in the shop.", proposal.title, false);
+      html += '<div class="grid2">';
+      html += field("proposal", "category", "Category", "Where it belongs, e.g. \u201cOils & Ghee\u201d.", proposal.category, false);
+      html += field("proposal", "pack_size", "Pack size", "e.g. \u201c500 g\u201d, \u201c1 L\u201d, \u201cpack of 2\u201d.", proposal.pack_size, false);
+      html += "</div>";
+      html += field("proposal", "price", "Price", "What it should sell for, e.g. \u201c$12.99\u201d. We will confirm before it goes live.", proposal.price, false);
+      html += field("proposal", "description", "Description", "What it is, in your own words. This is what shoppers read on the product page.", proposal.description, true);
+      html += field("proposal", "ingredients", "Ingredients", "Copy the ingredient list off the pack.", proposal.ingredients, true);
+      html += field("proposal", "notes", "Anything else we should know", "Supplier, shelf life, how it is stored, anything unusual.", proposal.notes, true);
+      html += "</div>";
+    }
+
+    if (!isNew && product.images && product.images.length) {
       html += '<h2 style="margin-bottom:10px">Photos we already have</h2>';
       html += '<div class="imgstrip">';
       product.images.forEach(function (image) {
@@ -449,10 +668,11 @@ const HTML = /* html */ `<!doctype html>
       });
       html += "</div>";
       html += '<p class="count" style="margin:10px 0 0">Click any photo to see it full size. If a better one exists, upload it on the relevant slide below.</p>';
-    } else {
+      html += "</div>";
+    } else if (!isNew) {
       html += '<p class="count" style="margin:0">We have no photos for this product yet - please upload at least one clear shot of the pack below.</p>';
+      html += "</div>";
     }
-    html += "</div>";
 
     html += '<div class="panel"><header><h2>About this product</h2></header>';
     html += '<div class="grid2">';
@@ -484,6 +704,9 @@ const HTML = /* html */ `<!doctype html>
 
     html += '<div class="sticky-actions">';
     html += '<span class="note">Everything saves automatically.</span>';
+    if (!brief.archived) {
+      html += '<button class="btn danger" id="archiveProduct" type="button">' + (isNew ? "Delete this product" : "Remove from the shop") + "</button>";
+    }
     if (brief.status === "submitted" || brief.status === "approved") {
       html += '<button class="btn subtle" id="reopen" type="button">Reopen for editing</button>';
     } else {
@@ -593,6 +816,11 @@ const HTML = /* html */ `<!doctype html>
         scheduleSave();
         return;
       }
+      if (scope === "proposal") {
+        brief.proposal[target.getAttribute("data-key")] = target.value;
+        scheduleSave();
+        return;
+      }
       if (scope === "slide") {
         var index = parseInt(target.getAttribute("data-index"), 10);
         var key = target.getAttribute("data-key");
@@ -672,21 +900,23 @@ const HTML = /* html */ `<!doctype html>
         return;
       }
       if (target.hasAttribute("data-rmimg")) {
-        var imgSlide = parseInt(target.getAttribute("data-imgslide"), 10);
+        var imgSlide = target.getAttribute("data-imgslide");
         var imgIndex = parseInt(target.getAttribute("data-rmimg"), 10);
-        brief.slides[imgSlide].images.splice(imgIndex, 1);
+        imageBucket(imgSlide).splice(imgIndex, 1);
         redraw();
         return;
       }
       if (target.id === "submit") setSubmitted(true);
       if (target.id === "reopen") setSubmitted(false);
+      if (target.id === "archiveProduct") archiveProduct(state.current, true);
+      if (target.id === "restoreProduct") archiveProduct(state.current, false);
     });
 
   }
 
   function bindDropZones() {
     Array.prototype.forEach.call(view.querySelectorAll(".drop"), function (zone) {
-      var index = parseInt(zone.getAttribute("data-drop"), 10);
+      var index = zone.getAttribute("data-drop");
       zone.addEventListener("click", function () {
         var picker = document.createElement("input");
         picker.type = "file";
@@ -712,10 +942,23 @@ const HTML = /* html */ `<!doctype html>
 
   /* -------------------------------------------------------------- uploads */
 
-  function uploadFiles(slideIndex, files) {
+  /**
+   * Photos live either on a slide or, for a product the client created here,
+   * on the product itself. "target" is the slide index or the string
+   * "product" - the drop zones and the remove buttons both carry it verbatim.
+   */
+  function imageBucket(target) {
+    if (target === "product") {
+      if (!state.data.brief.proposal.images) state.data.brief.proposal.images = [];
+      return state.data.brief.proposal.images;
+    }
+    return state.data.brief.slides[parseInt(target, 10)].images;
+  }
+
+  function uploadFiles(target, files) {
     if (!files || !files.length) return;
     var list = Array.prototype.slice.call(files);
-    var zone = view.querySelector('[data-drop="' + slideIndex + '"]');
+    var zone = view.querySelector('[data-drop="' + target + '"]');
     var done = 0;
 
     function step(index) {
@@ -735,10 +978,10 @@ const HTML = /* html */ `<!doctype html>
             filename: file.name,
             mimeType: file.type || "image/jpeg",
             data: String(reader.result).split(",")[1],
-            handle: state.data.product.handle
+            handle: state.data.product.handle || state.data.brief.proposal.title || "new-product"
           })
         }).then(function (body) {
-          state.data.brief.slides[slideIndex].images.push({ url: body.url, key: body.key, filename: body.filename });
+          imageBucket(target).push({ url: body.url, key: body.key, filename: body.filename });
           done++;
           step(index + 1);
         }).catch(function (error) {
@@ -774,6 +1017,7 @@ const HTML = /* html */ `<!doctype html>
       body: JSON.stringify({
         summary: brief.summary,
         slides: brief.slides,
+        proposal: brief.proposal,
         updated_by: brief.summary.contact || ""
       })
     }).then(function () {

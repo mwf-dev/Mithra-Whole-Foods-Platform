@@ -20,6 +20,10 @@ type BriefRow = {
   product_title: string | null
   product_handle: string | null
   status: Status
+  origin: "catalog" | "client"
+  archived: boolean
+  archived_at: string | null
+  archive_reason: string | null
   slide_count: number
   filled_slide_count: number
   image_count: number
@@ -37,10 +41,25 @@ type SlideDetail = {
   images: { url: string; filename: string }[]
 }
 
+type Proposal = {
+  title: string
+  category: string
+  pack_size: string
+  price: string
+  description: string
+  ingredients: string
+  notes: string
+  images: { url: string; filename: string }[]
+}
+
 type BriefDetail = {
   product_title: string | null
+  origin: "catalog" | "client"
+  archived: boolean
+  archive_reason: string | null
   summary: { tagline: string; sub_claim: string; notes: string; links: string[]; contact: string }
   slides: SlideDetail[]
+  proposal: Proposal
   yaml: string
 }
 
@@ -142,7 +161,9 @@ const ContentBriefsPage = () => {
         <div>
           <Heading level="h1">Content briefs</Heading>
           <Text className="text-ui-fg-subtle" size="small">
-            What the client has written for each product&apos;s image carousel.
+            What the client has written for each product&apos;s image carousel. Products
+            they added themselves and products they asked to remove show up here too —
+            neither touches the catalog until you act on it.
           </Text>
         </div>
         <div className="flex gap-2">
@@ -192,6 +213,23 @@ const ContentBriefsPage = () => {
                     <Text size="small" weight="plus">
                       {row.product_title ?? row.product_handle ?? row.product_id}
                     </Text>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {row.origin === "client" ? (
+                        <Badge color="purple" size="2xsmall">
+                          New product
+                        </Badge>
+                      ) : null}
+                      {row.archived ? (
+                        <Badge color="red" size="2xsmall">
+                          Removal requested
+                        </Badge>
+                      ) : null}
+                    </div>
+                    {row.archived && row.archive_reason ? (
+                      <Text size="xsmall" className="text-ui-fg-subtle">
+                        “{row.archive_reason}”
+                      </Text>
+                    ) : null}
                     {row.updated_by ? (
                       <Text size="xsmall" className="text-ui-fg-subtle">
                         by {row.updated_by}
@@ -256,6 +294,70 @@ const ContentBriefsPage = () => {
                 <Button size="small" onClick={() => copy(open.yaml, "Brief YAML")}>
                   Copy brief as YAML
                 </Button>
+
+                {open.archived ? (
+                  <div className="border-ui-border-error rounded-lg border p-3">
+                    <Text size="small" weight="plus">
+                      The client asked for this to come off the shop
+                    </Text>
+                    <Text size="small" className="text-ui-fg-subtle whitespace-pre-line">
+                      {open.archive_reason || "No reason given."}
+                    </Text>
+                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                      Nothing has changed in the catalog — unpublish or delete the product
+                      yourself if you agree.
+                    </Text>
+                  </div>
+                ) : null}
+
+                {open.origin === "client" ? (
+                  <div className="rounded-lg border p-3">
+                    <Text size="small" weight="plus">
+                      New product — not in the catalog yet
+                    </Text>
+                    <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                      {(
+                        [
+                          ["Name", open.proposal.title],
+                          ["Category", open.proposal.category],
+                          ["Pack size", open.proposal.pack_size],
+                          ["Price", open.proposal.price],
+                          ["Description", open.proposal.description],
+                          ["Ingredients", open.proposal.ingredients],
+                          ["Notes", open.proposal.notes],
+                        ] as [string, string][]
+                      )
+                        .filter(([, value]) => !!value)
+                        .map(([label, value]) => (
+                          <div key={label} className="contents">
+                            <dt>
+                              <Text size="xsmall" className="text-ui-fg-muted">
+                                {label}
+                              </Text>
+                            </dt>
+                            <dd>
+                              <Text size="small" className="whitespace-pre-line">
+                                {value}
+                              </Text>
+                            </dd>
+                          </div>
+                        ))}
+                    </dl>
+                    {open.proposal.images.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {open.proposal.images.map((image) => (
+                          <a key={image.url} href={image.url} target="_blank" rel="noreferrer noopener">
+                            <img
+                              src={image.url}
+                              alt={image.filename}
+                              className="h-16 w-16 rounded object-cover"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div>
                   <Text size="small" weight="plus">
