@@ -185,6 +185,50 @@ module.exports = defineConfig({
         ),
         __MAX_UPLOAD_FILE_SIZE__: 5 * 1024 * 1024,
       },
+      plugins: [
+        {
+          name: "mithra-admin-custom-branding",
+          transformIndexHtml(html: string) {
+            return html.replace(
+              "<head>",
+              `<head>
+              <title>Mithra Whole Foods — Admin</title>
+              <script>
+                (function() {
+                  var theme = localStorage.getItem("medusa_theme") || localStorage.getItem("theme");
+                  if (!theme) {
+                    localStorage.setItem("medusa_theme", "light");
+                    document.documentElement.classList.remove("dark");
+                    document.documentElement.classList.add("light");
+                  }
+                })();
+                document.addEventListener("DOMContentLoaded", function() {
+                  function updateBranding() {
+                    var els = document.querySelectorAll("h1, h2, h3, span, p, div");
+                    for (var i = 0; i < els.length; i++) {
+                      var el = els[i];
+                      if (el.childNodes.length === 1) {
+                        var txt = el.textContent ? el.textContent.trim() : "";
+                        if (txt === "Welcome to Medusa") {
+                          el.textContent = "Mithra Whole Foods Admin";
+                        }
+                        if (txt === "Sign in to access the account area") {
+                          el.textContent = "Sign in to manage orders, inventory, and fulfillment";
+                        }
+                      }
+                    }
+                  }
+                  updateBranding();
+                  var observer = new MutationObserver(updateBranding);
+                  if (document.body) {
+                    observer.observe(document.body, { childList: true, subtree: true });
+                  }
+                });
+              </script>`
+            )
+          },
+        },
+      ],
     }),
   },
   projectConfig: {

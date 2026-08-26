@@ -120,6 +120,7 @@ async function getJson(url: string): Promise<any> {
 
 const DashboardPage = () => {
   const [stats, setStats] = useState<Stats | null>(null)
+  const [unfulfilledOrders, setUnfulfilledOrders] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -127,15 +128,13 @@ const DashboardPage = () => {
     monthStart.setDate(1)
     monthStart.setHours(0, 0, 0, 0)
 
-    // Pull the fulfillment/payment relations so we can derive real statuses
-    // (the aggregated *_status fields come back empty under a narrow select).
     const orderFields =
-      "fields=id,display_id,email,created_at,total,currency_code," +
+      "fields=id,display_id,email,created_at,total,currency_code,shipping_methods.name," +
       "fulfillments.packed_at,fulfillments.shipped_at,fulfillments.delivered_at," +
-      "fulfillments.canceled_at,payment_collections.status"
+      "fulfillments.canceled_at,fulfillments.data,fulfillments.labels.*,payment_collections.status"
 
     Promise.all([
-      getJson(`/admin/orders?limit=200&order=-created_at&${orderFields}`),
+      getJson(`/admin/orders?limit=200&order=created_at&${orderFields}`),
       getJson(`/admin/products?limit=1&fields=id`),
     ])
       .then(([all, products]) => {
@@ -144,13 +143,18 @@ const DashboardPage = () => {
         const monthRows = rows.filter(
           (r) => new Date(r.created_at) >= monthStart
         )
+
+        const unfulfilled = rawOrders.filter((o) => {
+          const active = (o.fulfillments ?? []).filter((f) => !f.canceled_at)
+          return active.length === 0 || (!active.some((f) => f.delivered_at) && !active.some((f) => f.shipped_at))
+        })
+
+        setUnfulfilledOrders(unfulfilled)
         setStats({
-          recent: rows.slice(0, 8),
+          recent: [...rows].reverse().slice(0, 10),
           ordersThisMonth: monthRows.length,
           revenueThisMonth: monthRows.reduce((sum, o) => sum + (o.total ?? 0), 0),
-          awaitingFulfillment: rows.filter(
-            (r) => r.fulfillmentLabel === "not fulfilled"
-          ).length,
+          awaitingFulfillment: unfulfilled.length,
           totalProducts: products.count ?? 0,
           currency: (rows[0]?.currency_code || "usd") as string,
         })
@@ -158,79 +162,193 @@ const DashboardPage = () => {
       .catch((e) => setError(e.message))
   }, [])
 
-  const cards = stats
-    ? [
-        {
-          label: "Revenue · this month",
-          value: money(stats.revenueThisMonth, stats.currency),
-        },
-        { label: "Orders · this month", value: String(stats.ordersThisMonth) },
-        {
-          label: "Awaiting fulfillment",
-          value: String(stats.awaitingFulfillment),
-          highlight: stats.awaitingFulfillment > 0,
-        },
-        { label: "Products", value: String(stats.totalProducts) },
-      ]
-    : []
+  const fmtTimeAgo = (iso: string) => {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+    if (diff < 60) return `${diff}m ago`
+    const hours = Math.floor(diff / 60)
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
 
   return (
-    <Container className="divide-y p-0">
-      <div className="flex items-center justify-between px-6 py-4">
+    <Container className="divide-y p-0 border border-ui-border-base rounded-2xl shadow-sm bg-ui-bg-base overflow-hidden">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 bg-gradient-to-r from-ui-bg-subtle via-ui-bg-base to-ui-bg-subtle">
         <div>
-          <Heading level="h1">Dashboard</Heading>
-          <Text className="text-ui-fg-subtle" size="small">
-            Your store at a glance
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">🌿</span>
+            <Heading level="h1" className="text-xl font-bold">
+              Operations & Daily Dispatch Hub
+            </Heading>
+          </div>
+          <Text className="text-ui-fg-subtle text-xs mt-1">
+            Real-time store overview, FIFO dispatch queue, and fulfillment tracking.
           </Text>
         </div>
-        <Button size="small" variant="secondary" onClick={() => location.reload()}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="small" variant="secondary" onClick={() => location.reload()}>
+            🔄 Refresh Live Data
+          </Button>
+        </div>
       </div>
 
       {error && (
-        <div className="px-6 py-4">
-          <Text className="text-ui-fg-error">Couldn’t load dashboard: {error}</Text>
+        <div className="px-6 py-4 bg-ui-tag-red-bg border-b border-ui-tag-red-border">
+          <Text className="text-ui-fg-error font-medium">Couldn’t load dashboard: {error}</Text>
         </div>
       )}
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 p-6 lg:grid-cols-4">
-        {(stats ? cards : Array.from({ length: 4 })).map((c: any, i) => (
-          <div
-            key={i}
-            className={`rounded-lg border p-4 ${
-              c?.highlight
-                ? "border-ui-tag-orange-border bg-ui-tag-orange-bg"
-                : "border-ui-border-base bg-ui-bg-subtle"
-            }`}
-          >
-            <Text size="small" className="text-ui-fg-subtle">
-              {c?.label ?? "…"}
+      {/* Primary KPI Tiles */}
+      <div className="grid grid-cols-2 gap-4 p-6 lg:grid-cols-4 bg-ui-bg-subtle/30">
+        <div className={`rounded-xl border p-4 transition-all ${
+          (stats?.awaitingFulfillment ?? 0) > 0
+            ? "border-amber-500/40 bg-amber-500/10 shadow-xs"
+            : "border-ui-border-base bg-ui-bg-subtle"
+        }`}>
+          <div className="flex items-center justify-between">
+            <Text size="small" className="text-ui-fg-subtle font-medium">
+              ⏳ Awaiting Packing
             </Text>
-            <Heading level="h2" className="mt-1">
-              {c?.value ?? "—"}
-            </Heading>
+            {(stats?.awaitingFulfillment ?? 0) > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+            )}
           </div>
-        ))}
+          <Heading level="h1" className="text-2xl font-black mt-2 text-ui-fg-base">
+            {stats ? String(stats.awaitingFulfillment) : "—"}
+          </Heading>
+          <Text className="text-xs text-ui-fg-muted mt-1">
+            {(stats?.awaitingFulfillment ?? 0) > 0
+              ? "Action needed: Pack & Label"
+              : "All current orders packed!"}
+          </Text>
+        </div>
+
+        <div className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-4">
+          <Text size="small" className="text-ui-fg-subtle font-medium">
+            💰 Revenue · This Month
+          </Text>
+          <Heading level="h1" className="text-2xl font-black mt-2 text-emerald-400">
+            {stats ? money(stats.revenueThisMonth, stats.currency) : "—"}
+          </Heading>
+          <Text className="text-xs text-ui-fg-muted mt-1">
+            Paid & captured orders
+          </Text>
+        </div>
+
+        <div className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-4">
+          <Text size="small" className="text-ui-fg-subtle font-medium">
+            📦 Orders · This Month
+          </Text>
+          <Heading level="h1" className="text-2xl font-black mt-2 text-ui-fg-base">
+            {stats ? String(stats.ordersThisMonth) : "—"}
+          </Heading>
+          <Text className="text-xs text-ui-fg-muted mt-1">
+            Total store volume
+          </Text>
+        </div>
+
+        <div className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-4">
+          <Text size="small" className="text-ui-fg-subtle font-medium">
+            🏷️ Live Products
+          </Text>
+          <Heading level="h1" className="text-2xl font-black mt-2 text-ui-fg-base">
+            {stats ? String(stats.totalProducts) : "—"}
+          </Heading>
+          <Text className="text-xs text-ui-fg-muted mt-1">
+            Active catalog items
+          </Text>
+        </div>
       </div>
 
-      {/* Recent orders */}
-      <div className="px-6 py-4">
-        <div className="mb-2 flex items-center justify-between">
-          <Heading level="h2">Recent orders</Heading>
-          <a href="/app/orders" className="text-ui-fg-interactive text-sm">
-            View all
+      {/* Priority Action To-Do List (FIFO: Oldest Pending Orders) */}
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <Heading level="h2" className="text-base font-bold flex items-center gap-2">
+              <span>📋</span> Priority Dispatch Queue (Oldest Orders First)
+            </Heading>
+            <Text className="text-xs text-ui-fg-muted mt-0.5">
+              Fulfill these orders first to ensure timely customer delivery.
+            </Text>
+          </div>
+          <a href="/app/orders">
+            <Button size="small" variant="secondary">
+              Open Full Orders List →
+            </Button>
+          </a>
+        </div>
+
+        {unfulfilledOrders.length === 0 ? (
+          <div className="py-6 text-center bg-ui-bg-subtle/50 rounded-xl border border-dashed border-ui-border-base">
+            <span className="text-xl mb-1 block">✅</span>
+            <Text className="text-sm font-semibold text-ui-fg-base">
+              Dispatch queue is completely clear!
+            </Text>
+            <Text className="text-xs text-ui-fg-muted mt-0.5">
+              All incoming customer orders have been packed.
+            </Text>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {unfulfilledOrders.slice(0, 6).map((ord, idx) => (
+              <div
+                key={ord.id}
+                className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:border-amber-500/60 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs font-bold text-amber-300">
+                    #{idx + 1}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-ui-fg-base">Order #{ord.display_id}</span>
+                      <span className="text-xs text-ui-fg-muted">•</span>
+                      <span className="text-xs text-ui-fg-subtle">{ord.email || "Customer"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-ui-fg-muted mt-0.5">
+                      <span className="text-emerald-400 font-semibold">${((ord.total || 0) / 100).toFixed(2)}</span>
+                      <span>•</span>
+                      <span>{ord.shipping_methods?.[0]?.name || "Standard Shipping"}</span>
+                      <span>•</span>
+                      <span className="text-amber-400 font-medium">Placed {fmtTimeAgo(ord.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge color="orange" className="text-xs font-semibold">
+                    Needs Fulfillment
+                  </Badge>
+                  <a href={`/app/orders/${ord.id}`}>
+                    <Button size="small" variant="primary" className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold">
+                      ⚡ Fulfill Order #{ord.display_id}
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent Activity Table */}
+      <div className="p-6">
+        <div className="mb-3 flex items-center justify-between">
+          <Heading level="h2" className="text-base font-bold">
+            Recent Orders & History
+          </Heading>
+          <a href="/app/orders" className="text-ui-fg-interactive text-xs font-medium hover:underline">
+            View all orders →
           </a>
         </div>
         {stats && stats.recent.length === 0 ? (
-          <Text className="text-ui-fg-subtle py-6">No orders yet.</Text>
+          <Text className="text-ui-fg-subtle py-6 text-center text-sm">No recent orders.</Text>
         ) : (
           <Table>
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell>Order</Table.HeaderCell>
-                <Table.HeaderCell>Date</Table.HeaderCell>
+                <Table.HeaderCell>Placed</Table.HeaderCell>
                 <Table.HeaderCell>Customer</Table.HeaderCell>
                 <Table.HeaderCell>Payment</Table.HeaderCell>
                 <Table.HeaderCell>Fulfillment</Table.HeaderCell>
@@ -241,10 +359,10 @@ const DashboardPage = () => {
               {(stats?.recent ?? []).map((o) => (
                 <Table.Row
                   key={o.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-ui-bg-subtle"
                   onClick={() => (location.href = `/app/orders/${o.id}`)}
                 >
-                  <Table.Cell>#{o.display_id}</Table.Cell>
+                  <Table.Cell className="font-bold">#{o.display_id}</Table.Cell>
                   <Table.Cell>{fmtDate(o.created_at)}</Table.Cell>
                   <Table.Cell>{o.email ?? "—"}</Table.Cell>
                   <Table.Cell>
@@ -253,14 +371,11 @@ const DashboardPage = () => {
                     </Badge>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge
-                      size="2xsmall"
-                      color={statusColor(o.fulfillmentLabel)}
-                    >
+                    <Badge size="2xsmall" color={statusColor(o.fulfillmentLabel)}>
                       {o.fulfillmentLabel}
                     </Badge>
                   </Table.Cell>
-                  <Table.Cell className="text-right">
+                  <Table.Cell className="text-right font-medium text-emerald-400">
                     {money(o.total, o.currency_code)}
                   </Table.Cell>
                 </Table.Row>
