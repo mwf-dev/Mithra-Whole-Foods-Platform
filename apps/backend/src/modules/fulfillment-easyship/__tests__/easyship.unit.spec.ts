@@ -6,6 +6,7 @@ describe("EasyshipFulfillmentService", () => {
 
   beforeEach(() => {
     service = new EasyshipFulfillmentService({}, {
+      apiKey: "mock",
       shipFromZip: "19341",
       shipFromCity: "Exton",
       shipFromState: "PA",
@@ -89,7 +90,7 @@ describe("EasyshipFulfillmentService", () => {
 
 describe("EasyshipClient", () => {
   it("provides reliable mock fallback when unconfigured", async () => {
-    const client = new EasyshipClient({})
+    const client = new EasyshipClient({ apiKey: "mock" })
     expect(client.isConfigured).toBe(false)
 
     const rates = await client.getRates({
