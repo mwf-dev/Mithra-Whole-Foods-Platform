@@ -174,7 +174,22 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
     order: any,
     fulfillment: any
   ): Promise<CreateFulfillmentResult> {
-    const shippingAddress = order?.shipping_address || fulfillment?.shipping_address || {}
+    const shippingAddress =
+      order?.shipping_address ||
+      fulfillment?.shipping_address ||
+      fulfillment?.order?.shipping_address ||
+      {}
+    const customerEmail =
+      order?.email ||
+      fulfillment?.order?.email ||
+      fulfillment?.email ||
+      shippingAddress?.email ||
+      "customer@mithrawholefoods.com"
+    const customerPhone =
+      shippingAddress?.phone ||
+      order?.phone ||
+      fulfillment?.order?.phone ||
+      "+12155555678"
 
     const totalWeightKg = items.reduce(
       (acc, item) => acc + (Number(item.variant?.weight || item.weight || 500) * Number(item.quantity || 1)) / 1000,
@@ -198,8 +213,8 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
         postal_code: shippingAddress.postal_code || "19104",
         country_alpha2: shippingAddress.country_code?.toUpperCase() || "US",
         contact_name: `${shippingAddress.first_name || ""} ${shippingAddress.last_name || ""}`.trim() || "Customer",
-        contact_phone: shippingAddress.phone,
-        contact_email: order?.email,
+        contact_phone: customerPhone,
+        contact_email: customerEmail,
       },
       parcels: [
         {

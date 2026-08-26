@@ -125,7 +125,13 @@ export class EasyshipClient {
       },
       destination_address: {
         ...params.destination_address,
-        contact_phone: params.destination_address.contact_phone || "+12155555678",
+        contact_name:
+          params.destination_address.contact_name?.trim() || "Customer",
+        contact_email:
+          params.destination_address.contact_email ||
+          "customer@mithrawholefoods.com",
+        contact_phone:
+          params.destination_address.contact_phone || "+12155555678",
       },
       parcels: params.parcels.map((p) => ({
         ...p,
