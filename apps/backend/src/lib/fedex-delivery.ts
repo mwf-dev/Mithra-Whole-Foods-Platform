@@ -19,13 +19,29 @@ export async function deliverByTrackingNumber(
 ): Promise<DeliverByTrackingResult> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
 
-  const { data: fulfillments } = await query.graph({
+  let { data: fulfillments } = await query.graph({
     entity: "fulfillment",
-    fields: ["id", "delivered_at", "canceled_at", "order.id"],
+    fields: ["id", "delivered_at", "canceled_at", "order.id", "data"],
     filters: { labels: { tracking_number: trackingNumber } } as any,
   })
 
-  const fulfillment = fulfillments?.[0] as any
+  let fulfillment = fulfillments?.[0] as any
+
+  if (!fulfillment) {
+    // Fallback: search by Easyship shipment ID or data.tracking_number
+    const { data: allFulfillments } = await query.graph({
+      entity: "fulfillment",
+      fields: ["id", "delivered_at", "canceled_at", "order.id", "data"],
+      pagination: { take: 50 },
+    })
+
+    fulfillment = (allFulfillments || []).find(
+      (f: any) =>
+        f.data?.easyship_shipment_id === trackingNumber ||
+        f.data?.tracking_number === trackingNumber ||
+        f.id === trackingNumber
+    )
+  }
   if (!fulfillment) {
     return { ok: false, reason: "not_found" }
   }
