@@ -75,7 +75,15 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
       delivered: !!f.delivered_at,
       delivered_at: f.delivered_at,
       canceled: !!f.canceled_at,
-      tracking_numbers: (f.labels ?? []).map((l: any) => l.tracking_number).filter(Boolean),
+      tracking_numbers: Array.from(
+        new Set(
+          [
+            ...(f.labels ?? []).map((l: any) => l.tracking_number),
+            f.data?.tracking_number,
+            f.data?.easyship_shipment_id,
+          ].filter(Boolean)
+        )
+      ),
       items: (f.items ?? []).map((i: any) => ({
         title: i.title,
         quantity: i.quantity,
