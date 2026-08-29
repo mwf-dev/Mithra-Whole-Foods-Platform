@@ -2,6 +2,7 @@ import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { listCartPaymentMethods } from "@lib/data/payment"
 import { HttpTypes } from "@medusajs/types"
 import Addresses from "@modules/checkout/components/addresses"
+import CheckoutStepper from "@modules/checkout/components/checkout-stepper"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
@@ -24,15 +25,29 @@ export default async function CheckoutForm({
     return null
   }
 
+  const hasAddress = !!cart.shipping_address?.address_1
+  const hasShipping = !!(cart.shipping_methods && cart.shipping_methods.length > 0)
+  const hasPayment = !!cart.payment_collection?.payment_sessions?.length
+
   return (
-    <div className="w-full grid grid-cols-1 gap-y-8">
-      <Addresses cart={cart} customer={customer} />
+    <div className="w-full flex flex-col">
+      {/* 3-Step Guided Progression Bar */}
+      <CheckoutStepper
+        hasAddress={hasAddress}
+        hasShipping={hasShipping}
+        hasPayment={hasPayment}
+      />
 
-      <Shipping cart={cart} availableShippingMethods={shippingMethods} />
+      {/* Step Components */}
+      <div className="w-full grid grid-cols-1 gap-y-6">
+        <Addresses cart={cart} customer={customer} />
 
-      <Payment cart={cart} availablePaymentMethods={paymentMethods} />
+        <Shipping cart={cart} availableShippingMethods={shippingMethods} />
 
-      <Review cart={cart} />
+        <Payment cart={cart} availablePaymentMethods={paymentMethods} />
+
+        <Review cart={cart} />
+      </div>
     </div>
   )
 }
