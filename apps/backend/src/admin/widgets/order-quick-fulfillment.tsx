@@ -1,7 +1,7 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { DetailWidgetProps, AdminOrder } from "@medusajs/framework/types"
-import { Container, Heading, Text, Button, Badge, toast } from "@medusajs/ui"
-import { CheckCircleSolid, ArrowPath, Clock, MapPin, FlyingBox, DocumentText } from "@medusajs/icons"
+import { Container, Heading, Text, Button, toast } from "@medusajs/ui"
+import { CheckCircleSolid } from "@medusajs/icons"
 import { useState } from "react"
 
 /**
@@ -12,39 +12,37 @@ const OrderLifecycleDispatchWidget = ({
   data: order,
 }: DetailWidgetProps<AdminOrder>) => {
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
-  const [syncingStatus, setSyncingStatus] = useState(false)
 
-  const fulfillments = order.fulfillments || []
+  const fulfillments = (order.fulfillments as any[]) || []
   const activeFulfillments = fulfillments.filter((f) => !f.canceled_at)
-  const primaryFulfillment = activeFulfillments[0]
+  const primaryFulfillment = activeFulfillments[0] as any
 
   const isPaid = (order.payment_collections || []).some(
     (p: any) => p.status === "completed" || p.status === "captured"
   ) || order.payment_status === "captured" || true
 
   const isPacked = !!primaryFulfillment?.packed_at || activeFulfillments.length > 0
-  const isShipped = !!primaryFulfillment?.shipped_at || !!(primaryFulfillment?.data as any)?.tracking_number || !!primaryFulfillment?.labels?.[0]?.tracking_number
+  const isShipped = !!primaryFulfillment?.shipped_at || !!primaryFulfillment?.data?.tracking_number || !!primaryFulfillment?.labels?.[0]?.tracking_number
   const isDelivered = !!primaryFulfillment?.delivered_at
-  const isCanceled = !!primaryFulfillment?.canceled_at
 
   const trackingNumber =
     primaryFulfillment?.labels?.[0]?.tracking_number ||
-    (primaryFulfillment?.data as any)?.tracking_number ||
-    (primaryFulfillment?.data as any)?.easyship_shipment_id ||
+    primaryFulfillment?.data?.tracking_number ||
+    primaryFulfillment?.data?.easyship_shipment_id ||
     ""
 
   const labelUrl =
     primaryFulfillment?.labels?.[0]?.label_url ||
-    (primaryFulfillment?.data as any)?.label_url ||
+    primaryFulfillment?.data?.label_url ||
     ""
 
   const trackingUrl =
     primaryFulfillment?.labels?.[0]?.tracking_url ||
-    (primaryFulfillment?.data as any)?.tracking_url ||
+    primaryFulfillment?.data?.tracking_url ||
     (trackingNumber ? `https://www.trackmyshipment.co/shipment-tracking/${trackingNumber}` : "")
 
   const courierName =
-    (primaryFulfillment?.data as any)?.courier_name ||
+    primaryFulfillment?.data?.courier_name ||
     (primaryFulfillment?.labels?.[0]?.tracking_url?.includes("fedex") ? "FedEx" :
     primaryFulfillment?.labels?.[0]?.tracking_url?.includes("ups") ? "UPS" :
     "Easyship Courier")
