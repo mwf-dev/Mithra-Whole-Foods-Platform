@@ -85,7 +85,9 @@ const Shipping: React.FC<ShippingProps> = ({
   const isOpen = searchParams.get("step") === "delivery"
 
   const _shippingMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type !== "pickup"
+    (sm) =>
+      sm.service_zone?.fulfillment_set?.type !== "pickup" &&
+      !sm.name?.toLowerCase().includes("easyship")
   )
 
   const _pickupMethods = availableShippingMethods?.filter(
