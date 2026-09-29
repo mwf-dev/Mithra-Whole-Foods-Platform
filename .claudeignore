@@ -1,0 +1,26 @@
+# Agent read-exclusions — keep context spend on source, not artifacts.
+# Mirror this list in .cursorignore / .aiexclude if you add those tools.
+
+node_modules/
+**/node_modules/
+.git/
+
+# Build output (generated — never edit, never read)
+apps/web/.next/
+apps/backend/.medusa/
+**/dist/
+**/build/
+out/
+.turbo/
+coverage/
+
+# Lockfile: 600KB+, never useful in context (versions live in package.json)
+pnpm-lock.yaml
+
+# Uploaded media (binary; served from apps/backend/static)
+apps/backend/static/
+
+# Local env files (secrets — also gitignored)
+.env
+.env.*
+!.env.template

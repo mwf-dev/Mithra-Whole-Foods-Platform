@@ -1,0 +1,59 @@
+# Dependency directories
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+
+# Turborepo
+.turbo/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+!.env.template
+!.env.*.template
+
+# Database dumps. A pg_dump of this schema carries customer rows, addresses,
+# auth_identity/provider_identity (password hashes) and api_key — treat it
+# exactly like a credentials file and never commit one.
+*.sql
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# AI Configs (do not ignore .agents directory itself since we want to share instructions, just scratch/logs)
+brain/
+.system_generated/
+.vercel
+.env*.local
+
+# Installed agent skill packages + their lockfile. Tooling for whoever is
+# driving an agent locally, not part of the app — and `.claude/skills/*` are
+# just symlinks into `.agents/skills/`, which git would store as link files.
+.agents/skills/
+.claude/skills/
+skills-lock.json
+
+# Browser-QA artefacts (18 MB of screenshots as of 2026-08-06). Evidence for a
+# point-in-time audit; the findings live in docs/QA_2026-08-02_BROWSER_AUDIT.md.
+dogfood-output/

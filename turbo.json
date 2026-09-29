@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", ".medusa/**", "dist/**", "build/**"],
+      "env": [
+        "MEDUSA_BACKEND_URL",
+        "REVALIDATE_SECRET",
+        "NEXT_PUBLIC_STRIPE_KEY"
+      ]
+    },
+    "lint": {},
+    "typecheck": {},
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
