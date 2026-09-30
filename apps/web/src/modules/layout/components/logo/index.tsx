@@ -1,87 +1,92 @@
-"use client"
-
-import { useState } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
- * Brand logo, top-left of the header.
- *
- * Renders the artwork at `apps/web/public/logo.png`, falling back to a serif
- * wordmark + leaf mark (brand green) if that file is missing or fails to
- * decode. The artwork is emitted in the server HTML rather than probed for on
- * the client, so it paints with the header instead of popping in after
- * hydration; next/image downscales it to the size actually displayed.
+ * The official Mithra mark — the tree-and-face — rendered from the client's
+ * vector logo (PRODUCTS/Logo/Logo.cdr (Colour).pdf) to a transparent PNG at
+ * `public/brand/mithra-mark.png` (463×512). next/image serves a 1x/2x copy at
+ * the displayed height.
  */
-const LOGO_SRC = "/logo.png"
-// The source art is ~1774×650; this is that ratio at its rendered height.
-const LOGO_WIDTH = 153
-const LOGO_HEIGHT = 56
+const MARK_SRC = "/brand/mithra-mark.png"
+const MARK_RATIO = 463 / 512
 
+const SIZES = {
+  // Header: centred, big enough to read at a glance on a phone.
+  header: {
+    mark: "h-12 md:h-[68px]",
+    name: "text-[24px] md:text-[36px]",
+    tag: "text-[8.5px] md:text-[11.5px]",
+    gap: "gap-2 md:gap-3",
+    // Largest rendered height in px. next/image builds its 1x/2x srcset from
+    // this, so it must be the displayed size, not the source size — otherwise
+    // a 60px mark downloads the 1080px variant.
+    px: 68,
+  },
+  // Route-transition overlay: the dominant thing on screen.
+  hero: {
+    mark: "h-[clamp(5rem,14vw,8.5rem)]",
+    name: "text-[clamp(2.4rem,7vw,4.25rem)]",
+    tag: "text-[clamp(0.7rem,1.6vw,1rem)]",
+    gap: "gap-4 md:gap-6",
+    px: 136,
+  },
+} as const
+
+/**
+ * Mark + wordmark lockup. "MITHRA" is set in the bark brown of the mark's
+ * trunk, "WHOLE FOODS" in brand green between two leaf rules — the same
+ * arrangement as the printed packs, but live text, so it stays sharp at any
+ * size and costs no extra image.
+ */
+export function BrandLockup({
+  size = "header",
+  priority = false,
+}: {
+  size?: keyof typeof SIZES
+  priority?: boolean
+}) {
+  const s = SIZES[size]
+  return (
+    <span className={`flex items-center ${s.gap}`}>
+      <Image
+        src={MARK_SRC}
+        alt=""
+        width={Math.round(s.px * MARK_RATIO)}
+        height={s.px}
+        priority={priority}
+        quality={75}
+        className={`${s.mark} w-auto shrink-0 object-contain`}
+      />
+      <span className="flex flex-col items-center leading-none">
+        <span
+          className={`font-display uppercase tracking-[0.06em] text-bark leading-[0.9] ${s.name}`}
+        >
+          Mithra
+        </span>
+        <span
+          className={`mt-1 flex items-center gap-1.5 font-semibold uppercase tracking-[0.3em] text-primary ${s.tag}`}
+        >
+          <span aria-hidden className="h-px w-3 bg-current opacity-60 md:w-4" />
+          Whole Foods
+          <span aria-hidden className="h-px w-3 bg-current opacity-60 md:w-4" />
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/** Header logo: the lockup as a link home. */
 export default function Logo({ className }: { className?: string }) {
-  const [failed, setFailed] = useState(false)
-
   return (
     <LocalizedClientLink
       href="/"
       aria-label="Mithra Whole Foods — home"
-      className={`flex items-center gap-2.5 shrink-0 ${className ?? ""}`}
+      className={`flex shrink-0 items-center rounded-rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${
+        className ?? ""
+      }`}
       data-testid="nav-logo-link"
     >
-      {!failed ? (
-        <Image
-          src={LOGO_SRC}
-          alt="Mithra Whole Foods"
-          width={LOGO_WIDTH}
-          height={LOGO_HEIGHT}
-          priority
-          quality={75}
-          onError={() => setFailed(true)}
-          className="h-14 w-auto object-contain"
-        />
-      ) : (
-        <>
-          <LeafMark className="h-9 w-9 text-[#2E5C31]" />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-[22px] leading-none text-[#2E5C31] tracking-tight">
-              Mithra
-            </span>
-            <span className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#6b7f6e] mt-1">
-              Whole Foods
-            </span>
-          </span>
-        </>
-      )}
+      <BrandLockup priority />
     </LocalizedClientLink>
-  )
-}
-
-/** Simple sprout/leaf mark echoing the brand's tree motif. */
-function LeafMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M20 34V17"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M20 20C20 13 15 8 7 8c0 7 5 12 13 12Z"
-        fill="currentColor"
-        opacity="0.9"
-      />
-      <path
-        d="M20 24c0-6 4.5-10.5 12-10.5C32 19.5 27.5 24 20 24Z"
-        fill="currentColor"
-        opacity="0.55"
-      />
-    </svg>
   )
 }

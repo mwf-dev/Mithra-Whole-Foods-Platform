@@ -45,6 +45,9 @@ module.exports = {
           foreground: "#FFFFFF",
         },
         olive: "#7A8F3F",
+        // Official logo colours (sampled from the client's vector logo,
+        // PRODUCTS/Logo/Logo.cdr (Colour).pdf): the tree-and-face trunk.
+        bark: "#A24B3D",
         sage: "#A8B89A",
         terracotta: "#C86F45",
         cream: "#FAF7F1",

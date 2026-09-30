@@ -12,6 +12,8 @@ const dmSerif = DM_Serif_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  // Official Mithra mark (see modules/layout/components/logo).
+  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
 }
 
 import { Analytics } from "@vercel/analytics/react"

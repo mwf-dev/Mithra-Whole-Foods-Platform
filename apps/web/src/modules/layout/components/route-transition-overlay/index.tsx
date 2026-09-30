@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { BrandLockup } from "@modules/layout/components/logo"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -267,14 +267,9 @@ export default function RouteTransitionOverlay() {
           breakpoints, and it never animates: it is the calm anchor the sprout
           mark below plays against.
         */}
-        <Image
-          src="/logo.png"
-          alt=""
-          width={355}
-          height={130}
-          priority
-          className="h-[clamp(6rem,18vw,11.5rem)] w-auto object-contain"
-        />
+        <span aria-hidden>
+          <BrandLockup size="hero" />
+        </span>
         <span className="sr-only">Loading</span>
         {/*
           Loading mark: the brand's own tree glyph (same paths as the Logo
