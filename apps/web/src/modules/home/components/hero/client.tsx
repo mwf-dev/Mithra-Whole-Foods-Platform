@@ -1,340 +1,328 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { safeCssUrl } from "@lib/util/safe-css-url";
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import { ArrowRight, Check, ChevronLeft, ChevronRight } from "lucide-react"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import type { AisleWorld } from "@modules/home/aisles"
 
-interface Banner {
-  title: string;
-  subtitle: string;
-  image: string;
-  link: string;
+export type HeroSlide = {
+  id: string
+  href: string
+  world: AisleWorld
+  kicker: string
+  headline: string
+  chips: string[]
+  cta: string
+  image: string
+  imageAlt: string
+  launching?: boolean
 }
 
-interface HeroClientProps {
-  initialTitle: string;
-  initialSubtitle: string;
-  initialBgImage: string;
-  initialBanners: Banner[];
-  backendUrl: string;
-}
+const SLIDE_MS = 6500
 
-const SLIDE_INTERVAL_MS = 6000;
+// One fixed box for every slide so the page never jumps on rotation. Phones
+// get a taller-than-wide box because the copy stacks over the pack.
+const HERO_BOX = "h-[32rem] md:h-[clamp(25rem,64vh,36rem)]"
 
-// One fixed box for every slide, sized so the *whole* banner is visible.
-//
-// Two requirements pull against each other here. Banners are admin-uploaded, so
-// their aspect ratios are not guaranteed to match each other — but the carousel
-// must not resize between slides, or the page jumps on every rotation. So the
-// box height is static and the image is fitted inside it with `object-contain`
-// (see HeroImage). Nothing is ever cropped; a banner narrower or wider than the
-// box simply sits centred with the section background either side. That holds
-// however many slides get added, and whatever shape they are.
-//
-// On phones 16:9 is the right shape — the viewport is narrow, so the derived
-// height is modest and matches how the artwork is authored. On a desktop it is
-// not: at a 1920px-wide viewport, 16:9 works out to 1080px tall, so the hero
-// alone overflowed the screen and pushed everything below it out of view. From
-// `md` up the box therefore switches to a clamped height instead of a ratio:
-// never shorter than 384px, never taller than 70% of the viewport, capped at
-// 640px on very tall displays. That is enough room to show a 16:9 banner nearly
-// full-width while still leaving the next section peeking above the fold.
-const HERO_ASPECT =
-  "aspect-[16/9] md:aspect-auto md:h-[clamp(24rem,70vh,40rem)]";
+// Where the claim cards float around the pack (desktop), with a parallax
+// depth for each so they drift at different speeds under the cursor.
+const CHIP_SPOTS = [
+  { className: "left-[4%] top-[16%]", depth: 22, delay: "0s" },
+  { className: "right-[3%] top-[42%]", depth: 30, delay: "1.2s" },
+  { className: "left-[10%] bottom-[14%]", depth: 16, delay: "2.1s" },
+]
 
-/**
- * Banner links are admin-authored. Internal paths must carry the country code
- * — without it middleware answers with a 307, which the App Router cannot
- * follow client-side and downgrades into a full document reload. Absolute URLs
- * are left alone and sent through a plain anchor.
- */
-function HeroLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  if (/^https?:\/\//i.test(href)) {
-    return (
-      <a href={href} className="block w-full" rel="noopener noreferrer">
-        {children}
-      </a>
-    );
-  }
+// Parallax offsets are driven by two CSS variables on the hero root
+// (--mx/--my, each -1…1) written straight to the DOM from pointermove, so the
+// cursor never causes a React render.
+const layer = (x: number, y: number, rotate = 0): React.CSSProperties => ({
+  transform: `translate3d(calc(var(--mx) * ${x}px), calc(var(--my) * ${y}px), 0) rotate(calc(var(--mx) * ${rotate}deg))`,
+  transition: "transform 400ms cubic-bezier(.2,.8,.2,1)",
+})
 
-  // The hero is the primary entry point into the catalogue and the banners
-  // mostly resolve to the same handful of URLs (prefetches dedupe by href),
-  // so a full prefetch here is cheap and removes the wait on the main CTA.
-  return (
-    <LocalizedClientLink href={href} prefetch className="block w-full">
-      {children}
-    </LocalizedClientLink>
-  );
-}
-
-/**
- * A single banner, routed through next/image so it is resized and served as
- * AVIF/WebP rather than shipping the multi-megabyte original.
- */
-function HeroImage({
-  src,
-  alt,
+function ProductSlide({
+  slide,
+  active,
   priority,
   mounted,
 }: {
-  src: string;
-  alt: string;
-  priority?: boolean;
-  mounted?: boolean;
+  slide: HeroSlide
+  active: boolean
+  priority: boolean
+  mounted: boolean
 }) {
-  // Rejects anything that isn't http(s)/root-relative/data-image. next/image
-  // throws on an empty src, so fall back to the flat brand tile instead.
-  const safeSrc = safeCssUrl(src);
-
-  if (!safeSrc || !mounted) {
-    return <div className={`w-full ${HERO_ASPECT} bg-[#e6efe8]`} />;
-  }
-
+  const { world } = slide
   return (
     <div
-      className={`relative w-full ${HERO_ASPECT} flex items-center justify-center`}
+      className="flex h-full flex-col md:grid md:grid-cols-[1fr_1.05fr] md:items-center px-6 pt-8 pb-12 md:px-[6%] md:py-0"
+      style={{ backgroundColor: world.bg, color: world.ink }}
     >
-      {/*
-        Intrinsically sized rather than `fill`, so the <img> element is exactly
-        the visible banner — which is what lets `rounded-2xl` round the real
-        image edges. With `fill` + `object-contain` the element still spans the
-        whole box, so the radius landed on empty letterbox area and the banner
-        itself stayed square-cornered.
+      <div
+        className={`relative z-10 flex flex-col gap-3 md:gap-5 transition-all duration-700 ease-out ${
+          active ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">
+            {slide.kicker}
+          </span>
+          {slide.launching && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+              style={{ backgroundColor: world.deep }}
+            >
+              Launching soon
+            </span>
+          )}
+        </div>
+        <h2 className="font-display text-[2rem] leading-[1.02] md:text-5xl lg:text-6xl text-balance max-w-[14ch]">
+          {slide.headline}
+        </h2>
+        {/* Phones: claims inline. From md they float around the pack instead. */}
+        <ul className="flex flex-wrap gap-1.5 md:hidden">
+          {slide.chips.slice(0, 2).map((chip) => (
+            <li
+              key={chip}
+              className="rounded-full border border-current px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+            >
+              {chip}
+            </li>
+          ))}
+        </ul>
+        <LocalizedClientLink
+          href={slide.href}
+          tabIndex={active ? 0 : -1}
+          style={{ backgroundColor: world.deep }}
+          className="group/cta mt-1 inline-flex w-max items-center gap-2 rounded-rounded px-5 py-3 text-sm font-semibold text-white shadow-card transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          {slide.cta}
+          <ArrowRight size={16} aria-hidden className="transition-transform group-hover/cta:translate-x-1" />
+        </LocalizedClientLink>
+      </div>
 
-        `h-full w-auto` pins every slide to the same height and lets width
-        follow the image's own ratio: nothing is cropped, and the box never
-        resizes between slides. `max-w-full` is the guard for a banner uploaded
-        taller than the box; `object-contain` keeps it undistorted if it hits.
-        The width/height props are only the intrinsic hint next/image requires —
-        CSS decides the rendered size.
-      */}
-      <Image
-        src={safeSrc}
-        alt={alt}
-        width={1920}
-        height={1080}
-        sizes="100vw"
-        priority={priority}
-        quality={75}
-        className="h-full w-auto max-w-full object-contain rounded-2xl"
-      />
+      <div className="relative flex min-h-0 flex-1 items-center justify-center md:h-full">
+        {/* Soft light behind the pack; drifts the opposite way to the pack. */}
+        <div
+          aria-hidden
+          className="absolute aspect-square w-[80%] max-w-[28rem] rounded-full"
+          style={{
+            ...layer(10, 8),
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.42), rgba(255,255,255,0) 68%)",
+          }}
+        />
+        {mounted && (
+          <div
+            className={`relative h-full w-full transition-all duration-1000 ease-out ${
+              active ? "translate-x-0 scale-100 opacity-100" : "translate-x-16 scale-90 opacity-0"
+            }`}
+          >
+            <div className="absolute inset-0" style={layer(-18, -12, -2)}>
+              <div className="mithra-float absolute inset-0">
+                <Image
+                  src={slide.image}
+                  alt={slide.imageAlt}
+                  fill
+                  priority={priority}
+                  quality={75}
+                  sizes="(max-width: 768px) 90vw, 50vw"
+                  className="object-contain drop-shadow-[0_22px_24px_rgba(0,0,0,0.32)] p-2 md:p-10"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating claim cards (desktop). */}
+        {slide.chips.slice(0, CHIP_SPOTS.length).map((chip, i) => {
+          const spot = CHIP_SPOTS[i]
+          return (
+            <div
+              key={chip}
+              aria-hidden
+              className={`absolute z-10 hidden md:block ${spot.className} transition-all duration-700 ease-out ${
+                active ? "opacity-100 scale-100" : "opacity-0 scale-75"
+              }`}
+              style={{ transitionDelay: active ? `${300 + i * 150}ms` : "0ms" }}
+            >
+              <div style={layer(spot.depth, spot.depth * 0.6)}>
+                <div
+                  className="mithra-float flex items-center gap-2 rounded-rounded bg-white/95 py-2 pl-2 pr-3.5 text-xs font-semibold text-charcoal shadow-card-lg backdrop-blur-sm"
+                  style={{ animationDelay: spot.delay, animationDuration: `${5 + i}s` }}
+                >
+                  <span
+                    className="grid h-6 w-6 place-items-center rounded-full"
+                    style={{ backgroundColor: world.bg, color: world.ink }}
+                  >
+                    <Check size={13} strokeWidth={3} />
+                  </span>
+                  {chip}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
-  );
+  )
 }
 
-function resolveImage(url: string, backendUrl: string): string {
-  if (url && url.startsWith("/")) {
-    return `${backendUrl}${url}`;
+export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
+  const count = slides.length
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(false)
+  const rootRef = useRef<HTMLElement>(null)
+  const swipeX = useRef<number | null>(null)
+  const frame = useRef(0)
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduceMotion(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setReduceMotion(e.matches)
+    mq.addEventListener("change", onChange)
+    return () => mq.removeEventListener("change", onChange)
+  }, [])
+
+  // Mount each slide's image up to one ahead of the furthest reached: first
+  // paint costs one image, and the next one is decoded before it slides in.
+  const [maxSeen, setMaxSeen] = useState(0)
+  useEffect(() => setMaxSeen((m) => Math.max(m, index)), [index])
+
+  const go = (i: number) => setIndex((i + count) % count)
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse" || reduceMotion) return
+    const el = rootRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1
+    const my = ((e.clientY - rect.top) / rect.height) * 2 - 1
+    cancelAnimationFrame(frame.current)
+    frame.current = requestAnimationFrame(() => {
+      el.style.setProperty("--mx", mx.toFixed(3))
+      el.style.setProperty("--my", my.toFixed(3))
+    })
   }
-  return url;
-}
 
-// Titles may contain real newlines (typed in admin) or the literal "\n"
-// stored by the seed default — normalize both to line breaks.
-function formatTitle(title: string) {
-  return title
-    .replace(/\\n/g, "\n")
-    .split("\n")
-    .map((line, i, arr) => (
-      <span key={i}>
-        {line}
-        {i < arr.length - 1 && <br />}
-      </span>
-    ));
-}
+  const resetPointer = () => {
+    cancelAnimationFrame(frame.current)
+    rootRef.current?.style.setProperty("--mx", "0")
+    rootRef.current?.style.setProperty("--my", "0")
+  }
 
-export function HeroClient({
-  initialTitle,
-  initialSubtitle,
-  initialBgImage,
-  initialBanners,
-  backendUrl,
-}: HeroClientProps) {
-  const [title, setTitle] = useState(initialTitle);
-  const [subtitle, setSubtitle] = useState(initialSubtitle);
-  const [bgImage, setBgImage] = useState(initialBgImage);
-  const [banners, setBanners] = useState<Banner[]>(initialBanners);
-  const [slide, setSlide] = useState(0);
-
-  // Live-preview channel from the admin panel (served from the backend origin)
-  useEffect(() => {
-    const allowedOrigins = new Set(["http://localhost:9000", "http://localhost:8000"]);
-    try {
-      allowedOrigins.add(new URL(backendUrl).origin);
-    } catch {
-      // ignore malformed backend URL; localhost fallbacks remain
-    }
-
-    const handleMessage = (event: MessageEvent) => {
-      if (!allowedOrigins.has(event.origin)) {
-        return;
-      }
-
-      if (event.data?.type === 'UPDATE_PREVIEW' && event.data?.settings) {
-        const settings = event.data.settings;
-
-        if (settings.hero_title) setTitle(settings.hero_title);
-        if (settings.hero_subtitle) setSubtitle(settings.hero_subtitle);
-        if (settings.hero_image_url) {
-          setBgImage(resolveImage(settings.hero_image_url, backendUrl));
-        }
-        if (Array.isArray(settings.hero_banners)) {
-          setBanners(
-            settings.hero_banners
-              .filter((b: any) => b && (b.title || b.image_url))
-              .map((b: any) => ({
-                title: b.title || "",
-                subtitle: b.subtitle || "",
-                image: resolveImage(b.image_url || "", backendUrl),
-                link: b.link || "/store",
-              }))
-          );
-          setSlide(0);
-        }
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [backendUrl]);
-
-  // Auto-advance the banner slider.
-  //
-  // Depends on `slide` as well as `slideCount` so that *any* slide change tears
-  // the timer down and starts a fresh one. That matters for the arrows: the
-  // interval otherwise keeps running on its own schedule, so a click landing
-  // shortly before a tick got overridden almost immediately — observed live
-  // going 0 → 1 on click, then straight back to 0 about 300ms later, which
-  // reads as "the arrow is broken". Restarting means a manual change always
-  // gets the full interval before anything moves on its own. The cadence itself
-  // is unchanged.
-  const slideCount = banners.length;
-  useEffect(() => {
-    if (slideCount < 2) {
-      return;
-    }
-    const id = setInterval(
-      () => setSlide((s) => (s + 1) % slideCount),
-      SLIDE_INTERVAL_MS
-    );
-    return () => clearInterval(id);
-  }, [slideCount, slide]);
-
-  // Every slide sits in the same grid cell and is merely faded out, so the
-  // browser treats them all as in-viewport and `loading="lazy"` would not
-  // defer them. Track the furthest slide reached and only mount images up to
-  // one ahead of it — the first paint then costs a single banner instead of
-  // the whole carousel, while the next one is always warm before it fades in.
-  const [maxSeen, setMaxSeen] = useState(0);
-  useEffect(() => {
-    setMaxSeen((m) => Math.max(m, slide));
-  }, [slide]);
-
-  const hasBanners = slideCount > 0;
+  if (count === 0) return null
 
   return (
-    // Full-bleed background, contained foreground. The banner is centred and
-    // capped at the same max width the rest of the page uses, so on a wide
-    // monitor it reads as a deliberate card rather than an edge-to-edge image
-    // that runs past the fold. The corner radius lives on the <img> itself
-    // (see HeroImage) — the banner does not fill this box, so rounding the box
-    // would round empty space instead of the artwork.
-    <section className="relative w-full flex flex-col items-center bg-[#f0f4f0]">
-      <div
-        id="hero-carousel"
-        aria-live="polite"
-        className="relative mx-auto w-full max-w-[1440px] grid grid-cols-1 grid-rows-1 md:px-6 md:py-6"
-      >
-        {hasBanners ? (
-          banners.map((b, i) => (
-            <div
-              key={i}
-              className={`col-start-1 row-start-1 transition-all duration-1000 ease-in-out ${
-                i === slide
-                  ? "opacity-100 translate-x-0 z-10"
-                  : "opacity-0 translate-x-4 z-0 pointer-events-none"
-              }`}
-            >
-              <HeroLink href={b.link || "/store"}>
-                <HeroImage
-                  src={b.image}
-                  alt={b.title || "Hero background"}
-                  // The visible banner is the LCP element: fetch it eagerly.
+    <section
+      ref={rootRef}
+      aria-roledescription="carousel"
+      aria-label="Featured products"
+      className="w-full bg-cream"
+      style={{ ["--mx" as string]: 0, ["--my" as string]: 0 }}
+      onPointerMove={onPointerMove}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => {
+        setPaused(false)
+        resetPointer()
+      }}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => {
+        if (!rootRef.current?.contains(e.relatedTarget as Node)) setPaused(false)
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== "mouse") swipeX.current = e.clientX
+      }}
+      onPointerUp={(e) => {
+        if (swipeX.current === null) return
+        const dx = e.clientX - swipeX.current
+        swipeX.current = null
+        if (Math.abs(dx) > 50) go(index + (dx < 0 ? 1 : -1))
+      }}
+    >
+      <div className="relative mx-auto w-full max-w-[1440px] md:px-6 md:pt-6">
+        <div className={`relative overflow-hidden md:rounded-large ${HERO_BOX}`}>
+          {slides.map((slide, i) => {
+            const active = i === index
+            return (
+              <div
+                key={slide.id}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${count}: ${slide.headline}`}
+                aria-hidden={!active}
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                  active ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+                }`}
+              >
+                <ProductSlide
+                  slide={slide}
+                  active={active}
                   priority={i === 0}
                   mounted={i <= maxSeen + 1}
                 />
-              </HeroLink>
-            </div>
-          ))
-        ) : (
-          <div className="col-start-1 row-start-1 opacity-100 z-10">
-            <HeroLink href="/store">
-              <HeroImage
-                src={bgImage}
-                alt={title || "Hero background"}
-                priority
-                mounted
-              />
-            </HeroLink>
-          </div>
-        )}
-      </div>
+              </div>
+            )
+          })}
 
-      {/*
-        Manual prev/next. These sit in the gutters either side of the banner —
-        the space `object-contain` leaves when a slide is narrower than the box.
-        Auto-advance is untouched; this only adds a way to drive it by hand.
-
-        Rendered outside the slide grid so they are not inside the <a> that
-        wraps each banner: nested interactive elements are invalid, and a click
-        would otherwise navigate to the product page instead of changing slide.
-      */}
-      {slideCount > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={() => setSlide((s) => (s - 1 + slideCount) % slideCount)}
-            aria-label="Previous banner"
-            aria-controls="hero-carousel"
-            className="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 md:h-11 md:w-11 place-items-center rounded-full bg-white/80 text-[#2E5C31] shadow-md backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5C31]"
-          >
-            <ChevronLeft size={22} strokeWidth={2} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSlide((s) => (s + 1) % slideCount)}
-            aria-label="Next banner"
-            aria-controls="hero-carousel"
-            className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 md:h-11 md:w-11 place-items-center rounded-full bg-white/80 text-[#2E5C31] shadow-md backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5C31]"
-          >
-            <ChevronRight size={22} strokeWidth={2} aria-hidden />
-          </button>
-        </>
-      )}
-
-      {/* Slide indicators */}
-      {slideCount > 1 && (
-        <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {banners.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setSlide(i)}
-              aria-label={`Go to banner ${i + 1}`}
-              className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full transition-colors shadow-sm ${
-                i === slide ? "bg-white" : "bg-white/50 hover:bg-white/80"
-              }`}
-            />
-          ))}
+          {count > 1 && (
+            <>
+              {/* Dots double as a progress bar. The active bar's CSS animation
+                  *is* the timer: when it ends, the slide advances, and hover
+                  or focus pauses both at once. Reduced motion: no auto-advance. */}
+              <div className="absolute bottom-4 left-6 md:left-[6%] z-20 flex gap-1.5 rounded-full bg-black/25 px-2 py-1.5 backdrop-blur-sm">
+                {slides.map((s, i) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => go(i)}
+                    aria-label={`Show slide ${i + 1}`}
+                    aria-current={i === index}
+                    className={`relative h-1.5 overflow-hidden rounded-full bg-white/40 transition-all duration-300 ${
+                      i === index ? "w-10" : "w-4 hover:bg-white/70"
+                    }`}
+                  >
+                    {i === index && (
+                      <span
+                        key={index}
+                        className="absolute inset-y-0 left-0 rounded-full bg-white"
+                        style={
+                          reduceMotion
+                            ? { width: "100%" }
+                            : {
+                                animation: `mithra-progress ${SLIDE_MS}ms linear forwards`,
+                                animationPlayState: paused ? "paused" : "running",
+                              }
+                        }
+                        onAnimationEnd={() => go(index + 1)}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="absolute bottom-3 right-4 z-20 hidden md:flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(index - 1)}
+                  aria-label="Previous slide"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/85 text-charcoal shadow-card backdrop-blur-sm transition hover:scale-105 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                >
+                  <ChevronLeft size={20} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => go(index + 1)}
+                  aria-label="Next slide"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/85 text-charcoal shadow-card backdrop-blur-sm transition hover:scale-105 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                >
+                  <ChevronRight size={20} aria-hidden />
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </section>
-  );
+  )
 }

@@ -1,35 +1,20 @@
-import { HeroClient } from './client'
-import { HomepageSettings, resolveBackendImage } from '@lib/data/homepage'
+import { HeroClient, HeroSlide } from "./client"
+import { AISLES, HERO_AISLES, aisleHref } from "@modules/home/aisles"
 
-const BACKEND_URL = process.env.MEDUSA_BACKEND_URL || "http://localhost:9000";
+/**
+ * Homepage hero: one designed slide per featured aisle — the real pack on its
+ * own colour world. Slides come from `HERO_AISLES` in `aisles.ts`; the admin
+ * photo banners (`hero_banners`) are no longer shown here.
+ */
+export function Hero() {
+  const slides: HeroSlide[] = HERO_AISLES.map((id) => AISLES.find((a) => a.id === id))
+    .filter((a): a is NonNullable<typeof a> => !!a?.hero)
+    .map((a) => ({
+      id: a.id,
+      href: aisleHref(a),
+      world: a.world,
+      ...a.hero!,
+    }))
 
-export function Hero({ settings }: { settings?: HomepageSettings | null }) {
-  // Use settings data if available, otherwise fallback to defaults
-  const title = settings?.hero_title || "Ancient Foods.\\nTimeless Nutrition.";
-  const subtitle = settings?.hero_subtitle || "Premium quality traditional foods for a healthier you and a happier planet.";
-
-  let bgImage = "https://placehold.co/1920x800/e6efe8/2e5c31?text=Farm+Background+Image";
-  if (settings?.hero_image_url) {
-    bgImage = resolveBackendImage(settings.hero_image_url);
-  }
-
-  // Rotating banners (admin-managed) take precedence over the single hero
-  const banners = (settings?.hero_banners ?? [])
-    .filter((b) => b.title || b.image_url)
-    .map((b) => ({
-      title: b.title || "",
-      subtitle: b.subtitle || "",
-      image: resolveBackendImage(b.image_url),
-      link: b.link || "/store",
-    }));
-
-  return (
-    <HeroClient
-      initialTitle={title}
-      initialSubtitle={subtitle}
-      initialBgImage={bgImage}
-      initialBanners={banners}
-      backendUrl={BACKEND_URL}
-    />
-  );
+  return <HeroClient slides={slides} />
 }
