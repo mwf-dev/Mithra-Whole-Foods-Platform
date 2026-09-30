@@ -5,11 +5,15 @@
  * `chapters` are start times in the *edited* film; the story section lights
  * up the matching step as the video plays.
  *
- * Sesame "seed to bottle" (8.8 s) was cut on 2026-09-30 from the client's two
+ * Sesame "seed to bottle" (9.8 s) was cut on 2026-09-30 from the client's two
  * AI renders: seeds, wooden press and the spout pour come from `mp4.mp4`;
  * cloth filter, bottle filling and the closing bottle come from
  * `Create_a_second_premium_cin.mp4`. The white-bottle and bottle-in-the-pan
- * shots were dropped. Re-cut with ffmpeg trim + xfade (0.35 s crossfades).
+ * shots were dropped. Re-cut with ffmpeg trim + xfade (0.35 s crossfades),
+ * then slowed to 0.9x by stretching timestamps *and* lowering the frame rate
+ * to 21.6 fps — every source frame is shown once, none duplicated or blended,
+ * so the slow-down reads as natural rather than stuttery. Chapter times below
+ * are in the slowed film.
  */
 
 export type Film = {
@@ -37,10 +41,10 @@ export const SESAME_FILM: Film = {
     "Sesame seeds fall onto a wooden table, are crushed in a wooden chekku press, golden oil runs from the spout, is filtered through cloth, and is bottled in a Mithra sesame oil bottle.",
   chapters: [
     { label: "Sesame seeds", start: 0 },
-    { label: "Wooden chekku", start: 1.1 },
-    { label: "Cold pressed", start: 2.6 },
-    { label: "Filtered", start: 4.15 },
-    { label: "Bottled unrefined", start: 5.2 },
+    { label: "Wooden chekku", start: 1.22 },
+    { label: "Cold pressed", start: 2.89 },
+    { label: "Filtered", start: 4.61 },
+    { label: "Bottled unrefined", start: 5.78 },
   ],
   productHandles: ["extra-virgin-sesame-oil-2l", "extra-virgin-sesame-oil-5l"],
 }
