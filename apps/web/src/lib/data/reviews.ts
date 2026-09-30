@@ -3,6 +3,7 @@
 import { revalidateTag } from "next/cache"
 
 import { sdk } from "@lib/config"
+import { reportError } from "@lib/observability/report"
 import { getAuthHeaders, getCacheOptions, getCacheTag } from "./cookies"
 
 export type ProductReview = {
@@ -135,4 +136,30 @@ function toReviewError(error: any): string {
 
   console.error("Review submission failed:", error)
   return "Something went wrong sending your review. Please try again."
+}
+
+export type FeaturedReview = ProductReview & {
+  product: { id: string; title: string; handle: string; thumbnail: string | null }
+}
+
+/**
+ * Latest approved 4★+ reviews across the catalog, for the homepage strip.
+ * Shared by every visitor (no per-browser cache tag — see CLAUDE.md
+ * invariant 6), so a plain 5-minute revalidate is both correct and cheap.
+ */
+export async function getFeaturedReviews(limit = 8): Promise<FeaturedReview[]> {
+  try {
+    const { reviews } = await sdk.client.fetch<{ reviews: FeaturedReview[] }>(
+      `/store/reviews`,
+      {
+        method: "GET",
+        query: { limit },
+        next: { revalidate: 300 },
+      }
+    )
+    return reviews ?? []
+  } catch (error) {
+    reportError(error, { scope: "lib/data/reviews.getFeaturedReviews", level: "warning" })
+    return []
+  }
 }
