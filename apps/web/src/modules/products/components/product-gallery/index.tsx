@@ -1,18 +1,18 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Leaf, ZoomIn } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
-
-const PLACEHOLDER =
-  "https://placehold.co/800x800/f5f1e8/9caf88?text=Mithra+Whole+Foods"
+import { useRef, useState } from "react"
 
 /**
- * PDP image carousel. Renders every image attached to the product (upload as
- * many as you like in the admin — product shot, ingredients, nutrition, "about"
- * — and they all appear here) as a swipeable gallery with a large main image,
- * prev/next arrows, a thumbnail strip, and dot indicators.
+ * PDP gallery, Amazon/Flipkart style:
+ *   - a large stage on a soft ground, image contained (packs are never cropped);
+ *   - hover to magnify on desktop — the image scales 2x around the cursor;
+ *   - vertical thumbnail rail on desktop, horizontal strip on phones;
+ *   - swipe on touch, arrow keys when focused, a "2 / 5" counter.
+ * Every image attached to the product in the admin appears here, in order —
+ * put the white-background packshot first.
  */
 export default function ProductGallery({
   images,
@@ -21,113 +21,147 @@ export default function ProductGallery({
   images: HttpTypes.StoreProductImage[]
   title: string
 }) {
-  const slides = images.length
-    ? images
-    : ([{ id: "placeholder", url: PLACEHOLDER }] as HttpTypes.StoreProductImage[])
-
   const [active, setActive] = useState(0)
-  const hasMultiple = slides.length > 1
+  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null)
+  const touchX = useRef<number | null>(null)
+  const count = images.length
+  const hasMultiple = count > 1
 
   const go = (next: number) => {
-    const count = slides.length
+    setZoom(null)
     setActive(((next % count) + count) % count)
   }
 
-  // Touch swipe
-  const [touchX, setTouchX] = useState<number | null>(null)
-  const onTouchStart = (e: React.TouchEvent) =>
-    setTouchX(e.changedTouches[0].clientX)
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchX === null) return
-    const dx = e.changedTouches[0].clientX - touchX
-    if (Math.abs(dx) > 40) go(active + (dx < 0 ? 1 : -1))
-    setTouchX(null)
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return
+    const r = e.currentTarget.getBoundingClientRect()
+    setZoom({
+      x: ((e.clientX - r.left) / r.width) * 100,
+      y: ((e.clientY - r.top) / r.height) * 100,
+    })
   }
 
+  if (count === 0) {
+    return (
+      <div className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-large bg-cream text-primary/30">
+        <Leaf className="h-14 w-14" strokeWidth={1.25} aria-hidden />
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-grey-40">
+          Photo coming soon
+        </span>
+      </div>
+    )
+  }
+
+  const thumbs = (
+    <>
+      {images.map((image, i) => (
+        <button
+          key={image.id}
+          type="button"
+          onClick={() => go(i)}
+          aria-label={`View image ${i + 1} of ${count}`}
+          aria-current={i === active}
+          className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-rounded border-2 bg-white transition sm:h-20 sm:w-20 ${
+            i === active
+              ? "border-primary shadow-card"
+              : "border-transparent opacity-70 hover:opacity-100 hover:border-primary/40"
+          }`}
+        >
+          <Image
+            src={image.url}
+            alt=""
+            fill
+            sizes="80px"
+            quality={60}
+            className="object-contain p-1"
+          />
+        </button>
+      ))}
+    </>
+  )
+
   return (
-    <div className="w-full">
-      {/* Main image */}
+    <div className="flex w-full flex-col gap-3 md:flex-row-reverse md:gap-4">
+      {/* Stage */}
       <div
-        className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white group border border-gray-100"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        className="group relative aspect-square w-full overflow-hidden rounded-large bg-cream outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex-1"
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={`${title} images`}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") go(active + 1)
+          if (e.key === "ArrowLeft") go(active - 1)
+        }}
+        onPointerMove={onMove}
+        onPointerLeave={() => setZoom(null)}
+        onTouchStart={(e) => (touchX.current = e.changedTouches[0].clientX)}
+        onTouchEnd={(e) => {
+          if (touchX.current === null) return
+          const dx = e.changedTouches[0].clientX - touchX.current
+          if (Math.abs(dx) > 40) go(active + (dx < 0 ? 1 : -1))
+          touchX.current = null
+        }}
         data-testid="product-gallery"
       >
-        {slides.map((image, i) => (
-          <Image
+        {images.map((image, i) => (
+          <div
             key={image.id}
-            src={image.url}
-            alt={`${title} — image ${i + 1}`}
-            fill
-            priority={i === 0}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 800px"
-            className={`object-contain p-2 sm:p-4 transition-opacity duration-300 ${
-              i === active ? "opacity-100" : "opacity-0 pointer-events-none"
+            aria-hidden={i !== active}
+            className={`absolute inset-0 transition-opacity duration-300 ${
+              i === active ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
-          />
+          >
+            <Image
+              src={image.url}
+              alt={`${title} — image ${i + 1} of ${count}`}
+              fill
+              priority={i === 0}
+              quality={75}
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 55vw, 760px"
+              className="object-contain p-4 sm:p-8 transition-transform duration-200 ease-out"
+              style={
+                i === active && zoom
+                  ? { transform: "scale(2)", transformOrigin: `${zoom.x}% ${zoom.y}%` }
+                  : undefined
+              }
+            />
+          </div>
         ))}
+
+        <span className="pointer-events-none absolute left-3 top-3 hidden items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-charcoal shadow-card-sm transition-opacity md:flex md:group-hover:opacity-0">
+          <ZoomIn size={13} aria-hidden /> Hover to zoom
+        </span>
 
         {hasMultiple && (
           <>
+            <span className="absolute right-3 top-3 rounded-full bg-charcoal/70 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-white">
+              {active + 1} / {count}
+            </span>
             <button
               type="button"
               aria-label="Previous image"
               onClick={() => go(active - 1)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-md hover:bg-white hover:scale-105 transition md:opacity-0 md:group-hover:opacity-100"
+              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary-dark shadow-card transition hover:scale-105 hover:bg-white md:opacity-0 md:group-hover:opacity-100"
             >
-              <ChevronLeft size={22} />
+              <ChevronLeft size={22} aria-hidden />
             </button>
             <button
               type="button"
               aria-label="Next image"
               onClick={() => go(active + 1)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#2E5C31] shadow-md hover:bg-white hover:scale-105 transition md:opacity-0 md:group-hover:opacity-100"
+              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary-dark shadow-card transition hover:scale-105 hover:bg-white md:opacity-0 md:group-hover:opacity-100"
             >
-              <ChevronRight size={22} />
+              <ChevronRight size={22} aria-hidden />
             </button>
-
-            <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Go to image ${i + 1}`}
-                  onClick={() => setActive(i)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === active ? "w-6 bg-[#2E5C31]" : "w-1.5 bg-[#2E5C31]/30"
-                  }`}
-                />
-              ))}
-            </div>
           </>
         )}
       </div>
 
-      {/* Thumbnails */}
+      {/* Thumbnails: a vertical rail beside the stage from md, a strip below on phones */}
       {hasMultiple && (
-        <div className="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-1">
-          {slides.map((image, i) => (
-            <button
-              key={image.id}
-              type="button"
-              onClick={() => setActive(i)}
-              aria-label={`View image ${i + 1}`}
-              aria-current={i === active}
-              className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition ${
-                i === active
-                  ? "border-[#2E5C31] shadow-sm"
-                  : "border-gray-200 hover:border-[#2E5C31]/40"
-              }`}
-            >
-              <Image
-                src={image.url}
-                alt={`${title} thumbnail ${i + 1}`}
-                fill
-                sizes="(max-width: 640px) 64px, 80px"
-                className="object-contain p-1.5"
-              />
-            </button>
-          ))}
+        <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1 md:max-h-[40rem] md:w-20 md:flex-col md:overflow-y-auto md:overflow-x-visible md:pb-0">
+          {thumbs}
         </div>
       )}
     </div>
