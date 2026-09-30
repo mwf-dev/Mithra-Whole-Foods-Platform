@@ -9,6 +9,8 @@ import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-relat
 import ProductActionsWrapper from "./product-actions-wrapper"
 import ProductGallery from "@modules/products/components/product-gallery"
 import ProductReviews from "@modules/products/components/reviews"
+import { FilmStory } from "@modules/home/components/film-story"
+import { filmForProduct } from "@modules/home/films"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -26,6 +28,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (!product || !product.id) {
     return notFound()
   }
+
+  const film = filmForProduct(product.handle)
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
@@ -107,6 +111,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div>
 
         {/* Reviews */}
+        {film && (
+          <FilmStory
+            variant="card"
+            film={film}
+            eyebrow="How it's made"
+            headline="From seed to bottle"
+            body="Cold pressed in a traditional wooden chekku, filtered, and bottled unrefined, with no chemicals and no additives."
+          />
+        )}
+
         <Suspense fallback={null}>
           <ProductReviews
             productId={product.id}
