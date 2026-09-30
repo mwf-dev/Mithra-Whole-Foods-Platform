@@ -24,6 +24,7 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
 | GET | `/admin/content-briefs/:productId` | Admin session | `?format=yaml` optional | `{ brief: { …, yaml } }`, or `text/yaml` — the PIDS-shaped brief, paste-ready |
 | POST | `/admin/content-briefs/:productId` | Admin session | `{ status: draft \| submitted \| approved }` | `{ brief }` |
 | GET | `/store/custom` | Publishable key | — | empty 200 — dead starter stub, slated for deletion |
+| GET | `/store/reviews` | Publishable key | `?limit` (default 8, max 12), `?min_rating` (default 4) | `{ reviews: [{ id, rating, title, content, customer_name, verified_purchase, created_at, product: { id, title, handle, thumbnail } }] }` — latest **approved** reviews across the catalog, for the homepage strip (hidden below 3). Pending/rejected rows are never exposed. Added 2026-09-30 |
 
 ### HomepageSetting shape
 
@@ -40,9 +41,11 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
   // CMS sections added 2026-07-09 (all admin-managed, hidden when empty):
   announcement_text: string | null   // thin bar above the header
   footer_tagline: string | null
-  hero_banners: Array<{ title?; subtitle?; image_url?; link? }> | null   // max 5; replaces single hero when present
-  offer_cards: Array<{ title?; image_url?; link? }> | null              // max 8
-  category_tiles: Array<{ name?; image_url?; link? }> | null            // max 12
+  hero_banners: Array<{ title?; subtitle?; image_url?; link? }> | null   // max 5 — NOT rendered since 2026-09-30 (hero is code-driven, aisles.ts)
+  // max 8. badge ≤40, title ≤120, subtitle ≤200, code ≤40 (must be a real
+  // promotion), cta ≤40, theme ≤20 = key of OFFER_THEMES in web aisles.ts
+  offer_cards: Array<{ title?; subtitle?; badge?; code?; cta?; theme?; image_url?; link? }> | null
+  category_tiles: Array<{ name?; image_url?; link? }> | null            // max 12 — NOT rendered since 2026-09-30 (aisle discs)
   created_at: string; updated_at: string
 }
 ```
