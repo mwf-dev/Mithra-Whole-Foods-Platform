@@ -1,0 +1,242 @@
+{
+  "source": "Client product list (Product List.xlsx, 41 items) \u2014 2026-09-30",
+  "sales_channel_id": "sc_01KWS7NKQ93TKDH5B1A26BQT9N",
+  "tag": "coming-soon",
+  "categories": [
+    {
+      "handle": "snacks",
+      "name": "Snacks"
+    },
+    {
+      "handle": "traditional-treats",
+      "name": "Traditional Treats"
+    }
+  ],
+  "create": [
+    {
+      "handle": "mithra-rajabogam-ponni-boiled-rice",
+      "title": "Mithra Rajabogam Ponni Boiled Rice",
+      "category": "rices",
+      "description": "Ponni boiled rice from Mithra's Rajabogam range. No. 1 premium quality, for everyday South Indian meals.",
+      "image": "mithra-rajabogam-ponni-boiled-rice.jpg"
+    },
+    {
+      "handle": "mithra-bangaru-theegalu-sona-masoori-rice",
+      "title": "Mithra Bangaru Theegalu Sona Masoori Rice",
+      "category": "rices",
+      "description": "Single-polished Sona Masoori rice from Mithra's Bangaru Theegalu range.",
+      "image": "mithra-bangaru-theegalu-sona-masoori-rice.jpg"
+    },
+    {
+      "handle": "mithra-mullai-idli-rice",
+      "title": "Mithra Mullai Idli Rice",
+      "category": "rices",
+      "description": "Idli rice from Mithra's Mullai range, for soft idlis and crisp dosas.",
+      "image": "mithra-mullai-idli-rice.jpg"
+    },
+    {
+      "handle": "mithra-malligai-ir20-rice",
+      "title": "Mithra Malligai IR20 Rice",
+      "category": "rices",
+      "description": "IR20 rice from Mithra's Malligai range.",
+      "image": "mithra-malligai-ir20-rice.jpg"
+    },
+    {
+      "handle": "mithra-marutham-seeraga-samba-rice",
+      "title": "Mithra Marutham Seeraga Samba Rice",
+      "category": "rices",
+      "description": "Seeraga samba rice from Mithra's Marutham range \u2014 the small-grain rice South Indian kitchens use for biryani.",
+      "image": "mithra-marutham-seeraga-samba-rice.jpg"
+    },
+    {
+      "handle": "mithra-neithal-hand-pound-ponni-rice",
+      "title": "Mithra Neithal Hand Pound Ponni Rice",
+      "category": "rices",
+      "description": "Hand-pound ponni rice from Mithra's Neithal range.",
+      "image": "mithra-neithal-hand-pound-ponni-rice.jpg"
+    },
+    {
+      "handle": "mithra-pure-solid-jaggery-500g",
+      "title": "Mithra Pure Solid Jaggery - 500g",
+      "category": "natural-sweeteners",
+      "description": "Pure solid jaggery made from sugarcane juice. No preservatives. Net weight 17.64 oz (500 g).",
+      "image": "mithra-pure-solid-jaggery-500g.jpg"
+    },
+    {
+      "handle": "mithra-groundnut-chikki-200g",
+      "title": "Mithra Groundnut Chikki (Peanut Candy) - 200g",
+      "category": "millet-candy",
+      "description": "Groundnut chikki made with roasted peanuts and pure sugarcane jaggery. Net weight 7.05 oz (200 g).",
+      "image": "mithra-groundnut-chikki-200g.jpg"
+    },
+    {
+      "handle": "mithra-blueberry-millet-pancake-mix-1lb",
+      "title": "Mithra Blueberry Millet Pancake Mix - 1lb",
+      "category": "millet-flours",
+      "description": "Millet pancake mix with blueberry. Net weight 1 lb (453 g).",
+      "image": null
+    },
+    {
+      "handle": "mithra-popped-ragi-flour-1lb",
+      "title": "Mithra Popped Ragi Flour - 1lb",
+      "category": "millet-flours",
+      "description": "Popped ragi (finger millet) flour enriched with dates, almonds and cashews. No added sugar, no preservatives. Net weight 1 lb (453 g).",
+      "image": "mithra-popped-ragi-flour-1lb.jpg"
+    },
+    {
+      "handle": "mithra-nendran-raw-banana-powder-200g",
+      "title": "Mithra Nendran Raw Banana Powder - 200g",
+      "category": "millet-flours",
+      "description": "Nendran raw banana powder. 100% natural, no added sugar, no artificial colours. Net weight 7.05 oz (200 g).",
+      "image": "mithra-nendran-raw-banana-powder-200g.jpg"
+    },
+    {
+      "handle": "mithra-palm-jaggery-500g",
+      "title": "Mithra Palm Jaggery (Panai Karupatti) - 500g",
+      "category": "natural-sweeteners",
+      "description": "Palm jaggery (panai karupatti), traditionally made from palmyra sap. 100% natural, no preservatives. Net weight 17.64 oz (500 g).",
+      "image": "mithra-palm-jaggery-500g.jpg"
+    },
+    {
+      "handle": "mithra-paruthi-paal-mix-200g",
+      "title": "Mithra Paruthi Paal Mix (Cotton Seed Milk) - 200g",
+      "category": "health-drink-mix",
+      "description": "Paruthi paal (cotton seed milk) mix for the traditional Tamil drink. Vegan. Net weight 7.05 oz (200 g).",
+      "image": "mithra-paruthi-paal-mix-200g.jpg"
+    },
+    {
+      "handle": "mithra-elantha-vadai-100g",
+      "title": "Mithra Elantha Vadai - 100g",
+      "category": "traditional-treats",
+      "description": "Elantha vadai \u2014 a sweet, sour and spicy traditional treat made with elantha pazham (Indian jujube), jaggery, red chilli and salt. Net weight 3.52 oz (100 g).",
+      "image": "mithra-elantha-vadai-100g.jpg"
+    },
+    {
+      "handle": "mithra-kamarkattu",
+      "title": "Mithra Kamarkattu",
+      "category": "traditional-treats",
+      "description": "Kamarkattu \u2014 traditional sweet balls of jaggery and grated coconut, flavoured with cardamom.",
+      "image": "mithra-kamarkattu.jpg"
+    },
+    {
+      "handle": "mithra-palmyra-sprouts-powder-200g",
+      "title": "Mithra Palmyra Sprouts Powder - 200g",
+      "category": "health-drink-mix",
+      "description": "Palmyra sprouts powder (panang kizhangu maavu). 100% natural. Net weight 7.05 oz (200 g).",
+      "image": "mithra-palmyra-sprouts-powder-200g.jpg"
+    },
+    {
+      "handle": "mithra-pepper-kara-sev-200g",
+      "title": "Mithra Pepper Kara Sev - 200g",
+      "category": "snacks",
+      "description": "Pepper kara sev \u2014 a crunchy, peppery South Indian snack. Net weight 7.05 oz (200 g).",
+      "image": "mithra-pepper-kara-sev-200g.jpg"
+    },
+    {
+      "handle": "mithra-kai-muruku-200g",
+      "title": "Mithra Kai Muruku - 200g",
+      "category": "snacks",
+      "description": "Kai muruku \u2014 the classic hand-twisted South Indian murukku. Net weight 7.05 oz (200 g).",
+      "image": "mithra-kai-muruku-200g.jpg"
+    },
+    {
+      "handle": "mithra-manaparai-muruku-200g",
+      "title": "Mithra Manaparai Muruku - 200g",
+      "category": "snacks",
+      "description": "Manaparai muruku, the famous crisp murukku from Manaparai. Net weight 7.05 oz (200 g).",
+      "image": "mithra-manaparai-muruku-200g.jpg"
+    },
+    {
+      "handle": "mithra-mixture-200g",
+      "title": "Mithra Mixture - 200g",
+      "category": "snacks",
+      "description": "Mixture \u2014 a traditional South Indian savoury blend. Net weight 7.05 oz (200 g).",
+      "image": "mithra-mixture-200g.jpg"
+    },
+    {
+      "handle": "mithra-kara-boondi-200g",
+      "title": "Mithra Kara Boondi - 200g",
+      "category": "snacks",
+      "description": "Kara boondi \u2014 crisp, spiced gram-flour pearls. Net weight 7.05 oz (200 g).",
+      "image": "mithra-kara-boondi-200g.jpg"
+    },
+    {
+      "handle": "mithra-multigrain-health-mix-200g",
+      "title": "Mithra Multigrain Health Mix - 200g",
+      "category": "health-drink-mix",
+      "description": "Multigrain health drink mix made with 20+ natural ingredients: millets, pulses and cereals. No artificial colours, no preservatives. Net weight 7.05 oz (200 g).",
+      "image": "mithra-multigrain-health-mix-200g.jpg"
+    },
+    {
+      "handle": "mithra-kodo-millet-2lbs",
+      "title": "Mithra Kodo Millet - 2lbs",
+      "category": "millet-grains",
+      "description": "Kodo millet \u2014 an ancient grain, hulled and cleaned. Net weight 2 lbs (907 g).",
+      "image": "mithra-kodo-millet-2lbs.jpg"
+    },
+    {
+      "handle": "mithra-idli-podi-200g",
+      "title": "Mithra Idli Podi - 200g",
+      "category": "spices",
+      "description": "Traditional South Indian idli podi, freshly roasted. No artificial colours, no preservatives. Net weight 200 g.",
+      "image": "mithra-idli-podi-200g.jpg"
+    },
+    {
+      "handle": "mithra-paruppu-podi-200g",
+      "title": "Mithra Paruppu Podi - 200g",
+      "category": "spices",
+      "description": "Traditional South Indian paruppu (lentil) podi, freshly roasted. No artificial colours, no preservatives. Net weight 200 g.",
+      "image": "mithra-paruppu-podi-200g.jpg"
+    },
+    {
+      "handle": "mithra-sesame-podi-200g",
+      "title": "Mithra Sesame Podi - 200g",
+      "category": "spices",
+      "description": "Traditional South Indian sesame (ellu) podi, freshly roasted. No artificial colours, no preservatives. Net weight 200 g.",
+      "image": "mithra-sesame-podi-200g.jpg"
+    }
+  ],
+  "update": [
+    {
+      "handle": "wood-pressed-groundnut-oil",
+      "image": "wood-pressed-groundnut-oil.jpg",
+      "replace_images": true,
+      "publish": true,
+      "coming_soon": true,
+      "title": "Mithra Wooden Press Peanut Oil - 2L",
+      "description": "Traditional wooden press peanut oil \u2014 cold pressed, single filtered and unrefined. Extracted with the old wooden chekku method at a slow speed to keep its natural nutty aroma. For stir-frying, tempering, roasting and drizzling. Net content 2 L."
+    },
+    {
+      "handle": "sastra-pure-cow-ghee-1l-32-oz",
+      "image": "sastra-pure-cow-ghee-1l-32-oz.jpg"
+    },
+    {
+      "handle": "sastra-pure-cow-ghee-16l",
+      "image": "sastra-pure-cow-ghee-16l.jpg"
+    },
+    {
+      "handle": "foxtail-millet-unpolished-2lbs",
+      "image": "foxtail-millet-unpolished-2lbs.jpg"
+    },
+    {
+      "handle": "barnyard-millet-unpolished-2lbs",
+      "image": "barnyard-millet-unpolished-2lbs.jpg"
+    },
+    {
+      "handle": "finger-millet-unpolished-2lbs",
+      "image": "finger-millet-unpolished-2lbs.jpg"
+    },
+    {
+      "handle": "little-millet-unpolished-2lbs",
+      "image": "little-millet-unpolished-2lbs.jpg"
+    },
+    {
+      "handle": "jowar-red-millet-2lbs",
+      "image": "jowar-red-millet-2lbs.jpg"
+    },
+    {
+      "handle": "jaggery-powder-raw-cane-sugar-2lbs",
+      "image": "jaggery-powder-raw-cane-sugar-2lbs.jpg"
+    }
+  ]
+}
