@@ -43,7 +43,7 @@ export default function SearchBar({
         onChange={(e) => setTerm(e.target.value)}
         placeholder="Search for oils, rice, health mixes..."
         aria-label="Search products"
-        className="bg-transparent border-none outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
+        className="min-w-0 bg-transparent border-none outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
       />
       <button
         type="submit"

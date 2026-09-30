@@ -30,20 +30,20 @@ export default async function Nav() {
 
   return (
     <div className="sticky top-0 inset-x-0 z-50">
-      {/* Primary row: logo · account · cart */}
+      {/* Primary row, centred-logo layout (as Two Brothers): links and
+          search on the left, the Mithra lockup in the middle, account ·
+          wishlist · cart on the right. A 1fr/auto/1fr grid keeps the logo
+          truly centred however wide the two sides are. */}
       <header className="relative bg-white border-b border-ui-border-base">
-        <div className="content-container flex items-center justify-between h-16 md:h-[72px]">
-          {/* Left: mobile menu trigger, logo + Home, Shop */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-1">
-              <div className="md:hidden flex items-center h-full -ml-2">
-                <SideMenu
-                  regions={regions}
-                  locales={locales}
-                  currentLocale={currentLocale}
-                />
-              </div>
-              <Logo />
+        <div className="content-container grid grid-cols-[1fr_auto_1fr] items-center gap-3 h-[76px] md:h-[96px]">
+          {/* Left: mobile menu · Home, Shop · search */}
+          <div className="flex min-w-0 items-center gap-5">
+            <div className="md:hidden flex items-center h-full -ml-2">
+              <SideMenu
+                regions={regions}
+                locales={locales}
+                currentLocale={currentLocale}
+              />
             </div>
 
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-ui-fg-subtle">
@@ -57,7 +57,7 @@ export default async function Nav() {
               <LocalizedClientLink
                 href="/"
                 prefetch
-                className="hover:text-[#2E5C31] transition-colors"
+                className="hover:text-primary transition-colors"
                 data-testid="nav-home-link"
               >
                 Home
@@ -65,42 +65,44 @@ export default async function Nav() {
               <LocalizedClientLink
                 href="/store"
                 prefetch
-                className="hover:text-[#2E5C31] transition-colors"
+                className="hover:text-primary transition-colors"
                 data-testid="nav-store-link"
               >
                 Shop
               </LocalizedClientLink>
             </nav>
+
+            <SearchBar className="hidden lg:flex items-center min-w-0 max-w-[17rem] flex-1 bg-[#f8f8f8] rounded-full pl-4 pr-1.5 py-1.5" />
           </div>
 
-          {/* Right: search + account + wishlist + cart */}
-          <div className="flex items-center gap-x-4 md:gap-x-6 flex-1 justify-end">
-             {/* Search Bar */}
-             <SearchBar />
+          {/* Centre: logo */}
+          <Logo />
 
-             {/* Icons */}
-             <div className="flex items-center gap-x-4">
-                <LocalizedClientLink href="/account" className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors">
-                  <div className="bg-[#f8f8f8] p-2.5 rounded-full"><User size={20} strokeWidth={1.5} /></div>
-                  <span className="hidden lg:inline">Login</span>
-                </LocalizedClientLink>
-                
-                <LocalizedClientLink href="/account/wishlist" className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-[#2E5C31] transition-colors">
-                  <div className="bg-[#f8f8f8] p-2.5 rounded-full"><Heart size={20} strokeWidth={1.5} /></div>
-                  <span className="hidden lg:inline">Wishlist</span>
-                </LocalizedClientLink>
+          {/* Right: account · wishlist · cart */}
+          <div className="flex items-center justify-end gap-x-3 md:gap-x-4">
+            {/* Phones: account lives in the side menu, so the right side is
+                just the cart and balances the menu button — which keeps the
+                logo optically centred. */}
+            <LocalizedClientLink href="/account" className="hidden sm:flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-primary transition-colors">
+              <div className="bg-[#f8f8f8] p-2.5 rounded-full"><User size={20} strokeWidth={1.5} /></div>
+              <span className="hidden lg:inline">Login</span>
+            </LocalizedClientLink>
 
-                <Suspense
-                  fallback={
-                    <div className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle">
-                      <div className="bg-[#f8f8f8] p-2.5 rounded-full"><ShoppingCart size={20} strokeWidth={1.5} /></div>
-                      <span className="hidden lg:inline">Cart</span>
-                    </div>
-                  }
-                >
-                  <CartButton />
-                </Suspense>
-             </div>
+            <LocalizedClientLink href="/account/wishlist" className="hidden sm:flex flex-col items-center gap-1 text-xs text-ui-fg-subtle hover:text-primary transition-colors">
+              <div className="bg-[#f8f8f8] p-2.5 rounded-full"><Heart size={20} strokeWidth={1.5} /></div>
+              <span className="hidden lg:inline">Wishlist</span>
+            </LocalizedClientLink>
+
+            <Suspense
+              fallback={
+                <div className="flex flex-col items-center gap-1 text-xs text-ui-fg-subtle">
+                  <div className="bg-[#f8f8f8] p-2.5 rounded-full"><ShoppingCart size={20} strokeWidth={1.5} /></div>
+                  <span className="hidden lg:inline">Cart</span>
+                </div>
+              }
+            >
+              <CartButton />
+            </Suspense>
           </div>
         </div>
       </header>
