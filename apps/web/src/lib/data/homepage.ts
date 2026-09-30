@@ -7,6 +7,15 @@ export interface HomepageBanner {
 
 export interface HomepageCard {
   title?: string
+  subtitle?: string
+  /** Small pill above the title, e.g. "Free delivery". */
+  badge?: string
+  /** Discount code shown with a copy button (must be a real promotion). */
+  code?: string
+  /** Button text. */
+  cta?: string
+  /** Key into OFFER_THEMES (modules/home/aisles.ts). */
+  theme?: string
   image_url?: string
   link?: string
 }
