@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { isComingSoon } from "@lib/util/coming-soon"
 
 /**
  * Plain, serialisable view of one product for the client-side card. Built on
@@ -19,6 +20,8 @@ export type CardItem = {
   price: number
   originalPrice: number | null
   purchasable: boolean
+  /** Announced but not buyable yet (unpriced, or tagged `coming-soon`). */
+  comingSoon: boolean
   badge: string | null
   benefit: string | null
 }
@@ -66,6 +69,7 @@ export function splitTitle(title: string): { base: string; size: string | null }
 
 export function toCardItem(product: HttpTypes.StoreProduct): CardItem {
   const { cheapestPrice } = getProductPrice({ product })
+  const comingSoon = isComingSoon(product)
   const images = (product.images ?? []).map((i) => i.url).filter(Boolean)
   const image = product.thumbnail || images[0] || null
   const hoverImage = images.find((u) => u !== image) ?? null
@@ -93,7 +97,8 @@ export function toCardItem(product: HttpTypes.StoreProduct): CardItem {
     // than as "$0" behind a button that is guaranteed to fail.
     price: cheapestPrice?.calculated_price_number || 0,
     originalPrice: cheapestPrice?.original_price_number ?? null,
-    purchasable: !!cheapestPrice,
+    purchasable: !!cheapestPrice && !comingSoon,
+    comingSoon,
     badge,
     benefit,
   }

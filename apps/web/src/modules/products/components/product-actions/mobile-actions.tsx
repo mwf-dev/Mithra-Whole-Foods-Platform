@@ -1,3 +1,4 @@
+import { isComingSoon } from "@lib/util/coming-soon"
 import { Dialog, Transition } from "@headlessui/react"
 import { Button, clx } from "@medusajs/ui"
 import React, { Fragment, useMemo } from "react"
@@ -123,7 +124,9 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 isLoading={isAdding}
                 data-testid="mobile-cart-button"
               >
-                {!variant
+                {isComingSoon(product)
+                  ? "Coming soon"
+                  : !variant
                   ? "Select variant"
                   : !inStock
                   ? "Out of stock"

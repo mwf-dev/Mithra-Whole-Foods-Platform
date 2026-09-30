@@ -1,5 +1,6 @@
 "use client"
 
+import { isComingSoon } from "@lib/util/coming-soon"
 import { useCart } from "@lib/context/cart-context"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
@@ -104,6 +105,9 @@ export default function ProductActions({
 
     router.replace(pathname + "?" + params.toString())
   }, [selectedVariant, isValidVariant])
+
+  // Announced products have no price yet; Medusa would reject the line item.
+  const comingSoon = useMemo(() => isComingSoon(product), [product])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
@@ -224,6 +228,7 @@ export default function ProductActions({
         <Button
           onClick={handleAddToCart}
           disabled={
+            comingSoon ||
             !inStock ||
             !selectedVariant ||
             !!disabled ||
@@ -235,7 +240,9 @@ export default function ProductActions({
           isLoading={isAdding}
           data-testid="add-product-button"
         >
-          {!selectedVariant && !options
+          {comingSoon
+            ? "Coming soon"
+            : !selectedVariant && !options
             ? "Select variant"
             : !inStock || !isValidVariant
             ? "Out of stock"
@@ -246,7 +253,7 @@ export default function ProductActions({
           variant={selectedVariant}
           options={options}
           updateOptions={setOptionValue}
-          inStock={inStock}
+          inStock={inStock && !comingSoon}
           handleAddToCart={handleAddToCart}
           isAdding={isAdding}
           show={!inView}

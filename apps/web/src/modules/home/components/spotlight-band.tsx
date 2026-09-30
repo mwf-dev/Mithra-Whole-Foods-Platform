@@ -88,12 +88,16 @@ export function SpotlightBand({
                       )}
                       <span className="leading-tight">
                         <span className="line-clamp-1 max-w-[12rem]">{name}</span>
-                        {first.purchasable && (
+                        {first.purchasable ? (
                           <span className="block text-xs font-medium opacity-80">
                             {group.length > 1 ? `${group.length} sizes from ` : ""}
                             {format(first.price)}
                           </span>
-                        )}
+                        ) : first.comingSoon ? (
+                          <span className="block text-xs font-medium opacity-80">
+                            Launching soon
+                          </span>
+                        ) : null}
                       </span>
                     </LocalizedClientLink>
                   </li>

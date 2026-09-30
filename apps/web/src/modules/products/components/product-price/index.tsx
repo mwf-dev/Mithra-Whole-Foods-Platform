@@ -1,6 +1,7 @@
 import { clx } from "@medusajs/ui"
 
 import { getProductPrice } from "@lib/util/get-product-price"
+import { isComingSoon } from "@lib/util/coming-soon"
 import { HttpTypes } from "@medusajs/types"
 
 export default function ProductPrice({
@@ -17,8 +18,19 @@ export default function ProductPrice({
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
 
-  if (!selectedPrice) {
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
+  // No price in this region is not "still loading" — prices arrive with the
+  // product. It means the product is announced but not on sale yet.
+  if (!selectedPrice || isComingSoon(product)) {
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="inline-flex w-max items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
+          Coming soon
+        </span>
+        <span className="text-sm text-ui-fg-subtle">
+          Price will be announced at launch.
+        </span>
+      </div>
+    )
   }
 
   return (

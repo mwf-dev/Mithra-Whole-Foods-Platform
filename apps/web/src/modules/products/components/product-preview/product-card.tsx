@@ -40,7 +40,9 @@ export default function ProductCard({
     }).format(n)
 
   const onSale = item.originalPrice != null && item.originalPrice > item.price
-  const badge = item.badge ?? (onSale ? "Sale" : grouped ? `${items.length} sizes` : null)
+  const badge = item.comingSoon
+    ? "Coming soon"
+    : item.badge ?? (onSale ? "Sale" : grouped ? `${items.length} sizes` : null)
   const name = grouped ? title ?? item.title : item.title
 
   return (
@@ -144,7 +146,9 @@ export default function ProductCard({
               )}
             </>
           ) : (
-            <span className="text-sm font-medium text-grey-50">Price unavailable</span>
+            <span className="text-sm font-medium text-grey-50">
+              {item.comingSoon ? "Launching soon" : "Price unavailable"}
+            </span>
           )}
         </div>
 
@@ -163,7 +167,7 @@ export default function ProductCard({
             disabled
             className="w-full cursor-not-allowed rounded-lg border border-beige bg-grey-5 py-2.5 text-xs font-semibold text-grey-40"
           >
-            Currently unavailable
+            {item.comingSoon ? "Coming soon" : "Currently unavailable"}
           </button>
         )}
       </div>
