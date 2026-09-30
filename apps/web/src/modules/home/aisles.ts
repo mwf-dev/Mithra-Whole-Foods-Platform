@@ -205,7 +205,7 @@ export const AISLES: Aisle[] = [
   {
     id: "sweets-snacks",
     name: "Sweets & snacks",
-    categoryHandles: ["sweets", "millet-candy"],
+    categoryHandles: ["sweets", "snacks", "millet-candy"],
     // Banana-leaf green: the sweets are photographed on leaf, and the palm
     // jaggery reads warm against it without the page turning brown.
     world: { bg: "#2F6A34", ink: "#FBF3DC", deep: "#1B4020" },
@@ -222,7 +222,7 @@ export const AISLES: Aisle[] = [
   {
     id: "treats",
     name: "Traditional treats",
-    categoryHandles: [],
+    categoryHandles: ["traditional-treats"],
     world: { bg: "#E4E8F3", ink: "#21325E", deep: "#21325E" },
     art: { src: `${P}/kamarkat-plate.webp`, alt: "Brass plate of kamarkat", kind: "cutout" },
   },
