@@ -56,6 +56,28 @@ describe("homepage settings validation", () => {
     expect(payload.offer_cards).toEqual([{ title: "Under ₹99", link: "/store" }])
   })
 
+  it("keeps the offer card design fields", () => {
+    const card = {
+      title: "Free delivery over $49",
+      subtitle: "Anywhere in the US.",
+      badge: "Free delivery",
+      code: "MITHRA10",
+      cta: "Start shopping",
+      theme: "ghee",
+      link: "/store",
+    }
+    const { payload, errors } = validateBody({ offer_cards: [card] })
+    expect(errors).toEqual([])
+    expect(payload.offer_cards).toEqual([card])
+  })
+
+  it("caps offer card badge length", () => {
+    const { errors } = validateBody({
+      offer_cards: [{ title: "x", badge: "b".repeat(41) }],
+    })
+    expect(errors[0]).toMatch(/offer_cards\[0\]\.badge must be at most 40/)
+  })
+
   it("rejects non-array list fields and oversized lists", () => {
     const tooMany = Array.from({ length: 6 }, () => ({ title: "x" }))
     const { errors } = validateBody({

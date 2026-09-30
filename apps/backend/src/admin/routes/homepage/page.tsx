@@ -15,11 +15,28 @@ type ListFieldDef = {
   key: string
   label: string
   placeholder?: string
-  type: "text" | "image"
+  hint?: string
+  type: "text" | "image" | "select"
+  options?: { value: string; label: string }[]
 }
 
+// Must match OFFER_THEMES in the storefront (apps/web/src/modules/home/aisles.ts).
+const OFFER_THEME_OPTIONS = [
+  { value: "", label: "Automatic (cycles through the colours)" },
+  { value: "ghee", label: "Ghee yellow" },
+  { value: "podis", label: "Podi orange" },
+  { value: "oils", label: "Oil teal" },
+  { value: "ragi", label: "Ragi plum" },
+  { value: "sweets", label: "Leaf green (sweets)" },
+  { value: "rice", label: "Rice red" },
+  { value: "millets", label: "Millet sand" },
+  { value: "health", label: "Health-mix kraft" },
+  { value: "festival", label: "Festival night (Diwali)" },
+  { value: "mithra", label: "Mithra green" },
+]
+
 type ListSection = {
-  field: "hero_banners" | "offer_cards" | "category_tiles"
+  field: "offer_cards"
   heading: string
   description: string
   maxItems: number
@@ -27,45 +44,27 @@ type ListSection = {
   fields: ListFieldDef[]
 }
 
+// Hero slides and the category circles are now designed in code
+// (apps/web/src/modules/home/aisles.ts), so only the offer cards are edited
+// here. `hero_banners` / `category_tiles` / the promo and hero fields are
+// still loaded and saved back untouched — they are just no longer shown.
 const LIST_SECTIONS: ListSection[] = [
   {
-    field: "hero_banners",
-    heading: "Hero Banner Slider",
-    description:
-      "Rotating full-width banners at the top of the homepage. When you add banners here, they replace the single hero above.",
-    maxItems: 5,
-    itemLabel: "Banner",
-    fields: [
-      { key: "title", label: "Title", placeholder: "E.g. Harvest Fresh Millets", type: "text" },
-      { key: "subtitle", label: "Subtitle", placeholder: "E.g. Farm to family, always", type: "text" },
-      { key: "image_url", label: "Background Image", type: "image" },
-      { key: "link", label: "Link (where the banner goes)", placeholder: "/store", type: "text" },
-    ],
-  },
-  {
     field: "offer_cards",
-    heading: "Offer / Deal Cards",
+    heading: "Offers",
     description:
-      "A row of small offer cards, e.g. 'Under ₹99', 'Deal of the Day'. Shown below the hero.",
+      "Large offer cards on the homepage. Each card gets a colour theme and, unless you upload a picture, that theme's product pack. Only list offers that are real — a discount code must exist as a promotion in Medusa.",
     maxItems: 8,
-    itemLabel: "Offer card",
+    itemLabel: "Offer",
     fields: [
-      { key: "title", label: "Title", placeholder: "E.g. Deals under ₹99", type: "text" },
-      { key: "image_url", label: "Image", type: "image" },
-      { key: "link", label: "Link", placeholder: "/store", type: "text" },
-    ],
-  },
-  {
-    field: "category_tiles",
-    heading: "Category Tiles",
-    description:
-      "Circular category tiles with images, shown below the hero. Link each tile to its category page, e.g. /categories/millets.",
-    maxItems: 12,
-    itemLabel: "Tile",
-    fields: [
-      { key: "name", label: "Category name", placeholder: "E.g. Millets", type: "text" },
-      { key: "image_url", label: "Image", type: "image" },
-      { key: "link", label: "Link", placeholder: "/categories/millets", type: "text" },
+      { key: "badge", label: "Badge", placeholder: "E.g. Free delivery", type: "text" },
+      { key: "title", label: "Title", placeholder: "E.g. Free delivery on orders over $49", type: "text" },
+      { key: "subtitle", label: "Subtitle", placeholder: "E.g. Anywhere in the US. Cash on delivery available.", type: "text" },
+      { key: "code", label: "Discount code (optional)", placeholder: "E.g. DIWALI10", hint: "Shown with a Copy button. Create the promotion first under Promotions.", type: "text" },
+      { key: "cta", label: "Button text", placeholder: "E.g. Shop now", type: "text" },
+      { key: "link", label: "Link", placeholder: "/categories/ghee", type: "text" },
+      { key: "theme", label: "Colour theme", type: "select", options: OFFER_THEME_OPTIONS },
+      { key: "image_url", label: "Picture (optional)", hint: "Leave empty to use the theme's product pack. A cut-out PNG with a transparent background looks best.", type: "image" },
     ],
   },
 ]
@@ -148,20 +147,6 @@ const HomepageSettings = () => {
       toast.error("Upload error")
     }
     return null
-  }
-
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldName: string
-  ) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setLoading(true)
-    const url = await uploadFile(file)
-    setLoading(false)
-    if (url) {
-      setSettings((prev: any) => ({ ...prev, [fieldName]: url }))
-    }
   }
 
   // --- list helpers ---
@@ -256,48 +241,7 @@ const HomepageSettings = () => {
             </div>
           </div>
 
-          {/* Hero Section */}
-          <div className="flex flex-col gap-4 border-b pb-6">
-            <Heading level="h2">Hero Section</Heading>
-            <div className="flex flex-col gap-2">
-              <Label>Hero Title</Label>
-              <Input
-                name="hero_title"
-                value={settings.hero_title || ""}
-                onChange={handleChange}
-                placeholder="E.g. Traditional Foods"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Hero Subtitle</Label>
-              <Input
-                name="hero_subtitle"
-                value={settings.hero_subtitle || ""}
-                onChange={handleChange}
-                placeholder="E.g. 100% Organic"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Hero Background Image</Label>
-              {settings.hero_image_url && (
-                <img
-                  src={settings.hero_image_url}
-                  alt="Hero"
-                  className="h-40 object-cover rounded-md border w-full mb-2"
-                />
-              )}
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileUpload(e, "hero_image_url")}
-              />
-              <Text className="text-ui-fg-muted text-xs">
-                Upload a new image to replace the current one.
-              </Text>
-            </div>
-          </div>
-
-          {/* Repeatable sections: hero banners, offer cards, category tiles */}
+          {/* Offer cards */}
           {LIST_SECTIONS.map((section) => (
             <div key={section.field} className="flex flex-col gap-4 border-b pb-6">
               <Heading level="h2">{section.heading}</Heading>
@@ -325,12 +269,24 @@ const HomepageSettings = () => {
                     f.type === "image" ? (
                       <div key={f.key} className="flex flex-col gap-2">
                         <Label>{f.label}</Label>
+                        {f.hint && (
+                          <Text className="text-ui-fg-muted text-xs">{f.hint}</Text>
+                        )}
                         {item[f.key] && (
-                          <img
-                            src={item[f.key]}
-                            alt={f.label}
-                            className="h-24 object-cover rounded-md border w-full"
-                          />
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={item[f.key]}
+                              alt={f.label}
+                              className="h-24 flex-1 object-contain rounded-md border bg-ui-bg-base"
+                            />
+                            <Button
+                              size="small"
+                              variant="secondary"
+                              onClick={() => updateListItem(section.field, idx, f.key, "")}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         )}
                         <Input
                           type="file"
@@ -339,6 +295,23 @@ const HomepageSettings = () => {
                             handleListImageUpload(e, section.field, idx)
                           }
                         />
+                      </div>
+                    ) : f.type === "select" ? (
+                      <div key={f.key} className="flex flex-col gap-2">
+                        <Label>{f.label}</Label>
+                        <select
+                          value={item[f.key] || ""}
+                          onChange={(e) =>
+                            updateListItem(section.field, idx, f.key, e.target.value)
+                          }
+                          className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2 text-sm"
+                        >
+                          {f.options?.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     ) : (
                       <div key={f.key} className="flex flex-col gap-2">
@@ -350,6 +323,9 @@ const HomepageSettings = () => {
                             updateListItem(section.field, idx, f.key, e.target.value)
                           }
                         />
+                        {f.hint && (
+                          <Text className="text-ui-fg-muted text-xs">{f.hint}</Text>
+                        )}
                       </div>
                     )
                   )}
@@ -368,62 +344,13 @@ const HomepageSettings = () => {
             </div>
           ))}
 
-          {/* Promo Card 1 */}
-          <div className="flex flex-col gap-4 border-b pb-6">
-            <Heading level="h2">Promo Banner 1</Heading>
-            <div className="flex flex-col gap-2">
-              <Label>Promo 1 Title</Label>
-              <Input
-                name="promo_card_1_title"
-                value={settings.promo_card_1_title || ""}
-                onChange={handleChange}
-                placeholder="E.g. Spices"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Promo 1 Image</Label>
-              {settings.promo_card_1_url && (
-                <img
-                  src={settings.promo_card_1_url}
-                  alt="Promo 1"
-                  className="h-32 object-cover rounded-md border w-full mb-2"
-                />
-              )}
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileUpload(e, "promo_card_1_url")}
-              />
-            </div>
-          </div>
-
-          {/* Promo Card 2 */}
-          <div className="flex flex-col gap-4 border-b pb-6">
-            <Heading level="h2">Promo Banner 2</Heading>
-            <div className="flex flex-col gap-2">
-              <Label>Promo 2 Title</Label>
-              <Input
-                name="promo_card_2_title"
-                value={settings.promo_card_2_title || ""}
-                onChange={handleChange}
-                placeholder="E.g. Grains"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Promo 2 Image</Label>
-              {settings.promo_card_2_url && (
-                <img
-                  src={settings.promo_card_2_url}
-                  alt="Promo 2"
-                  className="h-32 object-cover rounded-md border w-full mb-2"
-                />
-              )}
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileUpload(e, "promo_card_2_url")}
-              />
-            </div>
+          <div className="flex flex-col gap-2 border-b pb-6">
+            <Heading level="h2">Hero slides & category circles</Heading>
+            <Text className="text-ui-fg-muted text-xs">
+              These are designed from the product packs and live in the
+              storefront code, so they always match the packaging. Ask your
+              developer to add or change a slide.
+            </Text>
           </div>
 
           {/* Footer */}

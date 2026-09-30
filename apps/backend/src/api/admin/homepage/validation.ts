@@ -36,7 +36,16 @@ export const LIST_FIELDS: Record<string, ListSpec> = {
   offer_cards: {
     maxItems: 8,
     itemFields: {
-      title: { kind: "text", maxLength: 300 },
+      title: { kind: "text", maxLength: 120 },
+      subtitle: { kind: "text", maxLength: 200 },
+      // Small pill above the title, e.g. "Free delivery", "Diwali".
+      badge: { kind: "text", maxLength: 40 },
+      // Discount code shown with a copy button. Must match a real Medusa
+      // promotion — the storefront only displays it.
+      code: { kind: "text", maxLength: 40 },
+      cta: { kind: "text", maxLength: 40 },
+      // Colour theme key (see OFFER_THEMES in the storefront's aisles.ts).
+      theme: { kind: "text", maxLength: 20 },
       image_url: { kind: "url", maxLength: 2000 },
       link: { kind: "url", maxLength: 500 },
     },
