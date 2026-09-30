@@ -128,3 +128,107 @@ h3,
 .font-display {
   font-family: var(--font-display), Georgia, serif;
 }
+
+/* ── Homepage motion ──────────────────────────────────────────────────────
+   CSS-only on purpose: no animation library ships to the client, nothing
+   blocks first paint, and every effect is switched off for visitors who ask
+   for reduced motion. Content is always visible at rest — an effect only ever
+   decorates something that is already there. */
+
+.mithra-marquee {
+  animation: mithra-marquee 42s linear infinite;
+}
+.mithra-marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes mithra-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Gentle idle float for pack cut-outs in the hero. */
+.mithra-float {
+  animation: mithra-float 6s ease-in-out infinite;
+}
+@keyframes mithra-float {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Scroll-driven reveal. Progressive enhancement: browsers without
+   `animation-timeline` simply show the section, fully visible, with no
+   observer and no JS. */
+@supports (animation-timeline: view()) {
+  .mithra-reveal {
+    animation: mithra-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+}
+@keyframes mithra-reveal {
+  from {
+    opacity: 0.35;
+    transform: translateY(28px);
+  }
+}
+
+.mithra-lamp {
+  animation: mithra-flicker 2.4s ease-in-out infinite;
+}
+@keyframes mithra-flicker {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Hero dot progress bar — its animationend advances the slide. */
+@keyframes mithra-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Small idle bob for pack cut-outs in rows (discs, offer and moment tiles).
+   Give siblings different animation-delays so a row never moves in lockstep. */
+.mithra-bob {
+  animation: mithra-bob 4.8s ease-in-out infinite;
+}
+@keyframes mithra-bob {
+  50% {
+    transform: translateY(-5px) rotate(-1.5deg);
+  }
+}
+
+/* Pointer tilt for cards: JS writes --tx/--ty (-1…1) on hover. */
+.mithra-tilt {
+  transform: perspective(900px) rotateX(calc(var(--ty, 0) * -5deg))
+    rotateY(calc(var(--tx, 0) * 6deg)) translateY(var(--lift, 0px));
+  transition: transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 350ms ease;
+  will-change: transform;
+}
+.mithra-tilt-shine {
+  background: radial-gradient(
+    circle at calc(50% + var(--tx, 0) * 40%) calc(50% + var(--ty, 0) * 40%),
+    rgba(255, 255, 255, 0.35),
+    rgba(255, 255, 255, 0) 55%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mithra-tilt {
+    transform: none !important;
+  }
+  .mithra-bob,
+  .mithra-marquee,
+  .mithra-float,
+  .mithra-reveal,
+  .mithra-lamp {
+    animation: none !important;
+  }
+}
