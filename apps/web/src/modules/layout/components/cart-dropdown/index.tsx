@@ -101,7 +101,7 @@ const CartDropdown = ({
                 </span>
               )}
             </div>
-            <span className="hidden lg:inline">Cart</span>
+            <span className="hidden xl:inline">Cart</span>
           </LocalizedClientLink>
         </PopoverButton>
         <Transition

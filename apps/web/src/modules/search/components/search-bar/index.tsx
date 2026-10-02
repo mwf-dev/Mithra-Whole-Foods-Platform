@@ -33,7 +33,7 @@ export default function SearchBar({
       role="search"
       className={
         className ??
-        "hidden lg:flex items-center max-w-md w-full bg-[#f8f8f8] rounded-full pl-5 pr-1.5 py-1.5"
+        "hidden lg:flex items-center gap-2 max-w-md w-full bg-[#f8f8f8] rounded-full pl-5 pr-1.5 py-1.5"
       }
     >
       <input
@@ -41,9 +41,9 @@ export default function SearchBar({
         name="q"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
-        placeholder="Search for oils, rice, health mixes..."
+        placeholder="Search oils, rice, millets…"
         aria-label="Search products"
-        className="min-w-0 bg-transparent border-none outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
+        className="min-w-0 flex-1 truncate bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400"
       />
       <button
         type="submit"
