@@ -25,13 +25,8 @@ const SLIDE_MS = 6500
 // get a taller-than-wide box because the copy stacks over the pack.
 const HERO_BOX = "h-[32rem] md:h-[clamp(25rem,64vh,36rem)]"
 
-// Where the claim cards float around the pack (desktop), with a parallax
-// depth for each so they drift at different speeds under the cursor.
-const CHIP_SPOTS = [
-  { className: "left-[4%] top-[16%]", depth: 22, delay: "0s" },
-  { className: "right-[3%] top-[42%]", depth: 30, delay: "1.2s" },
-  { className: "left-[10%] bottom-[14%]", depth: 16, delay: "2.1s" },
-]
+// Claim cards shown under the pack (desktop). Phones show two inline.
+const MAX_CHIPS = 3
 
 // Parallax offsets are driven by two CSS variables on the hero root
 // (--mx/--my, each -1…1) written straight to the DOM from pointermove, so the
@@ -101,68 +96,64 @@ function ProductSlide({
         </LocalizedClientLink>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center md:h-full">
-        {/* Soft light behind the pack; drifts the opposite way to the pack. */}
-        <div
-          aria-hidden
-          className="absolute aspect-square w-[80%] max-w-[28rem] rounded-full"
-          style={{
-            ...layer(10, 8),
-            background:
-              "radial-gradient(circle, rgba(255,255,255,0.42), rgba(255,255,255,0) 68%)",
-          }}
-        />
-        {mounted && (
+      {/* Pack column: the pack centred in its space, the claim cards in one
+          centred row beneath it — never on top of the pack art. */}
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center md:h-full md:py-8">
+        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+          {/* Soft light behind the pack; drifts the opposite way to the pack. */}
           <div
-            className={`relative h-full w-full transition-all duration-1000 ease-out ${
-              active ? "translate-x-0 scale-100 opacity-100" : "translate-x-16 scale-90 opacity-0"
-            }`}
-          >
-            <div className="absolute inset-0" style={layer(-18, -12, -2)}>
-              <div className="mithra-float absolute inset-0">
-                <Image
-                  src={slide.image}
-                  alt={slide.imageAlt}
-                  fill
-                  priority={priority}
-                  quality={75}
-                  sizes="(max-width: 768px) 90vw, 50vw"
-                  className="object-contain drop-shadow-[0_22px_24px_rgba(0,0,0,0.32)] p-2 md:p-10"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Floating claim cards (desktop). */}
-        {slide.chips.slice(0, CHIP_SPOTS.length).map((chip, i) => {
-          const spot = CHIP_SPOTS[i]
-          return (
+            aria-hidden
+            className="absolute aspect-square w-[80%] max-w-[28rem] rounded-full"
+            style={{
+              ...layer(10, 8),
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.42), rgba(255,255,255,0) 68%)",
+            }}
+          />
+          {mounted && (
             <div
-              key={chip}
-              aria-hidden
-              className={`absolute z-10 hidden md:block ${spot.className} transition-all duration-700 ease-out ${
-                active ? "opacity-100 scale-100" : "opacity-0 scale-75"
+              className={`relative h-full w-full transition-all duration-1000 ease-out ${
+                active ? "translate-x-0 scale-100 opacity-100" : "translate-x-16 scale-90 opacity-0"
               }`}
-              style={{ transitionDelay: active ? `${300 + i * 150}ms` : "0ms" }}
             >
-              <div style={layer(spot.depth, spot.depth * 0.6)}>
-                <div
-                  className="mithra-float flex items-center gap-2 rounded-rounded bg-white/95 py-2 pl-2 pr-3.5 text-xs font-semibold text-charcoal shadow-card-lg backdrop-blur-sm"
-                  style={{ animationDelay: spot.delay, animationDuration: `${5 + i}s` }}
-                >
-                  <span
-                    className="grid h-6 w-6 place-items-center rounded-full"
-                    style={{ backgroundColor: world.bg, color: world.ink }}
-                  >
-                    <Check size={13} strokeWidth={3} />
-                  </span>
-                  {chip}
+              <div className="absolute inset-0" style={layer(-18, -12, -2)}>
+                <div className="mithra-float absolute inset-0">
+                  <Image
+                    src={slide.image}
+                    alt={slide.imageAlt}
+                    fill
+                    priority={priority}
+                    quality={75}
+                    sizes="(max-width: 768px) 90vw, 50vw"
+                    className="object-contain object-center drop-shadow-[0_22px_24px_rgba(0,0,0,0.32)] p-2 md:p-4"
+                  />
                 </div>
               </div>
             </div>
-          )
-        })}
+          )}
+        </div>
+
+        {/* Claim cards (desktop): equal height, one centred row. */}
+        <ul className="relative z-10 mt-4 hidden flex-wrap justify-center gap-3 md:flex">
+          {slide.chips.slice(0, MAX_CHIPS).map((chip, i) => (
+            <li
+              key={chip}
+              className={`flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-white/95 pl-1.5 pr-4 text-[13px] font-semibold text-charcoal shadow-card backdrop-blur-sm transition-all duration-500 ease-out ${
+                active ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+              }`}
+              style={{ transitionDelay: active ? `${300 + i * 120}ms` : "0ms" }}
+            >
+              <span
+                aria-hidden
+                className="grid h-7 w-7 place-items-center rounded-full"
+                style={{ backgroundColor: world.bg, color: world.ink }}
+              >
+                <Check size={14} strokeWidth={3} />
+              </span>
+              {chip}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )
