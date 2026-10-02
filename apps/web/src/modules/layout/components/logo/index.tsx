@@ -11,32 +11,32 @@ const MARK_SRC = "/brand/mithra-mark.png"
 const MARK_RATIO = 463 / 512
 
 const SIZES = {
-  // Header: centred, big enough to read at a glance on a phone.
+  // Header: left-aligned, one line, sized so the full name fits beside the
+  // menu button and cart on a 360px phone.
   header: {
-    mark: "h-12 md:h-[68px]",
-    name: "text-[24px] md:text-[36px]",
-    tag: "text-[8.5px] md:text-[11.5px]",
-    gap: "gap-2 md:gap-3",
+    mark: "h-10 md:h-12 xl:h-14",
+    name: "text-[17px] sm:text-[20px] xl:text-[24px]",
+    gap: "gap-2 md:gap-2.5",
     // Largest rendered height in px. next/image builds its 1x/2x srcset from
     // this, so it must be the displayed size, not the source size — otherwise
-    // a 60px mark downloads the 1080px variant.
-    px: 68,
+    // a 56px mark downloads the 1080px variant.
+    px: 56,
   },
   // Route-transition overlay: the dominant thing on screen.
   hero: {
-    mark: "h-[clamp(5rem,14vw,8.5rem)]",
-    name: "text-[clamp(2.4rem,7vw,4.25rem)]",
-    tag: "text-[clamp(0.7rem,1.6vw,1rem)]",
-    gap: "gap-4 md:gap-6",
-    px: 136,
+    mark: "h-[clamp(3.5rem,10vw,6.5rem)]",
+    name: "text-[clamp(1.4rem,4.6vw,3rem)]",
+    gap: "gap-3 md:gap-5",
+    px: 104,
   },
 } as const
 
 /**
- * Mark + wordmark lockup. "MITHRA" is set in the bark brown of the mark's
- * trunk, "WHOLE FOODS" in brand green between two leaf rules — the same
- * arrangement as the printed packs, but live text, so it stays sharp at any
- * size and costs no extra image.
+ * Mark + wordmark lockup. The full name — "MITHRA WHOLE FOODS" — is one line
+ * at one size (the client asked for the words to read as a single name, not
+ * a big "Mithra" over a small tagline). "Mithra" keeps the bark brown of the
+ * mark's trunk and "Whole Foods" the brand green, so the pack colours carry
+ * over. Live text, so it stays sharp at any size and costs no extra image.
  */
 export function BrandLockup({
   size = "header",
@@ -57,19 +57,11 @@ export function BrandLockup({
         quality={75}
         className={`${s.mark} w-auto shrink-0 object-contain`}
       />
-      <span className="flex flex-col items-center leading-none">
-        <span
-          className={`font-display uppercase tracking-[0.06em] text-bark leading-[0.9] ${s.name}`}
-        >
-          Mithra
-        </span>
-        <span
-          className={`mt-1 flex items-center gap-1.5 font-semibold uppercase tracking-[0.3em] text-primary ${s.tag}`}
-        >
-          <span aria-hidden className="h-px w-3 bg-current opacity-60 md:w-4" />
-          Whole Foods
-          <span aria-hidden className="h-px w-3 bg-current opacity-60 md:w-4" />
-        </span>
+      <span
+        className={`whitespace-nowrap font-display uppercase leading-none tracking-[0.04em] ${s.name}`}
+      >
+        <span className="text-bark">Mithra</span>{" "}
+        <span className="text-primary">Whole Foods</span>
       </span>
     </span>
   )
