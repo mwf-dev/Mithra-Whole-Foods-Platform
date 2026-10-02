@@ -1,64 +1,32 @@
-import Image from "next/image"
 import { Leaf } from "lucide-react"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { AISLES, Aisle, aisleHref, aisleProductIds } from "@modules/home/aisles"
+import { AisleIllustration, hasIllustration } from "./aisle-illustrations"
 
 function Disc({ aisle, index }: { aisle: Aisle; index: number }) {
-  const { art, world } = aisle
-
-  if (!art) {
-    return (
-      <div
-        className="grid h-24 w-24 md:h-28 md:w-28 place-items-center rounded-full"
-        style={{ backgroundColor: world.bg, color: world.deep }}
-      >
-        <Leaf className="h-9 w-9" strokeWidth={1.5} aria-hidden />
-      </div>
-    )
-  }
-
-  if (art.kind === "label") {
-    // Flat print artwork has no silhouette to lift out of the circle, so it
-    // fills the disc and zooms instead.
-    return (
-      <div
-        className="relative h-24 w-24 md:h-28 md:w-28 overflow-hidden rounded-full ring-4 ring-white/60"
-        style={{ backgroundColor: world.bg }}
-      >
-        <Image
-          src={art.src}
-          alt=""
-          fill
-          sizes="112px"
-          quality={60}
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-        />
-      </div>
-    )
-  }
-
-  // Cut-out pack: anchored to the bottom of the disc and allowed to overflow
-  // the top, so on hover it rises out of the circle.
+  const { world } = aisle
   return (
     <div
-      className="relative h-24 w-24 md:h-28 md:w-28 rounded-full ring-4 ring-white/60"
-      style={{ backgroundColor: world.bg }}
+      className="grid h-24 w-24 md:h-28 md:w-28 place-items-center rounded-full ring-4 ring-white/60 shadow-card-sm transition-shadow duration-300 group-hover:shadow-card-lg"
+      style={{ backgroundColor: world.bg, color: world.deep }}
     >
-      <div className="absolute inset-x-2 bottom-2 top-[-18%] transition-transform duration-500 ease-out group-hover:-translate-y-5 group-hover:scale-110">
-        {/* Idle bob, staggered so the row ripples rather than pulses. */}
+      {/* Idle bob, staggered so the row ripples rather than pulses; lifts
+          on hover. */}
+      <div className="transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-110">
         <div
-          className="mithra-bob absolute inset-0"
+          className="mithra-bob"
           style={{ animationDelay: `${(index % 6) * -0.8}s` }}
         >
-          <Image
-            src={art.src}
-            alt=""
-            fill
-            sizes="112px"
-            quality={60}
-            className="object-contain object-bottom drop-shadow-[0_6px_6px_rgba(0,0,0,0.25)]"
+          <AisleIllustration
+            id={aisle.id}
+            world={world}
+            className="h-16 w-16 md:h-[4.5rem] md:w-[4.5rem]"
           />
+          {/* Fallback for an aisle with no drawing yet. */}
+          {!hasIllustration(aisle.id) && (
+            <Leaf className="h-9 w-9" strokeWidth={1.5} aria-hidden />
+          )}
         </div>
       </div>
     </div>
@@ -66,7 +34,9 @@ function Disc({ aisle, index }: { aisle: Aisle; index: number }) {
 }
 
 /**
- * "Shop by aisle": every aisle as a disc in its pack's colour. Counts come
+ * "Shop by aisle": every aisle as a disc in its pack's colour, with a drawn
+ * illustration rather than a product photo (client request — categories
+ * should read as categories, not as one product). Counts come
  * from the backend categories; aisles with nothing in the catalog yet say so
  * instead of linking to an empty page.
  */
@@ -90,7 +60,7 @@ export function AisleDiscs({
               id="aisles-heading"
               className="font-display text-3xl leading-[1.1] md:text-4xl text-charcoal"
             >
-              Everything in the Mithra kitchen
+              Everything at Mithra Whole Foods
             </h2>
           </div>
           <LocalizedClientLink
