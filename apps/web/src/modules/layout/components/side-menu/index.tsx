@@ -1,135 +1,193 @@
 "use client"
 
-import { Popover, PopoverPanel, Transition } from "@headlessui/react"
+import { Dialog, DialogPanel, DialogBackdrop } from "@headlessui/react"
 import { ArrowRightMini } from "@medusajs/icons"
-import { Text, clx, useToggleState } from "@medusajs/ui"
-import { Fragment } from "react"
-import { Menu } from "lucide-react"
+import { clx, useToggleState } from "@medusajs/ui"
+import { useState } from "react"
+import {
+  ChevronRight,
+  Heart,
+  Home,
+  Menu,
+  ShoppingBag,
+  ShoppingCart,
+  User,
+  X,
+} from "lucide-react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { BrandLockup } from "@modules/layout/components/logo"
+import SearchBar from "@modules/search/components/search-bar"
 import CountrySelect from "../country-select"
 import LanguageSelect from "../language-select"
 import { HttpTypes } from "@medusajs/types"
 import { Locale } from "@lib/data/locales"
 
-const SideMenuItems = {
-  Home: "/",
-  Store: "/store",
-  Account: "/account",
-  Cart: "/cart",
-}
+const PRIMARY_LINKS = [
+  { name: "Home", href: "/", icon: Home, testId: "home-link" },
+  { name: "All products", href: "/store", icon: ShoppingBag, testId: "store-link" },
+]
+
+const ACCOUNT_LINKS = [
+  { name: "Account", href: "/account", icon: User, testId: "account-link" },
+  { name: "Wishlist", href: "/account/wishlist", icon: Heart, testId: "wishlist-link" },
+  { name: "Cart", href: "/cart", icon: ShoppingCart, testId: "cart-link" },
+]
 
 type SideMenuProps = {
   regions: HttpTypes.StoreRegion[] | null
   locales: Locale[] | null
   currentLocale: string | null
+  categories: HttpTypes.StoreProductCategory[]
 }
 
-const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
+/**
+ * Phone navigation: a full-height drawer that slides in from the left. It is
+ * the only navigation on phones (the header there is just menu · logo ·
+ * cart), so it carries everything — search, Home, All products, every
+ * category, account links and the region/language pickers.
+ */
+const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps) => {
+  const [open, setOpen] = useState(false)
+  const close = () => setOpen(false)
   const countryToggleState = useToggleState()
   const languageToggleState = useToggleState()
 
+  const rowClass =
+    "flex items-center gap-3 rounded-rounded px-3 py-3 text-base font-medium text-charcoal transition-colors hover:bg-primary/10 hover:text-primary"
+
   return (
-    <div className="h-full">
-      <div className="flex items-center h-full">
-        <Popover className="h-full flex relative">
-          {({ open, close }) => (
-            <>
-              <div className="relative flex h-full">
-                <Popover.Button
-                  data-testid="nav-menu-button"
-                  className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-[#2E5C31] px-2"
-                >
-                  <Menu className="w-6 h-6 text-gray-800 hover:text-[#2E5C31] transition-colors" strokeWidth={1.5} />
-                </Popover.Button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
+        aria-expanded={open}
+        data-testid="nav-menu-button"
+        className="flex h-full items-center px-2 text-gray-800 transition-colors hover:text-primary focus:outline-none"
+      >
+        <Menu className="h-6 w-6" strokeWidth={1.5} />
+      </button>
+
+      <Dialog open={open} onClose={close} className="relative z-[100]">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out data-[closed]:opacity-0"
+          data-testid="side-menu-backdrop"
+        />
+
+        <div className="fixed inset-0 flex">
+          <DialogPanel
+            transition
+            className="flex h-full w-[86vw] max-w-sm flex-col bg-white shadow-card-xl transition-transform duration-300 ease-out data-[closed]:-translate-x-full"
+            data-testid="nav-menu-popup"
+          >
+            <div className="flex items-center justify-between border-b border-beige px-4 py-3">
+              <LocalizedClientLink href="/" onClick={close} aria-label="Mithra Whole Foods — home">
+                <BrandLockup />
+              </LocalizedClientLink>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close menu"
+                className="grid h-9 w-9 place-items-center rounded-full text-charcoal hover:bg-grey-5"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+              {/* The header has no search on phones; this is its home. Submitting
+                  navigates, so the drawer closes with it. */}
+              <div onSubmit={close} className="px-1 pb-3">
+                <SearchBar className="flex w-full items-center gap-2 rounded-full bg-[#f8f8f8] pl-4 pr-1.5 py-1.5" />
               </div>
 
-              {open && (
-                <div
-                  className="fixed inset-0 z-[50] bg-transparent pointer-events-auto"
-                  onClick={close}
-                  data-testid="side-menu-backdrop"
-                />
+              <ul className="flex flex-col">
+                {PRIMARY_LINKS.map(({ name, href, icon: Icon, testId }) => (
+                  <li key={name}>
+                    <LocalizedClientLink href={href} onClick={close} className={rowClass} data-testid={testId}>
+                      <Icon size={18} strokeWidth={1.75} aria-hidden />
+                      {name}
+                    </LocalizedClientLink>
+                  </li>
+                ))}
+              </ul>
+
+              {categories.length > 0 && (
+                <>
+                  <p className="mt-4 px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-grey-50">
+                    Categories
+                  </p>
+                  <ul className="flex flex-col">
+                    {categories.map((category) => (
+                      <li key={category.id}>
+                        <LocalizedClientLink
+                          href={`/categories/${category.handle}`}
+                          onClick={close}
+                          className="flex items-center justify-between rounded-rounded px-3 py-2.5 text-sm text-charcoal transition-colors hover:bg-primary/10 hover:text-primary"
+                        >
+                          {category.name}
+                          <ChevronRight size={16} className="text-grey-40" aria-hidden />
+                        </LocalizedClientLink>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
 
-              <Transition
-                show={open}
-                as={Fragment}
-                enter="transition ease-out duration-150"
-                enterFrom="opacity-0 translate-y-1"
-                enterTo="opacity-100 translate-y-0"
-                leave="transition ease-in duration-150"
-                leaveFrom="opacity-100 translate-y-0"
-                leaveTo="opacity-0 translate-y-1"
-              >
-                <PopoverPanel className="absolute top-full left-0 mt-4 w-64 z-[51] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden text-gray-900">
+              <ul className="mt-4 flex flex-col border-t border-beige pt-3">
+                {ACCOUNT_LINKS.map(({ name, href, icon: Icon, testId }) => (
+                  <li key={name}>
+                    <LocalizedClientLink href={href} onClick={close} className={rowClass} data-testid={testId}>
+                      <Icon size={18} strokeWidth={1.75} aria-hidden />
+                      {name}
+                    </LocalizedClientLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {(!!locales?.length || regions) && (
+              <div className="flex flex-col gap-y-4 border-t border-beige px-6 py-4">
+                {!!locales?.length && (
                   <div
-                    data-testid="nav-menu-popup"
-                    className="flex flex-col p-4"
+                    className="flex cursor-pointer items-center justify-between text-sm"
+                    onClick={languageToggleState.toggle}
                   >
-                    <ul className="flex flex-col gap-1">
-                      {Object.entries(SideMenuItems).map(([name, href]) => {
-                        return (
-                          <li key={name}>
-                            <LocalizedClientLink
-                              href={href}
-                              className="block px-4 py-3 hover:bg-green-50 hover:text-green-800 rounded-lg text-lg font-medium transition-colors"
-                              onClick={close}
-                              data-testid={`${name.toLowerCase()}-link`}
-                            >
-                              {name}
-                            </LocalizedClientLink>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    
-                    <div className="flex flex-col gap-y-4 mt-4 pt-4 border-t border-gray-100 px-4">
-                      {!!locales?.length && (
-                        <div
-                          className="flex justify-between items-center text-sm cursor-pointer"
-                          onClick={languageToggleState.toggle}
-                        >
-                          <LanguageSelect
-                            toggleState={languageToggleState}
-                            locales={locales}
-                            currentLocale={currentLocale}
-                          />
-                          <ArrowRightMini
-                            className={clx(
-                              "transition-transform duration-150",
-                              languageToggleState.state ? "rotate-90" : ""
-                            )}
-                          />
-                        </div>
+                    <LanguageSelect
+                      toggleState={languageToggleState}
+                      locales={locales}
+                      currentLocale={currentLocale}
+                    />
+                    <ArrowRightMini
+                      className={clx(
+                        "transition-transform duration-150",
+                        languageToggleState.state ? "rotate-90" : ""
                       )}
-                      
-                      {regions && (
-                        <div
-                          className="flex justify-between items-center text-sm cursor-pointer"
-                          onClick={countryToggleState.toggle}
-                        >
-                          <CountrySelect
-                            toggleState={countryToggleState}
-                            regions={regions}
-                          />
-                          <ArrowRightMini
-                            className={clx(
-                              "transition-transform duration-150",
-                              countryToggleState.state ? "rotate-90" : ""
-                            )}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    />
                   </div>
-                </PopoverPanel>
-              </Transition>
-            </>
-          )}
-        </Popover>
-      </div>
-    </div>
+                )}
+                {regions && (
+                  <div
+                    className="flex cursor-pointer items-center justify-between text-sm"
+                    onClick={countryToggleState.toggle}
+                  >
+                    <CountrySelect toggleState={countryToggleState} regions={regions} />
+                    <ArrowRightMini
+                      className={clx(
+                        "transition-transform duration-150",
+                        countryToggleState.state ? "rotate-90" : ""
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
   )
 }
 
