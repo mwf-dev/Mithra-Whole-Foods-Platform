@@ -10,8 +10,8 @@ import { useEffect, useRef, useState } from "react"
  * PDP gallery:
  *   - a large stage on a soft ground, image contained (packs are never cropped);
  *   - thumbnails in a strip *below* the stage on every screen size;
- *   - click/tap the stage to open a full-screen viewer — big image on a dark
- *     ground, arrows, swipe, arrow keys, Esc to close. No hover zoom: the
+ *   - click/tap the stage to open a full-screen viewer — the image fills the
+ *     screen over a blurred, dimmed page; arrows, swipe, arrow keys, Esc. No hover zoom: the
  *     client found it jumpy, and the full-screen view shows more detail.
  * Every image attached to the product in the admin appears here, in order —
  * put the white-background packshot first.
@@ -58,7 +58,7 @@ export default function ProductGallery({
     const base =
       variant === "stage"
         ? "h-11 w-11 bg-white/90 text-primary-dark shadow-card hover:bg-white md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-        : "h-12 w-12 bg-white/15 text-white hover:bg-white/25"
+        : "h-12 w-12 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
     return (
       <>
         <button
@@ -87,12 +87,8 @@ export default function ProductGallery({
     )
   }
 
-  const thumbs = (variant: "stage" | "viewer") => (
-    <div
-      className={`no-scrollbar flex gap-2.5 overflow-x-auto pb-1 ${
-        variant === "viewer" ? "justify-center px-4" : ""
-      }`}
-    >
+  const thumbs = (
+    <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
       {images.map((image, i) => (
         <button
           key={image.id}
@@ -165,44 +161,42 @@ export default function ProductGallery({
         {arrows("stage")}
       </div>
 
-      {hasMultiple && thumbs("stage")}
+      {hasMultiple && thumbs}
 
-      {/* Full-screen viewer */}
+      {/* Full-screen viewer: the page behind is blurred and dimmed out of
+          the way, and the image fills the whole screen. Counter, close and
+          arrows float over it. */}
       <Dialog open={viewer} onClose={() => setViewer(false)} className="relative z-[150]">
-        <div className="fixed inset-0 bg-neutral-950" aria-hidden />
-        <DialogPanel className="fixed inset-0 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 text-white">
-            <span className="text-sm font-semibold tabular-nums">
-              {hasMultiple ? `${active + 1} / ${count}` : title}
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-2xl" aria-hidden />
+        <DialogPanel className="fixed inset-0" {...swipe}>
+          {images.map((image, i) =>
+            i === active ? (
+              <Image
+                key={image.id}
+                src={image.url}
+                alt={`${title} — image ${i + 1} of ${count}`}
+                fill
+                quality={75}
+                sizes="100vw"
+                className="object-contain"
+              />
+            ) : null
+          )}
+
+          {hasMultiple && (
+            <span className="absolute left-4 top-4 z-10 rounded-full bg-black/50 px-3 py-1.5 text-sm font-semibold tabular-nums text-white backdrop-blur-sm">
+              {active + 1} / {count}
             </span>
-            <button
-              type="button"
-              onClick={() => setViewer(false)}
-              aria-label="Close full screen"
-              className="grid h-11 w-11 place-items-center rounded-full bg-white/15 hover:bg-white/25"
-            >
-              <X size={22} aria-hidden />
-            </button>
-          </div>
-
-          <div className="relative min-h-0 flex-1" {...swipe}>
-            {images.map((image, i) =>
-              i === active ? (
-                <Image
-                  key={image.id}
-                  src={image.url}
-                  alt={`${title} — image ${i + 1} of ${count}`}
-                  fill
-                  quality={75}
-                  sizes="100vw"
-                  className="object-contain p-2 sm:p-8"
-                />
-              ) : null
-            )}
-            {arrows("viewer")}
-          </div>
-
-          {hasMultiple && <div className="py-4">{thumbs("viewer")}</div>}
+          )}
+          <button
+            type="button"
+            onClick={() => setViewer(false)}
+            aria-label="Close full screen"
+            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+          >
+            <X size={22} aria-hidden />
+          </button>
+          {arrows("viewer")}
         </DialogPanel>
       </Dialog>
     </div>
