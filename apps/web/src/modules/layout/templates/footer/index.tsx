@@ -1,4 +1,5 @@
 import { Mail, MapPin, Phone } from "lucide-react"
+import Image from "next/image"
 
 import { BUSINESS, mapsUrl } from "@lib/business"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -17,14 +18,15 @@ export default function Footer() {
         <div className="mb-10 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand + contact, as on the client's business card */}
           <div className="flex flex-col gap-4">
-            <div>
-              <p className="font-brand text-[48px] font-bold leading-[0.85] text-white">
-                {BUSINESS.name}
-              </p>
-              <p className="mt-1 font-brand text-[24px] leading-none text-[#9bd67a]">
-                {BUSINESS.tagline}
-              </p>
-            </div>
+            {/* The client's wordmark, light version for the dark footer. */}
+            <Image
+              src="/brand/mithra-wordmark-light.svg"
+              alt={`${BUSINESS.name} — ${BUSINESS.tagline}`}
+              width={336}
+              height={83.4}
+              unoptimized
+              className="h-[72px] w-auto self-start"
+            />
             <address className="flex flex-col gap-2.5 text-[13px] not-italic">
               <span className="font-semibold text-white">{BUSINESS.legalName}</span>
               <a

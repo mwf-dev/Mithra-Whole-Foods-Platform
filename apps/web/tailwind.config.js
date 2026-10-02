@@ -97,9 +97,6 @@ module.exports = {
           "sans-serif",
         ],
         display: ["var(--font-display)", "Georgia", "serif"],
-        // The calligraphic hand of the client's signage — the wordmark and
-        // tagline only. Tangerine runs small, so size it up (see logo/).
-        brand: ["var(--font-brand)", "Georgia", "cursive"],
         // legacy alias — older components use font-playfair; both render DM Serif Display
         playfair: ["var(--font-display)", "Georgia", "serif"],
       },

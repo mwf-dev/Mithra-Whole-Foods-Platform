@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="content-container py-12 md:py-16">
-      <p className="font-brand text-3xl font-bold leading-none text-primary md:text-4xl">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
         {BUSINESS.tagline}
       </p>
       <h1 className="mt-2 font-display text-4xl leading-[1.1] text-charcoal md:text-5xl">
