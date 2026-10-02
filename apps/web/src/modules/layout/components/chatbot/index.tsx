@@ -1,7 +1,34 @@
 "use client"
 
-import { MessageSquare, X, ArrowLeft } from "lucide-react"
+import { X, ArrowLeft } from "lucide-react"
+import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
+
+import { WELCOME_OPEN_FLAG, WELCOME_SETTLED_EVENT } from "./events"
+
+/** The real Mithra mark (see layout/components/logo). */
+const MARK_SRC = "/brand/mithra-mark.png"
+
+function Mark({ className }: { className: string }) {
+  return (
+    <Image
+      src={MARK_SRC}
+      alt=""
+      width={44}
+      height={48}
+      quality={75}
+      className={`${className} w-auto object-contain`}
+    />
+  )
+}
+
+const GREETED_KEY = "mithra:chat-greeted"
+/** Pause after the welcome card closes before the chat speaks up. */
+const GREET_DELAY_MS = 1200
+/** If the welcome card never reports back, greet anyway after this long. */
+const GREET_FALLBACK_MS = 12000
+/** The greeting leaves on its own if nobody reacts. */
+const GREET_VISIBLE_MS = 16000
 
 interface Message {
   id: string
@@ -41,6 +68,10 @@ const WhatsAppIcon = () => (
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
+  const [greeting, setGreeting] = useState(false)
+  // Scrolling down tucks the launcher to the edge so it never sits on top of
+  // product cards, buttons or the footer; scrolling up (or hovering) brings it back.
+  const [tucked, setTucked] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -55,6 +86,69 @@ export default function Chatbot() {
   // Retrieve configurable WhatsApp number from environment or fallback user-defined number
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || DEFAULT_WHATSAPP_NUMBER
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${WHATSAPP_TEXT}`
+
+  useEffect(() => {
+    let lastY = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      if (Math.abs(y - lastY) < 8) return
+      setTucked(y > 160 && y > lastY)
+      lastY = y
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Proactive hello, once per browsing session, after the welcome card is done.
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(GREETED_KEY) === "1") return
+    } catch {
+      // Storage blocked: greet, but only once (the cleanup below guards it).
+    }
+
+    let greetTimer: ReturnType<typeof setTimeout> | undefined
+    let hideTimer: ReturnType<typeof setTimeout> | undefined
+    let fired = false
+
+    const greet = () => {
+      if (fired) return
+      fired = true
+      greetTimer = setTimeout(() => {
+        try {
+          window.sessionStorage.setItem(GREETED_KEY, "1")
+        } catch {
+          // see above
+        }
+        setGreeting(true)
+        hideTimer = setTimeout(() => setGreeting(false), GREET_VISIBLE_MS)
+      }, GREET_DELAY_MS)
+    }
+
+    const settled = (window as unknown as Record<string, boolean>).__mithraWelcomeSettled
+    // Safety net only: never while the popup is still open — then we wait for
+    // its "settled" signal however long the visitor takes to read it.
+    const fallback = setTimeout(() => {
+      if (!(window as unknown as Record<string, boolean>)[WELCOME_OPEN_FLAG]) greet()
+    }, GREET_FALLBACK_MS)
+    if (settled) {
+      greet()
+    } else {
+      window.addEventListener(WELCOME_SETTLED_EVENT, greet, { once: true })
+    }
+
+    return () => {
+      clearTimeout(fallback)
+      if (greetTimer) clearTimeout(greetTimer)
+      if (hideTimer) clearTimeout(hideTimer)
+      window.removeEventListener(WELCOME_SETTLED_EVENT, greet)
+    }
+  }, [])
+
+  const openChat = () => {
+    setGreeting(false)
+    setIsOpen(true)
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -97,16 +191,16 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+    <div className="pointer-events-none fixed bottom-4 right-3 z-50 flex flex-col items-end font-sans sm:bottom-6 sm:right-6">
       {/* Chat Window Panel */}
       {isOpen && (
-        <div className="mb-4 flex h-[480px] w-[340px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl transition-all duration-300 ease-in-out sm:w-[380px]">
+        <div className="pointer-events-auto mb-3 flex h-[min(480px,calc(100dvh-7rem))] w-[calc(100vw-1.5rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl transition-all duration-300 ease-in-out">
           {/* Header */}
           <div className="flex items-center justify-between bg-primary p-4 text-white">
             <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-                <MessageSquare size={20} className="text-white" />
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-primary bg-green-400" />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white">
+                <Mark className="h-7" />
+                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
               </div>
               <div>
                 <h3 className="font-playfair text-lg font-bold leading-tight">Mithra Support</h3>
@@ -206,13 +300,46 @@ export default function Chatbot() {
         </div>
       )}
 
-      {/* Floating Toggle Button */}
+      {/* Proactive greeting. Dismissible; clicking it opens the chat. */}
+      {greeting && !isOpen && (
+        <div
+          role="status"
+          className="pointer-events-auto relative mb-3 max-w-[16.5rem] mithra-greet rounded-2xl rounded-br-md border border-gray-100 bg-white p-4 pr-9 shadow-2xl"
+        >
+          <button
+            type="button"
+            onClick={() => setGreeting(false)}
+            aria-label="Dismiss"
+            className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          >
+            <X size={14} />
+          </button>
+          <button type="button" onClick={openChat} className="flex items-start gap-3 text-left">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-cream">
+              <Mark className="h-6" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-charcoal">Hi, welcome to Mithra</span>
+              <span className="mt-0.5 block text-xs leading-snug text-gray-600">
+                Questions about delivery, payment or returns? Ask us here.
+              </span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Launcher: the Mithra mark on white, small enough to stay out of the way. */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-        aria-label="Open support chat"
+        onClick={() => (isOpen ? setIsOpen(false) : openChat())}
+        className={`pointer-events-auto relative grid h-12 w-12 place-items-center rounded-full border-2 border-primary bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:translate-x-0 hover:opacity-100 focus:translate-x-0 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95 sm:h-14 sm:w-14 ${
+          tucked && !isOpen ? "translate-x-[62%] opacity-80" : ""
+        }`}
+        aria-label={isOpen ? "Close support chat" : "Open support chat"}
       >
-        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        {isOpen ? <X size={22} className="text-primary" /> : <Mark className="h-7 sm:h-8" />}
+        {!isOpen && (
+          <span className="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
+        )}
       </button>
     </div>
   )
