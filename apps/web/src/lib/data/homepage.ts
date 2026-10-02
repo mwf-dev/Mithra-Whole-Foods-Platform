@@ -20,6 +20,18 @@ export interface HomepageCard {
   link?: string
 }
 
+export interface HomepageWelcomeCard {
+  badge?: string
+  title?: string
+  subtitle?: string
+  cta?: string
+  link?: string
+  image_url?: string
+  /** YYYY-MM-DD, inclusive. With a window the card is featured while today is inside it. */
+  show_from?: string
+  show_until?: string
+}
+
 export interface HomepageCategoryTile {
   name?: string
   image_url?: string
@@ -38,6 +50,7 @@ export interface HomepageSettings {
   footer_tagline?: string | null
   hero_banners?: HomepageBanner[] | null
   offer_cards?: HomepageCard[] | null
+  welcome_cards?: HomepageWelcomeCard[] | null
   category_tiles?: HomepageCategoryTile[] | null
 }
 

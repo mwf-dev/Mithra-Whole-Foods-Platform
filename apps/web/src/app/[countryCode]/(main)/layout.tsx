@@ -2,7 +2,6 @@ import { Metadata } from "next"
 import { Suspense } from "react"
 
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
-import { hasDismissedWelcomePrompt } from "@lib/data/cookies"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getHomepageSettings } from "@lib/data/homepage"
 import { getBaseURL } from "@lib/util/env"
@@ -13,7 +12,8 @@ import { StoreCartShippingOption } from "@medusajs/types"
 import { AnnouncementBar } from "@modules/home/components/announcement-bar"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import Chatbot from "@modules/layout/components/chatbot"
-import WelcomeSignInPrompt from "@modules/layout/components/welcome-sign-in-prompt"
+import WelcomePopup from "@modules/layout/components/welcome-popup"
+import { buildWelcomeCards } from "@modules/layout/components/welcome-popup/cards"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
 import RouteTransitionOverlay from "@modules/layout/components/route-transition-overlay"
@@ -24,13 +24,11 @@ export const metadata: Metadata = {
 }
 
 export default async function PageLayout(props: { children: React.ReactNode }) {
-  const [customer, cart, homepageSettings, welcomeDismissed] =
-    await Promise.all([
-      retrieveCustomer(),
-      retrieveCart(),
-      getHomepageSettings(),
-      hasDismissedWelcomePrompt(),
-    ])
+  const [customer, cart, homepageSettings] = await Promise.all([
+    retrieveCustomer(),
+    retrieveCart(),
+    getHomepageSettings(),
+  ])
   let shippingOptions: StoreCartShippingOption[] = []
 
   if (cart) {
@@ -63,10 +61,11 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
       )}
       {props.children}
       <Footer />
+      {/* Order matters: the chat listens for the popup's "done" signal, so it
+          must mount first. One card per visit, rotated in the browser; the
+          sign-up card is for guests only. */}
       <Chatbot />
-
-      {/* Guests only, and only until they wave it away. */}
-      {!customer && !welcomeDismissed && <WelcomeSignInPrompt />}
+      <WelcomePopup cards={buildWelcomeCards(homepageSettings, !customer)} />
       </CustomerProvider>
     </CartProvider>
   )
