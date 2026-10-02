@@ -1,55 +1,86 @@
+import { Mail, MapPin, Phone } from "lucide-react"
+
+import { BUSINESS, mapsUrl } from "@lib/business"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+const linkClass = "transition-colors hover:text-white"
+
+/**
+ * Only links to pages that exist. Terms, privacy, delivery and returns pages
+ * are not built yet (they need wording from the client) — add them here when
+ * they are, rather than linking to a 404.
+ */
 export default function Footer() {
   return (
-    <footer className="bg-[#333333] w-full text-[#cccccc] py-10 mt-12">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-          {/* Information */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-[14px] mb-1">Information</h3>
-            <ul className="flex flex-col gap-2.5 text-[13px]">
-              <li><LocalizedClientLink href="/terms-conditions" className="hover:text-white transition-colors">Terms & Conditions</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/delivery-information" className="hover:text-white transition-colors">Delivery Information</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/about-us" className="hover:text-white transition-colors">About Us</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/special-offers" className="hover:text-white transition-colors">Special Offers</LocalizedClientLink></li>
-            </ul>
+    <footer className="mt-12 w-full bg-charcoal py-12 text-[#cccccc]">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+        <div className="mb-10 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          {/* Brand + contact, as on the client's business card */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="font-brand text-[48px] font-bold leading-[0.85] text-white">
+                {BUSINESS.name}
+              </p>
+              <p className="mt-1 font-brand text-[24px] leading-none text-[#9bd67a]">
+                {BUSINESS.tagline}
+              </p>
+            </div>
+            <address className="flex flex-col gap-2.5 text-[13px] not-italic">
+              <span className="font-semibold text-white">{BUSINESS.legalName}</span>
+              <a
+                href={mapsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex items-start gap-2.5 ${linkClass}`}
+              >
+                <MapPin size={16} className="mt-0.5 shrink-0" aria-hidden />
+                <span>
+                  {BUSINESS.address.street}
+                  <br />
+                  {BUSINESS.address.city}, {BUSINESS.address.region} {BUSINESS.address.postalCode}
+                </span>
+              </a>
+              <a href={`tel:${BUSINESS.phoneTel}`} className={`flex items-center gap-2.5 ${linkClass}`}>
+                <Phone size={16} className="shrink-0" aria-hidden />
+                {BUSINESS.phoneDisplay}
+              </a>
+              <a href={`mailto:${BUSINESS.email}`} className={`flex items-center gap-2.5 break-all ${linkClass}`}>
+                <Mail size={16} className="shrink-0" aria-hidden />
+                {BUSINESS.email}
+              </a>
+            </address>
           </div>
 
-          {/* Customer Service */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-[14px] mb-1">Customer Service</h3>
+          <nav aria-label="Shop" className="flex flex-col gap-3">
+            <h3 className="mb-1 text-[14px] font-semibold text-white">Shop</h3>
             <ul className="flex flex-col gap-2.5 text-[13px]">
-              <li><LocalizedClientLink href="/contact" className="hover:text-white transition-colors">Contact Us</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/returns" className="hover:text-white transition-colors">Returns</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/site-map" className="hover:text-white transition-colors">Site Map</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/store" className={linkClass}>All products</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/categories/ghee" className={linkClass}>Ghee</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/categories/cold-pressed-oils" className={linkClass}>Cold pressed oils</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/search" className={linkClass}>Search</LocalizedClientLink></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Extras */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-[14px] mb-1">Extras</h3>
+          <nav aria-label="Company" className="flex flex-col gap-3">
+            <h3 className="mb-1 text-[14px] font-semibold text-white">Company</h3>
             <ul className="flex flex-col gap-2.5 text-[13px]">
-              <li><LocalizedClientLink href="/brands" className="hover:text-white transition-colors">Brands</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/specials" className="hover:text-white transition-colors">Specials</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/about-us" className={linkClass}>About us</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/contact" className={linkClass}>Contact us</LocalizedClientLink></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* My Account */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-[14px] mb-1">My Account</h3>
+          <nav aria-label="My account" className="flex flex-col gap-3">
+            <h3 className="mb-1 text-[14px] font-semibold text-white">My account</h3>
             <ul className="flex flex-col gap-2.5 text-[13px]">
-              <li><LocalizedClientLink href="/account" className="hover:text-white transition-colors">My Account</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/account/orders" className="hover:text-white transition-colors">Order History</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/account/wishlist" className="hover:text-white transition-colors">Wish List</LocalizedClientLink></li>
-              <li><LocalizedClientLink href="/account/newsletter" className="hover:text-white transition-colors">Newsletter</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/account" className={linkClass}>My account</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/account/orders" className={linkClass}>Order history</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/account/wishlist" className={linkClass}>Wish list</LocalizedClientLink></li>
             </ul>
-          </div>
+          </nav>
         </div>
 
-        <div className="border-t border-[#444444] pt-6 flex flex-col md:flex-row justify-between text-[13px]">
-          <p>MithraWholeFoods &copy; 2026</p>
+        <div className="border-t border-[#4a4a4a] pt-6 text-[13px]">
+          <p>&copy; {new Date().getFullYear()} {BUSINESS.legalName}. All rights reserved.</p>
         </div>
       </div>
     </footer>

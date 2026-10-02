@@ -4,6 +4,8 @@ import { X, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
 
+import { BUSINESS } from "@lib/business"
+
 import { WELCOME_OPEN_FLAG, WELCOME_SETTLED_EVENT } from "./events"
 
 /** The real Mithra mark (see layout/components/logo). */
@@ -296,6 +298,12 @@ export default function Chatbot() {
               <WhatsAppIcon />
               <span>Chat on WhatsApp</span>
             </a>
+            <p className="mt-3 text-center text-xs text-gray-500">
+              Or call{" "}
+              <a href={`tel:${BUSINESS.phoneTel}`} className="font-semibold text-primary hover:underline">
+                {BUSINESS.phoneDisplay}
+              </a>
+            </p>
           </div>
         </div>
       )}
