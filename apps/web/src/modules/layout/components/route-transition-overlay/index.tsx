@@ -102,10 +102,22 @@ export default function RouteTransitionOverlay() {
     }, wait)
   }, [])
 
-  const start = useCallback(() => {
+  /**
+   * The route the App Router last committed (pathname + search). `start()`
+   * runs a tick late, and a navigation served from the client cache — notably
+   * Back/Forward — can commit *before* that tick. Its "finished" signal has
+   * then already fired, so nothing would ever hide the overlay and it sat over
+   * the page until MAX_VISIBLE_MS (8s). Shoppers read that as a hang and kept
+   * pressing Back, walking straight out of the site.
+   */
+  const committed = useRef<string | null>(null)
+
+  const start = useCallback((target: string) => {
     // Defer execution to avoid React state update warnings when pushState
     // is called synchronously by Next.js during an internal render phase.
     setTimeout(() => {
+      // Already there: the navigation finished before we started.
+      if (committed.current === target) return
       clearTimers()
       setMounted(true)
 
@@ -137,6 +149,7 @@ export default function RouteTransitionOverlay() {
    */
   const search = searchParams.toString()
   useEffect(() => {
+    committed.current = pathname + (search ? `?${search}` : "")
     hide()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, search])
@@ -202,7 +215,7 @@ export default function RouteTransitionOverlay() {
         return
       }
 
-      start()
+      start(url.pathname + url.search)
     }
 
     document.addEventListener("click", onClick, { capture: true })
@@ -219,7 +232,7 @@ export default function RouteTransitionOverlay() {
               url.pathname !== window.location.pathname ||
               url.search !== window.location.search
             ) {
-              start()
+              start(url.pathname + url.search)
             }
           } catch {
             // Unparseable target — skip rather than risk a stuck overlay.
@@ -231,8 +244,10 @@ export default function RouteTransitionOverlay() {
     window.history.pushState = wrap(pushState)
     window.history.replaceState = wrap(replaceState)
 
-    // Back/forward buttons.
-    const onPopState = () => start()
+    // Back/forward buttons. The browser has already moved `location` to the
+    // destination by the time this fires.
+    const onPopState = () =>
+      start(window.location.pathname + window.location.search)
     window.addEventListener("popstate", onPopState)
 
     return () => {
