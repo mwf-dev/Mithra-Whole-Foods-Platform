@@ -77,7 +77,7 @@ export function AisleDiscs({
 }) {
   return (
     <section
-      className="bg-white py-12 md:py-16"
+      className="bg-white pt-10 pb-12 md:pt-0 md:pb-16"
       aria-labelledby="aisles-heading"
     >
       <div className="content-container">

@@ -23,10 +23,17 @@ const SLIDE_MS = 6500
 
 // One fixed box for every slide so the page never jumps on rotation. Phones
 // get a taller-than-wide box because the copy stacks over the pack.
-const HERO_BOX = "h-[32rem] md:h-[clamp(25rem,64vh,36rem)]"
+const HERO_BOX = "h-[34rem] md:h-[clamp(28rem,74vh,44rem)]"
 
-// Claim cards shown under the pack (desktop). Phones show two inline.
-const MAX_CHIPS = 3
+// Floating claim cards (desktop), stacked in a column beside the pack — never
+// over the pack art. Each gets its own parallax depth, idle-float phase and a
+// small sideways offset so the column reads as floating, not as a list.
+// Phones show two inline under the headline instead.
+const CHIP_SPOTS = [
+  { depth: 22, delay: "0s", nudge: "translate-x-0" },
+  { depth: 30, delay: "1.2s", nudge: "-translate-x-6" },
+  { depth: 16, delay: "2.1s", nudge: "translate-x-2" },
+]
 
 // Parallax offsets are driven by two CSS variables on the hero root
 // (--mx/--my, each -1…1) written straight to the DOM from pointermove, so the
@@ -50,7 +57,7 @@ function ProductSlide({
   const { world } = slide
   return (
     <div
-      className="flex h-full flex-col md:grid md:grid-cols-[1fr_1.05fr] md:items-center px-6 pt-8 pb-12 md:px-[6%] md:py-0"
+      className="flex h-full flex-col md:grid md:grid-cols-[1fr_1.25fr] md:items-center md:gap-6 px-6 pt-8 pb-12 md:px-[5%] md:py-0"
       style={{ backgroundColor: world.bg, color: world.ink }}
     >
       <div
@@ -96,14 +103,15 @@ function ProductSlide({
         </LocalizedClientLink>
       </div>
 
-      {/* Pack column: the pack centred in its space, the claim cards in one
-          centred row beneath it — never on top of the pack art. */}
-      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center md:h-full md:py-8">
-        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+      {/* Pack column: the pack centred in its space with the floating claim
+          cards in their own column to its right, so they never sit on the
+          pack art. */}
+      <div className="relative flex min-h-0 flex-1 items-center justify-center gap-4 md:h-full md:py-10">
+        <div className="relative flex h-full min-h-0 w-full flex-1 items-center justify-center">
           {/* Soft light behind the pack; drifts the opposite way to the pack. */}
           <div
             aria-hidden
-            className="absolute aspect-square w-[80%] max-w-[28rem] rounded-full"
+            className="absolute aspect-square w-[80%] max-w-[30rem] rounded-full"
             style={{
               ...layer(10, 8),
               background:
@@ -125,7 +133,7 @@ function ProductSlide({
                     priority={priority}
                     quality={75}
                     sizes="(max-width: 768px) 90vw, 50vw"
-                    className="object-contain object-center drop-shadow-[0_22px_24px_rgba(0,0,0,0.32)] p-2 md:p-4"
+                    className="object-contain object-center drop-shadow-[0_22px_24px_rgba(0,0,0,0.32)] p-2 md:p-0"
                   />
                 </div>
               </div>
@@ -133,26 +141,36 @@ function ProductSlide({
           )}
         </div>
 
-        {/* Claim cards (desktop): equal height, one centred row. */}
-        <ul className="relative z-10 mt-4 hidden flex-wrap justify-center gap-3 md:flex">
-          {slide.chips.slice(0, MAX_CHIPS).map((chip, i) => (
-            <li
-              key={chip}
-              className={`flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-white/95 pl-1.5 pr-4 text-[13px] font-semibold text-charcoal shadow-card backdrop-blur-sm transition-all duration-500 ease-out ${
-                active ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-              }`}
-              style={{ transitionDelay: active ? `${300 + i * 120}ms` : "0ms" }}
-            >
-              <span
-                aria-hidden
-                className="grid h-7 w-7 place-items-center rounded-full"
-                style={{ backgroundColor: world.bg, color: world.ink }}
+        {/* Floating claim cards (desktop). */}
+        <ul className="relative z-10 hidden shrink-0 flex-col items-start gap-5 md:flex">
+          {slide.chips.slice(0, CHIP_SPOTS.length).map((chip, i) => {
+            const spot = CHIP_SPOTS[i]
+            return (
+              <li
+                key={chip}
+                className={`${spot.nudge} transition-all duration-700 ease-out ${
+                  active ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                }`}
+                style={{ transitionDelay: active ? `${300 + i * 150}ms` : "0ms" }}
               >
-                <Check size={14} strokeWidth={3} />
-              </span>
-              {chip}
-            </li>
-          ))}
+                <div style={layer(spot.depth, spot.depth * 0.6)}>
+                  <div
+                    className="mithra-float flex items-center gap-2 whitespace-nowrap rounded-full bg-white/95 py-2 pl-2 pr-4 text-[13px] font-semibold text-charcoal shadow-card-lg backdrop-blur-sm"
+                    style={{ animationDelay: spot.delay, animationDuration: `${5 + i}s` }}
+                  >
+                    <span
+                      aria-hidden
+                      className="grid h-7 w-7 place-items-center rounded-full"
+                      style={{ backgroundColor: world.bg, color: world.ink }}
+                    >
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                    {chip}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </div>
@@ -165,7 +183,7 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
   const [paused, setPaused] = useState(false)
   const [reduceMotion, setReduceMotion] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
-  const swipeX = useRef<number | null>(null)
+  const swipe = useRef<{ x: number; y: number } | null>(null)
   const frame = useRef(0)
 
   useEffect(() => {
@@ -210,7 +228,7 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Featured products"
-      className="w-full bg-cream"
+      className="w-full bg-white"
       style={{ ["--mx" as string]: 0, ["--my" as string]: 0 }}
       onPointerMove={onPointerMove}
       onMouseEnter={() => setPaused(true)}
@@ -222,18 +240,34 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
       onBlur={(e) => {
         if (!rootRef.current?.contains(e.relatedTarget as Node)) setPaused(false)
       }}
-      onPointerDown={(e) => {
-        if (e.pointerType !== "mouse") swipeX.current = e.clientX
+      // Swipe on touch screens. Touch events, not pointer events: as soon as
+      // the browser starts treating a touch as a scroll it cancels the
+      // pointer stream, so pointerup never arrived and swiping did nothing.
+      // A mostly-horizontal drag of 40px+ pages the carousel; vertical drags
+      // are left alone so the page still scrolls.
+      onTouchStart={(e) => {
+        const t = e.touches[0]
+        swipe.current = { x: t.clientX, y: t.clientY }
+        setPaused(true)
       }}
-      onPointerUp={(e) => {
-        if (swipeX.current === null) return
-        const dx = e.clientX - swipeX.current
-        swipeX.current = null
-        if (Math.abs(dx) > 50) go(index + (dx < 0 ? 1 : -1))
+      onTouchEnd={(e) => {
+        const start = swipe.current
+        swipe.current = null
+        setPaused(false)
+        if (!start) return
+        const t = e.changedTouches[0]
+        const dx = t.clientX - start.x
+        const dy = t.clientY - start.y
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          go(index + (dx < 0 ? 1 : -1))
+        }
       }}
     >
-      <div className="relative mx-auto w-full max-w-[1440px] md:px-6 md:pt-6">
-        <div className={`relative overflow-hidden md:rounded-large ${HERO_BOX}`}>
+      {/* Wider than the 1440px content column so the card uses the side space
+          on large screens. Equal padding above and below keeps the gap to the
+          header and to the next section the same. */}
+      <div className="relative mx-auto w-full max-w-[1760px] md:px-6 md:py-8">
+        <div className={`relative touch-pan-y overflow-hidden md:rounded-large ${HERO_BOX}`}>
           {slides.map((slide, i) => {
             const active = i === index
             return (
