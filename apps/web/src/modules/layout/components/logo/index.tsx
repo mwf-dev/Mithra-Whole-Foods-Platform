@@ -14,13 +14,13 @@ const SIZES = {
   // Header: left-aligned, one line, sized so the full name fits beside the
   // menu button and cart on a 360px phone.
   header: {
-    mark: "h-10 md:h-12 xl:h-14",
-    name: "text-[17px] sm:text-[20px] xl:text-[24px]",
+    mark: "h-11 md:h-14 xl:h-[72px]",
+    name: "text-[18px] sm:text-[22px] xl:text-[30px]",
     gap: "gap-2 md:gap-2.5",
     // Largest rendered height in px. next/image builds its 1x/2x srcset from
     // this, so it must be the displayed size, not the source size — otherwise
-    // a 56px mark downloads the 1080px variant.
-    px: 56,
+    // a 72px mark downloads the 1080px variant.
+    px: 72,
   },
   // Route-transition overlay: the dominant thing on screen.
   hero: {

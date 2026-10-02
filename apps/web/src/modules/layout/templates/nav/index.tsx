@@ -38,7 +38,7 @@ export default async function Nav() {
           phone drawer) — the homepage aisle discs already show every aisle,
           so a second category row only duplicated them. */}
       <header className="relative bg-white border-b border-ui-border-base">
-        <div className="content-container flex items-center gap-3 md:gap-6 h-[68px] md:h-[84px]">
+        <div className="content-container flex items-center gap-3 md:gap-6 h-[72px] md:h-[96px]">
           <div className="md:hidden flex items-center h-full -ml-2">
             <SideMenu
               regions={regions}
