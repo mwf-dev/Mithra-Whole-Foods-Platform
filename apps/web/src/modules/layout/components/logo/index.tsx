@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { BUSINESS } from "@lib/business"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
@@ -12,10 +13,12 @@ const MARK_RATIO = 463 / 512
 
 const SIZES = {
   // Header: left-aligned, one line, sized so the full name fits beside the
-  // menu button and cart on a 360px phone.
+  // menu button and cart on a 360px phone. The script runs small for its
+  // font-size, hence the large numbers.
   header: {
     mark: "h-11 md:h-14 xl:h-[72px]",
-    name: "text-[18px] sm:text-[22px] xl:text-[30px]",
+    name: "text-[30px] sm:text-[36px] xl:text-[48px]",
+    tag: "hidden xl:block text-[22px]",
     gap: "gap-2 md:gap-2.5",
     // Largest rendered height in px. next/image builds its 1x/2x srcset from
     // this, so it must be the displayed size, not the source size — otherwise
@@ -25,18 +28,20 @@ const SIZES = {
   // Route-transition overlay: the dominant thing on screen.
   hero: {
     mark: "h-[clamp(3.5rem,10vw,6.5rem)]",
-    name: "text-[clamp(1.4rem,4.6vw,3rem)]",
+    name: "text-[clamp(2.2rem,7vw,4.6rem)]",
+    tag: "text-[clamp(1.2rem,3.4vw,2.2rem)]",
     gap: "gap-3 md:gap-5",
     px: 104,
   },
 } as const
 
 /**
- * Mark + wordmark lockup. The full name — "MITHRA WHOLE FOODS" — is one line
- * at one size (the client asked for the words to read as a single name, not
- * a big "Mithra" over a small tagline). "Mithra" keeps the bark brown of the
- * mark's trunk and "Whole Foods" the brand green, so the pack colours carry
- * over. Live text, so it stays sharp at any size and costs no extra image.
+ * Mark + wordmark lockup. The full name — "Mithra Whole Foods" — is one line
+ * at one size, in the calligraphic hand of the client's signage and business
+ * card (Tangerine, the closest free match). "Mithra" keeps the bark brown of
+ * the mark's trunk and "Whole Foods" the brand green. The sign's tagline,
+ * "Harvesting Goodness", sits under it, right-aligned as on the card. Live
+ * text, so it stays sharp at any size.
  */
 export function BrandLockup({
   size = "header",
@@ -57,11 +62,14 @@ export function BrandLockup({
         quality={75}
         className={`${s.mark} w-auto shrink-0 object-contain`}
       />
-      <span
-        className={`whitespace-nowrap font-display uppercase leading-none tracking-[0.04em] ${s.name}`}
-      >
-        <span className="text-bark">Mithra</span>{" "}
-        <span className="text-primary">Whole Foods</span>
+      <span className="flex flex-col whitespace-nowrap font-brand font-bold leading-none">
+        <span className={`leading-[0.8] ${s.name}`}>
+          <span className="text-bark">Mithra</span>{" "}
+          <span className="text-primary">Whole Foods</span>
+        </span>
+        <span className={`-mt-1 self-end text-primary/80 ${s.tag}`}>
+          {BUSINESS.tagline}
+        </span>
       </span>
     </span>
   )

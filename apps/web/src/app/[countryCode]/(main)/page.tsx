@@ -20,7 +20,7 @@ import { getFeaturedReviews } from "@lib/data/reviews"
 import { swallow } from "@lib/observability/report"
 
 export const metadata: Metadata = {
-  title: "Mithra Whole Foods",
+  title: "Mithra Whole Foods — Harvesting Goodness",
   description:
     "Traditional South Indian foods — ghee, cold-pressed oils, podis, millets and traditional rice — shipped from Exton, PA.",
 }
