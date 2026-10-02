@@ -16,7 +16,7 @@ type ListFieldDef = {
   label: string
   placeholder?: string
   hint?: string
-  type: "text" | "image" | "select"
+  type: "text" | "image" | "select" | "date"
   options?: { value: string; label: string }[]
 }
 
@@ -36,7 +36,7 @@ const OFFER_THEME_OPTIONS = [
 ]
 
 type ListSection = {
-  field: "offer_cards"
+  field: "offer_cards" | "welcome_cards"
   heading: string
   description: string
   maxItems: number
@@ -49,6 +49,24 @@ type ListSection = {
 // here. `hero_banners` / `category_tiles` / the promo and hero fields are
 // still loaded and saved back untouched — they are just no longer shown.
 const LIST_SECTIONS: ListSection[] = [
+  {
+    field: "welcome_cards",
+    heading: "Welcome popup",
+    description:
+      "The card visitors see a few seconds after arriving. Without any cards here the storefront rotates its built-in sign-up and product cards, one per visit. A card with a date window is shown first while today falls inside it (leave both dates empty to just add it to the rotation). Visitors never see more than one card per visit.",
+    maxItems: 10,
+    itemLabel: "Card",
+    fields: [
+      { key: "badge", label: "Badge", placeholder: "E.g. Diwali", type: "text" },
+      { key: "title", label: "Title", placeholder: "E.g. Sweets for the festival", type: "text" },
+      { key: "subtitle", label: "Subtitle", placeholder: "E.g. Laddus, jangiri and mysore pak, made fresh.", type: "text" },
+      { key: "cta", label: "Button text", placeholder: "E.g. Shop sweets", type: "text" },
+      { key: "link", label: "Link", placeholder: "/categories/sweets", type: "text" },
+      { key: "show_from", label: "Show from (optional)", type: "date" },
+      { key: "show_until", label: "Show until (optional)", hint: "Inclusive. Set both to feature a card on specific days.", type: "date" },
+      { key: "image_url", label: "Picture (optional)", hint: "A cut-out PNG with a transparent background looks best.", type: "image" },
+    ],
+  },
   {
     field: "offer_cards",
     heading: "Offers",
@@ -81,6 +99,7 @@ const EMPTY_SETTINGS = {
   footer_tagline: "",
   hero_banners: [] as ListItem[],
   offer_cards: [] as ListItem[],
+  welcome_cards: [] as ListItem[],
   category_tiles: [] as ListItem[],
 }
 
@@ -105,6 +124,7 @@ const HomepageSettings = () => {
             ...s,
             hero_banners: Array.isArray(s.hero_banners) ? s.hero_banners : [],
             offer_cards: Array.isArray(s.offer_cards) ? s.offer_cards : [],
+            welcome_cards: Array.isArray(s.welcome_cards) ? s.welcome_cards : [],
             category_tiles: Array.isArray(s.category_tiles) ? s.category_tiles : [],
           })
         }
@@ -317,6 +337,7 @@ const HomepageSettings = () => {
                       <div key={f.key} className="flex flex-col gap-2">
                         <Label>{f.label}</Label>
                         <Input
+                          type={f.type === "date" ? "date" : "text"}
                           value={item[f.key] || ""}
                           placeholder={f.placeholder}
                           onChange={(e) =>

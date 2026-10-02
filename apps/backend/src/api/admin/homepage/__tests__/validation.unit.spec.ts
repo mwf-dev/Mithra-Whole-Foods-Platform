@@ -1,4 +1,4 @@
-import { validateBody, isValidUrlValue } from "../validation"
+import { validateBody, isValidUrlValue, isValidDateValue } from "../validation"
 
 describe("homepage settings validation", () => {
   it("accepts a valid payload and strips unknown fields", () => {
@@ -93,5 +93,42 @@ describe("homepage settings validation", () => {
       category_tiles: [{ name: "Millets", image_url: "javascript:alert(1)" }],
     })
     expect(errors[0]).toMatch(/category_tiles\[0\].image_url/)
+  })
+
+  it("keeps welcome card fields and a valid date window", () => {
+    const { payload, errors } = validateBody({
+      welcome_cards: [
+        {
+          badge: "Diwali",
+          title: "Sweets for the festival",
+          cta: "Shop sweets",
+          link: "/categories/sweets",
+          show_from: "2026-10-28",
+          show_until: "2026-11-02",
+          evil: "x",
+        },
+      ],
+    })
+    expect(errors).toEqual([])
+    expect(payload.welcome_cards).toEqual([
+      {
+        badge: "Diwali",
+        title: "Sweets for the festival",
+        cta: "Shop sweets",
+        link: "/categories/sweets",
+        show_from: "2026-10-28",
+        show_until: "2026-11-02",
+      },
+    ])
+  })
+
+  it("rejects malformed welcome card dates", () => {
+    expect(isValidDateValue("2026-10-31")).toBe(true)
+    expect(isValidDateValue("2026-02-30")).toBe(false)
+    expect(isValidDateValue("31/10/2026")).toBe(false)
+    const { errors } = validateBody({
+      welcome_cards: [{ title: "x", show_from: "tomorrow" }],
+    })
+    expect(errors[0]).toMatch(/show_from must be a date/)
   })
 })

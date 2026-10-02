@@ -20,4 +20,8 @@ export const HomepageSetting = model.define("homepage_setting", {
   offer_cards: model.json().nullable(),
   // [{ name, image_url, link }] — category tiles with images
   category_tiles: model.json().nullable(),
+  // [{ title, subtitle, badge, cta, link, image_url, show_from, show_until }]
+  // — cards for the storefront's arrival popup. A card whose date window
+  // includes today is shown first; others join the rotation.
+  welcome_cards: model.json().nullable(),
 })

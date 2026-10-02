@@ -17,7 +17,7 @@ export const URL_FIELDS: Record<string, number> = {
 
 // JSON list fields: arrays of flat objects. Each entry whitelists its item
 // keys ("text" = length-capped string, "url" = also validated as URL/path).
-type ItemFieldKind = "text" | "url"
+type ItemFieldKind = "text" | "url" | "date"
 type ListSpec = {
   maxItems: number
   itemFields: Record<string, { kind: ItemFieldKind; maxLength: number }>
@@ -50,6 +50,21 @@ export const LIST_FIELDS: Record<string, ListSpec> = {
       link: { kind: "url", maxLength: 500 },
     },
   },
+  welcome_cards: {
+    maxItems: 10,
+    itemFields: {
+      badge: { kind: "text", maxLength: 40 },
+      title: { kind: "text", maxLength: 80 },
+      subtitle: { kind: "text", maxLength: 200 },
+      cta: { kind: "text", maxLength: 40 },
+      image_url: { kind: "url", maxLength: 2000 },
+      link: { kind: "url", maxLength: 500 },
+      // YYYY-MM-DD, inclusive. With neither set the card simply joins the
+      // rotation; with a window it is shown first while today falls inside it.
+      show_from: { kind: "date", maxLength: 10 },
+      show_until: { kind: "date", maxLength: 10 },
+    },
+  },
   category_tiles: {
     maxItems: 12,
     itemFields: {
@@ -73,6 +88,14 @@ export const isValidUrlValue = (value: string): boolean => {
   } catch {
     return false
   }
+}
+
+export const isValidDateValue = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+  const d = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value
 }
 
 export const validateBody = (
@@ -148,6 +171,11 @@ export const validateBody = (
           errors.push(
             `${field}[${idx}].${key} must be an http(s) URL or a relative path`
           )
+          itemError = true
+          break
+        }
+        if (rule.kind === "date" && !isValidDateValue(v)) {
+          errors.push(`${field}[${idx}].${key} must be a date like 2026-10-31`)
           itemError = true
           break
         }
