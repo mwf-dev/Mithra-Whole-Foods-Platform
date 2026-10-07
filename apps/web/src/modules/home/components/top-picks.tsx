@@ -24,14 +24,36 @@ const TAB_AISLES: { id: string; label: string; aisles: string[] }[] = [
   { id: "sweets", label: "Sweets & sweeteners", aisles: ["sweets-snacks", "sweeteners"] },
 ]
 
+/**
+ * Order of the "All" tab: one card per aisle, so a first-time visitor sees the
+ * whole range at a glance. Oils, ghee and millets lead; aisles with no studio
+ * image yet simply don't appear.
+ */
+const ALL_TAB_ORDER = [
+  "oils",
+  "ghee",
+  "millets",
+  "podis",
+  "kids-flours",
+  "rice",
+  "health-mixes",
+  "sweeteners",
+  "sweets-snacks",
+  "treats",
+  "pantry",
+]
+
 export function ProductRail({
   products,
+  groups: given,
   region,
 }: {
   products: HttpTypes.StoreProduct[]
+  /** Pre-chosen size groups (the "All" tab); otherwise grouped from `products`. */
+  groups?: HttpTypes.StoreProduct[][]
   region: HttpTypes.StoreRegion
 }) {
-  const groups = purchasableFirst(groupBySize(products)).slice(0, PER_RAIL)
+  const groups = given ?? purchasableFirst(groupBySize(products)).slice(0, PER_RAIL)
   return (
     <ul
       data-rail
@@ -79,15 +101,35 @@ export function TopPicks({
     return products.filter((p) => wanted.has(p.id))
   }
 
-  const tabs: RailTab[] = [
-    { id: "all", label: "All", products },
+  // One product per aisle for "All": the first buyable size group of each
+  // aisle (or its first group when nothing in it is buyable yet).
+  const seen = new Set<string>()
+  const onePerAisle: HttpTypes.StoreProduct[][] = []
+  for (const id of ALL_TAB_ORDER) {
+    const [pick] = purchasableFirst(groupBySize(inAisles([id]))).filter(
+      (g) => !g.some((p) => seen.has(p.id!))
+    )
+    if (!pick) continue
+    pick.forEach((p) => seen.add(p.id!))
+    onePerAisle.push(pick)
+  }
+
+  type Source = {
+    id: string
+    label: string
+    products: HttpTypes.StoreProduct[]
+    groups?: HttpTypes.StoreProduct[][]
+  }
+  const sources: Source[] = [
+    { id: "all", label: "All", products, groups: onePerAisle },
     ...TAB_AISLES.map((t) => ({ id: t.id, label: t.label, products: inAisles(t.aisles) })),
   ]
+  const tabs: RailTab[] = sources
     .filter((t) => t.products.length > 0)
     .map((t) => ({
       id: t.id,
       label: t.label,
-      content: <ProductRail products={t.products} region={region} />,
+      content: <ProductRail products={t.products} groups={t.groups} region={region} />,
     }))
 
   return (
