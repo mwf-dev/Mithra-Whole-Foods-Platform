@@ -32,7 +32,7 @@ const SLIDE_MS = 6500
 
 // One fixed box for every slide so the page never jumps on rotation. Phones
 // get a taller-than-wide box because the copy stacks over the pack.
-const HERO_BOX = "h-[37rem] md:h-auto md:aspect-[2/1] md:max-h-[44rem]"
+const HERO_BOX = "h-[41rem] md:h-auto md:aspect-[2/1] md:max-h-[44rem]"
 
 // Floating claim cards (desktop), stacked in a column beside the pack — never
 // over the pack art. Each gets its own parallax depth, idle-float phase and a
@@ -115,7 +115,7 @@ function SceneSlide({
 
       {/* Phones show the right two thirds of the scene (the packs), desktop the
           whole frame centred a little low so the table is never cropped. */}
-      <div className="relative aspect-[4/3] w-full md:absolute md:inset-0 md:aspect-auto">
+      <div className="relative aspect-[6/5] w-full overflow-hidden md:absolute md:inset-0 md:aspect-auto">
         <Image
           src={slide.scene!}
           alt={slide.imageAlt}
@@ -126,6 +126,14 @@ function SceneSlide({
           className={`object-cover object-right md:object-[50%_30%] transition-transform duration-[6500ms] ease-out ${
             active ? "scale-[1.04]" : "scale-100"
           }`}
+        />
+        {/* Phones: the copy block above is the slide's flat colour while the scene
+            has its own slightly different backdrop and light. Fade the scene's
+            top edge into the flat colour so there is no visible seam. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-[-1px] h-3/5 md:hidden"
+          style={{ background: `linear-gradient(to bottom, ${world.bg} 0%, ${world.bg}cc 30%, transparent 100%)` }}
         />
         {slide.badge && (
           <span

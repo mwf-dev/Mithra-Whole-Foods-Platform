@@ -132,7 +132,7 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
 
   const cta = (
     <span
-      className="group/cta inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-base font-semibold text-white shadow-card transition-transform hover:-translate-y-0.5 sm:w-auto"
+      className="group/cta inline-flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-base font-semibold text-white shadow-card transition-transform hover:-translate-y-0.5 sm:w-auto"
       style={{ backgroundColor: card.kind === "signup" ? "#2E5C31" : world.deep }}
     >
       {card.cta}
@@ -146,10 +146,13 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
         transition
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 data-[closed]:opacity-0"
       />
-      <div className="fixed inset-0 flex items-end justify-center p-3 sm:items-center sm:p-6">
+      {/* Phones: anchored to the TOP (not the bottom) and sized against the small
+          viewport, so the card can never land partly below the visible screen
+          on browsers whose bottom edge moves with the toolbar. */}
+      <div className="fixed inset-0 flex items-start justify-center overflow-hidden p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-6">
         <DialogPanel
           transition
-          className="relative grid max-h-[calc(100dvh-1.5rem)] w-full max-w-[54rem] grid-rows-[11.5rem_1fr] overflow-hidden rounded-3xl bg-white shadow-2xl transition duration-500 ease-out data-[closed]:translate-y-8 data-[closed]:scale-95 data-[closed]:opacity-0 sm:max-h-[90dvh] sm:grid-cols-[1.05fr_1fr] sm:grid-rows-1"
+          className="relative grid max-h-[calc(100svh-1.5rem)] w-full max-w-[54rem] grid-rows-[8.5rem_minmax(0,1fr)] overflow-hidden rounded-3xl bg-white shadow-2xl transition duration-500 ease-out data-[closed]:translate-y-8 data-[closed]:scale-95 data-[closed]:opacity-0 sm:max-h-[90dvh] sm:grid-cols-[1.05fr_1fr] sm:grid-rows-1"
         >
           <button
             type="button"
@@ -224,7 +227,7 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
           </div>
 
           {/* Content */}
-          <div className="flex min-h-0 flex-col justify-center gap-3 overflow-y-auto p-6 sm:gap-4 sm:p-9">
+          <div className="flex min-h-0 flex-col justify-center gap-2.5 overflow-y-auto p-5 pb-0 sm:gap-4 sm:p-9">
             {card.badge && (
               <span
                 className="w-max rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]"
@@ -233,11 +236,11 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
                 {card.badge}
               </span>
             )}
-            <h2 className="font-display text-[1.65rem] leading-[1.08] text-charcoal sm:text-[2.1rem]">
+            <h2 className="font-display text-[1.45rem] leading-[1.08] text-charcoal sm:text-[2.1rem]">
               {card.title}
             </h2>
             {card.subtitle && (
-              <p className="text-sm leading-relaxed text-grey-60 sm:text-[15px]">{card.subtitle}</p>
+              <p className="line-clamp-3 text-sm leading-relaxed text-grey-60 sm:text-[15px]">{card.subtitle}</p>
             )}
 
             {card.chips && card.chips.length > 0 && (
@@ -266,7 +269,7 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
               </ul>
             )}
 
-            <div className="mt-1 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className="sticky bottom-0 mt-1 flex flex-col items-stretch gap-1 bg-white pb-3 pt-2 sm:static sm:flex-row sm:items-center sm:gap-3 sm:pb-0 sm:pt-0">
               {external ? (
                 <a href={href} onClick={close}>
                   {cta}
