@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CurryBranch, MilletStalk } from "./botanicals"
 
 export type RailTab = { id: string; label: string; content: React.ReactNode }
 
@@ -39,8 +40,11 @@ export function TabbedRail({
   }
 
   return (
-    <section className="bg-cream py-12 md:py-16" aria-labelledby="rail-heading">
-      <div className="content-container">
+    <section className="relative overflow-hidden bg-cream py-12 md:py-16" aria-labelledby="rail-heading">
+      {/* Edge illustrations: wide screens only, behind everything. */}
+      <MilletStalk className="absolute -left-3 bottom-0 hidden h-[26rem] text-primary/20 large:block" />
+      <CurryBranch className="absolute -right-8 top-4 hidden h-[24rem] text-primary/20 large:block" />
+      <div className="content-container relative">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             {eyebrow && (
@@ -96,7 +100,7 @@ export function TabbedRail({
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   selected
                     ? "bg-primary-dark text-white"
-                    : "bg-white text-charcoal border border-beige hover:border-primary/50"
+                    : `${i % 2 ? "bg-primary/10" : "bg-white"} text-charcoal border border-beige hover:border-primary/50`
                 }`}
               >
                 {tab.label}
@@ -113,6 +117,7 @@ export function TabbedRail({
           role="tabpanel"
           aria-labelledby={`tab-${tab.id}`}
           hidden={tab.id !== active}
+          className="relative"
           ref={(el) => {
             panels.current[tab.id] = el
           }}

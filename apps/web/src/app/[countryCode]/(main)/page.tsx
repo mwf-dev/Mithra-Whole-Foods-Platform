@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import { Hero } from "@modules/home/components/hero"
 import { AisleDiscs } from "@modules/home/components/aisle-discs"
 import { TopPicks } from "@modules/home/components/top-picks"
+import { StoryStrip } from "@modules/home/components/story-strip"
 import { FestivalBanner } from "@modules/home/components/festival-banner"
 import { SpotlightBand } from "@modules/home/components/spotlight-band"
 import { WhyMithra } from "@modules/home/components/why-mithra"
@@ -82,6 +83,7 @@ export default async function Home(props: {
       <Hero />
       <AisleDiscs categories={categories} />
       <TopPicks products={products} categories={categories} region={region} />
+      <StoryStrip />
       <FestivalBanner />
       {band(0)}
       <WhyMithra />

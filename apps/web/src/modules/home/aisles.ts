@@ -53,6 +53,10 @@ export type Aisle = {
     imageAlt: string
     /** Set while the aisle's hero products are not purchasable yet. */
     launching?: boolean
+    /** Full-bleed 3:2 hero scene (see HeroSlide.scene). Optional: without it the slide uses `image`. */
+    scene?: string
+    /** Round sticker over the scene ("New", "Launching soon"). */
+    badge?: string
   }
   spotlight?: {
     eyebrow: string
@@ -85,7 +89,8 @@ export const AISLES: Aisle[] = [
       chips: ["Lactose free", "Gluten free", "High smoke point"],
       cta: "Shop ghee",
       image: `${P}/ghee-100ml-trio.webp`,
-      imageAlt: "Three jars of Sastra Pure Cow Ghee",
+      imageAlt: "Sastra Pure Cow Ghee jar, tin and tub with ven pongal, laddoos and marigolds",
+      scene: "/hero/ghee.webp",
     },
     spotlight: {
       eyebrow: "Aisle · Ghee",
@@ -95,9 +100,8 @@ export const AISLES: Aisle[] = [
         "Lactose free and gluten free",
         "100 ml jar, 1 L tin, or the 16 L tub for big kitchens",
       ],
-      image: `${P}/ghee-tins-scene.webp`,
-      imageAlt: "Sastra ghee tins on a wooden table",
-      imagePosition: "12% 50%",
+      image: "/scenes/ghee-kitchen.webp",
+      imageAlt: "Sastra ghee jar, tin and tub on a kitchen counter beside a plate of dosas",
     },
   },
   {
@@ -113,6 +117,7 @@ export const AISLES: Aisle[] = [
       cta: "See the podis",
       image: `${P}/idli-podi-trio.webp`,
       imageAlt: "Three jars of Mithra Idli Podi",
+      scene: "/hero/podis.webp",
       launching: true,
     },
     spotlight: {
@@ -123,8 +128,8 @@ export const AISLES: Aisle[] = [
         "No artificial colours, no preservatives",
         "200 g jars: Idli, Paruppu and Sesame",
       ],
-      image: `${P}/podi-scene.webp`,
-      imageAlt: "Three jars of Idli Podi on a wooden table",
+      image: "/scenes/podi-shelf.webp",
+      imageAlt: "Mithra Idli, Paruppu and Sesame podi jars on a pantry shelf with idlis",
       comingSoon: [
         { name: "Idli Podi", image: `${P}/idli-podi.webp` },
         { name: "Paruppu Podi", image: `${P}/paruppu-podi.webp` },
@@ -145,6 +150,8 @@ export const AISLES: Aisle[] = [
       cta: "See kids' flours",
       image: `${P}/popped-ragi-pair.webp`,
       imageAlt: "Popped Ragi Flour pouches, back and front",
+      scene: "/hero/ragi.webp",
+      badge: "New",
       launching: true,
     },
   },
@@ -162,8 +169,8 @@ export const AISLES: Aisle[] = [
         "Beetroot and carrot malts",
         "Sukku coffee, the dry-ginger classic",
       ],
-      image: `${P}/multigrain-scene.webp`,
-      imageAlt: "Multigrain Health Mix pouches on a kitchen counter",
+      image: "/scenes/mixes-morning.webp",
+      imageAlt: "Mithra Multi Grain Health Mix, Paruthi Paal Mix and Palmyra Sprouts Powder with porridge and a malt drink",
     },
   },
   {
@@ -180,12 +187,13 @@ export const AISLES: Aisle[] = [
     world: { bg: "#1F5F5B", ink: "#F4EEDC", deep: "#123D3A" },
     art: { src: `${P}/sesame-oil-2l.webp`, alt: "Mithra cold-pressed sesame oil, 2 L bottle", kind: "cutout" },
     hero: {
-      kicker: "Mithra cold-pressed sesame oil",
-      headline: "Wood-pressed oil, in 2 L and 5 L",
-      chips: ["Cold pressed", "Unrefined", "No additives"],
+      kicker: "Mithra wooden-press oils",
+      headline: "Wood-pressed peanut and sesame oil",
+      chips: ["Cold pressed", "Single filtered", "Unrefined"],
       cta: "Shop oils",
       image: `${P}/sesame-oil-duo.webp`,
-      imageAlt: "Mithra cold-pressed sesame oil, 2 L bottle and 5 L can",
+      imageAlt: "Mithra wooden-press peanut oil and sesame oil jugs with peanuts, sesame seeds and a dosa",
+      scene: "/hero/oils.webp",
     },
   },
   {
@@ -211,12 +219,13 @@ export const AISLES: Aisle[] = [
     world: { bg: "#2F6A34", ink: "#FBF3DC", deep: "#1B4020" },
     art: { src: `${P}/jangiri-plate.webp`, alt: "Plate of palm-jaggery jangiri", kind: "cutout" },
     hero: {
-      kicker: "Karupatti sweets",
-      headline: "Sweetened with palm jaggery",
-      chips: ["Jangiri", "Mysore pak", "Halwa"],
+      kicker: "Mithra sweets",
+      headline: "Sweets from the old kitchen",
+      chips: ["Kamarkat", "Elantha vadai", "Groundnut chikki"],
       cta: "Shop sweets",
-      image: `${P}/karupatti-crate.webp`,
-      imageAlt: "Mithra crate of palm jaggery with a plate of jangiri",
+      image: `${P}/kamarkat-plate.webp`,
+      imageAlt: "Mithra Kamarkat, Elantha Vadai and Groundnut Chikki pouches with the sweets on a banana leaf",
+      scene: "/hero/sweets.webp",
     },
   },
   {

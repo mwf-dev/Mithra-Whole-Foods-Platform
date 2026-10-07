@@ -71,8 +71,9 @@ const WhatsAppIcon = () => (
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
   const [greeting, setGreeting] = useState(false)
-  // Scrolling down tucks the launcher to the edge so it never sits on top of
-  // product cards, buttons or the footer; scrolling up (or hovering) brings it back.
+  // Scrolling down shrinks and softens the launcher so it is less in the way of
+  // product cards and buttons. It stays fully on screen — it used to slide 62%
+  // off the edge, which left almost nothing to tap on a phone.
   const [tucked, setTucked] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -193,7 +194,7 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-3 z-50 flex flex-col items-end font-sans sm:bottom-6 sm:right-6">
+    <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-50 flex flex-col items-end font-sans sm:bottom-6 sm:right-6">
       {/* Chat Window Panel */}
       {isOpen && (
         <div className="pointer-events-auto mb-3 flex h-[min(480px,calc(100dvh-7rem))] w-[calc(100vw-1.5rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl transition-all duration-300 ease-in-out">
@@ -339,8 +340,8 @@ export default function Chatbot() {
       {/* Launcher: the Mithra mark on white, small enough to stay out of the way. */}
       <button
         onClick={() => (isOpen ? setIsOpen(false) : openChat())}
-        className={`pointer-events-auto relative grid h-12 w-12 place-items-center rounded-full border-2 border-primary bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:translate-x-0 hover:opacity-100 focus:translate-x-0 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95 sm:h-14 sm:w-14 ${
-          tucked && !isOpen ? "translate-x-[62%] opacity-80" : ""
+        className={`pointer-events-auto relative grid h-12 w-12 place-items-center rounded-full border-2 border-primary bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95 sm:h-14 sm:w-14 ${
+          tucked && !isOpen ? "scale-90 opacity-80" : ""
         }`}
         aria-label={isOpen ? "Close support chat" : "Open support chat"}
       >

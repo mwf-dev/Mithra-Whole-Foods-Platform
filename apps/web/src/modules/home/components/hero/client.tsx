@@ -17,13 +17,22 @@ export type HeroSlide = {
   image: string
   imageAlt: string
   launching?: boolean
+  /**
+   * Full-bleed art for the slide: a landscape scene (3:2) with the packs and a
+   * styled dish on the right and an empty, flat-colour left 40% where the
+   * headline sits. No text is baked into the image. Slides without one keep the
+   * pack-on-colour layout.
+   */
+  scene?: string
+  /** Round sticker on the scene, e.g. "New" — drawn in HTML, never in the art. */
+  badge?: string
 }
 
 const SLIDE_MS = 6500
 
 // One fixed box for every slide so the page never jumps on rotation. Phones
 // get a taller-than-wide box because the copy stacks over the pack.
-const HERO_BOX = "h-[34rem] md:h-[clamp(28rem,74vh,44rem)]"
+const HERO_BOX = "h-[37rem] md:h-auto md:aspect-[2/1] md:max-h-[44rem]"
 
 // Floating claim cards (desktop), stacked in a column beside the pack — never
 // over the pack art. Each gets its own parallax depth, idle-float phase and a
@@ -43,6 +52,95 @@ const layer = (x: number, y: number, rotate = 0): React.CSSProperties => ({
   transition: "transform 400ms cubic-bezier(.2,.8,.2,1)",
 })
 
+/**
+ * Scene slide: the image fills the box; the copy sits over its empty left
+ * side on desktop. On phones the copy stacks above the scene instead, so the
+ * art is never covered. Everything but the image is live HTML.
+ */
+function SceneSlide({
+  slide,
+  active,
+  priority,
+}: {
+  slide: HeroSlide
+  active: boolean
+  priority: boolean
+}) {
+  const { world } = slide
+  return (
+    <div
+      className="relative flex h-full flex-col md:block"
+      style={{ backgroundColor: world.bg, color: world.ink }}
+    >
+      <div
+        className={`relative z-10 flex flex-col gap-3 px-6 pt-8 pb-5 transition-all duration-700 ease-out md:absolute md:inset-y-0 md:left-0 md:w-[44%] md:justify-center md:gap-5 md:p-0 md:pl-[6%] ${
+          active ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{slide.kicker}</span>
+          {slide.launching && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+              style={{ backgroundColor: world.deep }}
+            >
+              Launching soon
+            </span>
+          )}
+        </div>
+        <h2 className="font-display text-[2.1rem] leading-[1.02] md:text-5xl lg:text-[3.6rem] text-balance max-w-[14ch]">
+          {slide.headline}
+        </h2>
+        <ul className="flex flex-wrap gap-2">
+          {slide.chips.slice(0, 3).map((chip) => (
+            <li
+              key={chip}
+              className="inline-flex items-center gap-1.5 rounded-full border border-current/40 bg-white/10 px-3 py-1.5 text-xs font-semibold backdrop-blur-[2px] md:text-[13px]"
+            >
+              <Check size={14} strokeWidth={3} aria-hidden />
+              {chip}
+            </li>
+          ))}
+        </ul>
+        <LocalizedClientLink
+          href={slide.href}
+          tabIndex={active ? 0 : -1}
+          style={{ backgroundColor: world.deep }}
+          className="group/cta mt-1 inline-flex w-max items-center gap-2 rounded-rounded px-6 py-3.5 text-sm font-semibold text-white shadow-card transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          {slide.cta}
+          <ArrowRight size={16} aria-hidden className="transition-transform group-hover/cta:translate-x-1" />
+        </LocalizedClientLink>
+      </div>
+
+      {/* Phones show the right two thirds of the scene (the packs), desktop the
+          whole frame centred a little low so the table is never cropped. */}
+      <div className="relative aspect-[4/3] w-full md:absolute md:inset-0 md:aspect-auto">
+        <Image
+          src={slide.scene!}
+          alt={slide.imageAlt}
+          fill
+          priority={priority}
+          quality={75}
+          sizes="(max-width: 768px) 100vw, 1440px"
+          className={`object-cover object-right md:object-[50%_30%] transition-transform duration-[6500ms] ease-out ${
+            active ? "scale-[1.04]" : "scale-100"
+          }`}
+        />
+        {slide.badge && (
+          <span
+            aria-hidden
+            className="absolute right-4 top-4 grid h-20 w-20 -rotate-12 place-items-center rounded-full text-center text-[11px] font-extrabold uppercase leading-tight tracking-wide text-white shadow-card-lg md:right-[5%] md:top-[9%] md:h-28 md:w-28 md:text-sm"
+            style={{ backgroundColor: world.deep }}
+          >
+            {slide.badge}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ProductSlide({
   slide,
   active,
@@ -55,6 +153,9 @@ function ProductSlide({
   mounted: boolean
 }) {
   const { world } = slide
+  if (slide.scene) {
+    return <SceneSlide slide={slide} active={active} priority={priority} />
+  }
   return (
     <div
       className="flex h-full flex-col md:grid md:grid-cols-[1fr_1.25fr] md:items-center md:gap-6 px-6 pt-8 pb-12 md:px-[5%] md:py-0"
@@ -266,7 +367,7 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
       {/* Wider than the 1440px content column so the card uses the side space
           on large screens. Equal padding above and below keeps the gap to the
           header and to the next section the same. */}
-      <div className="relative mx-auto w-full max-w-[1760px] md:px-6 md:py-8">
+      <div className="relative mx-auto w-full max-w-[1488px] md:px-6 md:py-8">
         <div className={`relative touch-pan-y overflow-hidden md:rounded-large ${HERO_BOX}`}>
           {slides.map((slide, i) => {
             const active = i === index
