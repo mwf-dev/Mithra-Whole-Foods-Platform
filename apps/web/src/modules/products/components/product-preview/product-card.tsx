@@ -67,7 +67,7 @@ export default function ProductCard({
       }
     : {
         body: "gap-2 p-4",
-        title: "text-sm font-semibold leading-snug",
+        title: "font-sans text-sm font-semibold leading-snug",
         sub: "mt-1 text-xs leading-snug",
         chip: "min-h-[32px] px-2.5 text-xs",
         price: "text-lg font-bold",
