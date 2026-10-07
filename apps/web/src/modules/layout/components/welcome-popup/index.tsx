@@ -146,10 +146,10 @@ export default function WelcomePopup({ cards }: { cards: WelcomeCard[] }) {
         transition
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 data-[closed]:opacity-0"
       />
-      {/* Phones: anchored to the TOP (not the bottom) and sized against the small
-          viewport, so the card can never land partly below the visible screen
-          on browsers whose bottom edge moves with the toolbar. */}
-      <div className="fixed inset-0 flex items-start justify-center overflow-hidden p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-6">
+      {/* Centred on every screen. The box is pinned to the SMALL viewport height
+          (svh) so on phones the centre is the middle of what is actually visible,
+          not of the area behind a retracting browser toolbar. */}
+      <div className="fixed inset-x-0 top-0 flex h-[100svh] items-center justify-center overflow-hidden p-3 sm:p-6">
         <DialogPanel
           transition
           className="relative grid max-h-[calc(100svh-1.5rem)] w-full max-w-[54rem] grid-rows-[8.5rem_minmax(0,1fr)] overflow-hidden rounded-3xl bg-white shadow-2xl transition duration-500 ease-out data-[closed]:translate-y-8 data-[closed]:scale-95 data-[closed]:opacity-0 sm:max-h-[90dvh] sm:grid-cols-[1.05fr_1fr] sm:grid-rows-1"

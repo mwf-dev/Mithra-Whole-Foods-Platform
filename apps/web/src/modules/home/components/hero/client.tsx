@@ -128,12 +128,13 @@ function SceneSlide({
           }`}
         />
         {/* Phones: the copy block above is the slide's flat colour while the scene
-            has its own slightly different backdrop and light. Fade the scene's
-            top edge into the flat colour so there is no visible seam. */}
+            has its own slightly different backdrop and light. Fade only the scene's
+            very top edge into the flat colour — any taller and it washes out the
+            tops of tall packs (oil bottles) that start near the top. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[-1px] h-3/5 md:hidden"
-          style={{ background: `linear-gradient(to bottom, ${world.bg} 0%, ${world.bg}cc 30%, transparent 100%)` }}
+          className="pointer-events-none absolute inset-x-0 top-[-1px] h-[10%] md:hidden"
+          style={{ background: `linear-gradient(to bottom, ${world.bg} 0%, ${world.bg}99 45%, transparent 100%)` }}
         />
         {slide.badge && (
           <span
