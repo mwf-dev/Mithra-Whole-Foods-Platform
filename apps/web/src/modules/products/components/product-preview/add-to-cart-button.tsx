@@ -21,6 +21,7 @@ export default function AddToCartButton({
   title,
   thumbnail,
   unitPrice,
+  large = false,
 }: {
   variantId?: string
   variantCount: number
@@ -28,6 +29,8 @@ export default function AddToCartButton({
   title?: string
   thumbnail?: string | null
   unitPrice?: number
+  /** Bigger type and hit areas, for the homepage rail card. */
+  large?: boolean
 }) {
   const { countryCode } = useParams<{ countryCode: string }>()
   const router = useRouter()
@@ -75,23 +78,23 @@ export default function AddToCartButton({
 
   if (isQuickAddable && quantity > 0) {
     return (
-      <div className="flex items-center justify-between w-full rounded-lg border border-primary bg-primary/5 py-1.5 px-1.5">
+      <div className={`flex items-center justify-between w-full rounded-lg border border-primary bg-primary/5 px-1.5 ${large ? "py-2" : "py-1.5"}`}>
         <button
           onClick={decrement}
           aria-label="Decrease quantity"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-primary hover:bg-primary hover:text-white transition-colors"
+          className={`flex items-center justify-center rounded-md text-primary hover:bg-primary hover:text-white transition-colors ${large ? "h-9 w-9" : "h-7 w-7"}`}
         >
-          <Minus size={14} />
+          <Minus size={large ? 16 : 14} />
         </button>
-        <span className="text-sm font-semibold text-primary tabular-nums" aria-live="polite">
+        <span className={`${large ? "text-base" : "text-sm"} font-semibold text-primary tabular-nums`} aria-live="polite">
           {quantity} in cart
         </span>
         <button
           onClick={increment}
           aria-label="Increase quantity"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-primary hover:bg-primary hover:text-white transition-colors"
+          className={`flex items-center justify-center rounded-md text-primary hover:bg-primary hover:text-white transition-colors ${large ? "h-9 w-9" : "h-7 w-7"}`}
         >
-          <Plus size={14} />
+          <Plus size={large ? 16 : 14} />
         </button>
       </div>
     )
@@ -100,10 +103,10 @@ export default function AddToCartButton({
   return (
     <button
       onClick={handleAdd}
-      className="w-full bg-primary text-white hover:bg-primary-dark disabled:opacity-60 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold transition-colors"
+      className={`w-full bg-primary text-white hover:bg-primary-dark disabled:opacity-60 rounded-lg flex items-center justify-center gap-2 font-semibold transition-colors ${large ? "py-3 text-sm" : "py-2.5 text-xs"}`}
       aria-label="Add to cart"
     >
-      <ShoppingCart size={14} /> Add To Cart
+      <ShoppingCart size={large ? 16 : 14} /> Add To Cart
     </button>
   )
 }

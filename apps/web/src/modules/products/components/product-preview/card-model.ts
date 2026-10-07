@@ -135,3 +135,26 @@ export function groupBySize(
         )
   )
 }
+
+/**
+ * True when a product's first image is one of the studio card images — the
+ * white-ground packshot made for the storefront cards (`card-<handle>-01`, or
+ * `oil-<handle>-01` for the oils, whose renders come from the client's own jug
+ * art). Rails use it to show only products whose card photo matches the rest,
+ * instead of mixing in older scene photos or another brand's pack.
+ */
+export function hasStudioImage(product: HttpTypes.StoreProduct): boolean {
+  const first = product.thumbnail || product.images?.[0]?.url || ""
+  return /[/_](card|oil)-[a-z0-9-]+-01\.jpg/i.test(first)
+}
+
+/**
+ * Stable sort that puts groups with something buyable ahead of groups that are
+ * all "coming soon", so a rail does not open on a card with a disabled button.
+ */
+export function purchasableFirst(
+  groups: HttpTypes.StoreProduct[][]
+): HttpTypes.StoreProduct[][] {
+  const live = (g: HttpTypes.StoreProduct[]) => g.some((p) => toCardItem(p).purchasable)
+  return [...groups.filter(live), ...groups.filter((g) => !live(g))]
+}

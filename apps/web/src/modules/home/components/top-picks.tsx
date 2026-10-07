@@ -2,7 +2,11 @@ import { ArrowRight } from "lucide-react"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductPreview from "@modules/products/components/product-preview"
-import { groupBySize } from "@modules/products/components/product-preview/card-model"
+import {
+  groupBySize,
+  hasStudioImage,
+  purchasableFirst,
+} from "@modules/products/components/product-preview/card-model"
 import { AISLES, aisleProductIds } from "@modules/home/aisles"
 import { RailTab, TabbedRail } from "./tabbed-rail"
 
@@ -27,7 +31,7 @@ export function ProductRail({
   products: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion
 }) {
-  const groups = groupBySize(products).slice(0, PER_RAIL)
+  const groups = purchasableFirst(groupBySize(products)).slice(0, PER_RAIL)
   return (
     <ul
       data-rail
@@ -38,7 +42,7 @@ export function ProductRail({
           key={group[0].id}
           className="w-[66%] shrink-0 snap-start xsmall:w-[40%] md:w-[30%] small:w-[23%] medium:w-[18.5%]"
         >
-          <ProductPreview product={group[0]} sizes={group} region={region} />
+          <ProductPreview product={group[0]} sizes={group} region={region} variant="rail" />
         </li>
       ))}
     </ul>
@@ -50,7 +54,7 @@ export function ProductRail({
  * the homepage already fetches — no request per tab.
  */
 export function TopPicks({
-  products,
+  products: all,
   categories,
   region,
 }: {
@@ -58,6 +62,11 @@ export function TopPicks({
   categories: HttpTypes.StoreProductCategory[]
   region: HttpTypes.StoreRegion
 }) {
+  // Only products with the studio card photo (white-ground packshot): the
+  // rail reads as one set, and older scene photos or third-party packs stay
+  // out of it. The full catalog is still on /store.
+  const products = all.filter(hasStudioImage)
+
   if (!products.length) {
     return null
   }

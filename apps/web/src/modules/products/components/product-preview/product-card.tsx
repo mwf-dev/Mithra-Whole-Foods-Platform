@@ -21,12 +21,20 @@ export default function ProductCard({
   items,
   currencyCode,
   title,
+  variant = "default",
 }: {
   items: CardItem[]
   currencyCode: string
   /** Display name for a size group (the title minus its size). */
   title?: string
+  /**
+   * `rail` is the homepage "Stock the pantry" card: white image ground, the
+   * body sans-serif instead of the display serif that `h3` inherits, and larger
+   * type throughout. Every other grid keeps `default`.
+   */
+  variant?: "default" | "rail"
 }) {
+  const rail = variant === "rail"
   const [selected, setSelected] = useState(0)
   const item = items[Math.min(selected, items.length - 1)]
   const href = `/products/${item.handle}`
@@ -45,6 +53,30 @@ export default function ProductCard({
     : item.badge ?? (onSale ? "Sale" : grouped ? `${items.length} sizes` : null)
   const name = grouped ? title ?? item.title : item.title
 
+  const t = rail
+    ? {
+        body: "gap-3 p-5",
+        title: "font-sans text-lg font-semibold leading-snug tracking-tight",
+        sub: "mt-1.5 text-sm leading-snug",
+        chip: "min-h-[38px] px-3 text-sm",
+        price: "font-sans text-2xl font-bold",
+        was: "text-sm",
+        soon: "text-base",
+        badge: "text-[11px]",
+        button: "py-3 text-sm",
+      }
+    : {
+        body: "gap-2 p-4",
+        title: "text-sm font-semibold leading-snug",
+        sub: "mt-1 text-xs leading-snug",
+        chip: "min-h-[32px] px-2.5 text-xs",
+        price: "text-lg font-bold",
+        was: "text-xs",
+        soon: "text-sm",
+        badge: "text-[10px]",
+        button: "py-2.5 text-xs",
+      }
+
   return (
     <Tilt
       shine
@@ -52,12 +84,12 @@ export default function ProductCard({
     >
       <LocalizedClientLink
         href={href}
-        className="relative block aspect-square overflow-hidden bg-beige"
+        className={`relative block aspect-square overflow-hidden ${rail ? "bg-white" : "bg-beige"}`}
       >
         <WishlistHeart key={item.handle} title={item.title} handle={item.handle} />
 
         {badge && (
-          <span className="absolute left-3 top-3 z-10 rounded-base bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-charcoal shadow-card-sm">
+          <span className={`absolute left-3 top-3 z-10 rounded-base bg-white/95 px-2 py-1 ${t.badge} font-bold uppercase tracking-wider text-charcoal shadow-card-sm`}>
             {badge}
           </span>
         )}
@@ -97,18 +129,18 @@ export default function ProductCard({
         )}
       </LocalizedClientLink>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className={`flex flex-1 flex-col ${t.body}`}>
         <LocalizedClientLink href={href} className="flex-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-charcoal transition-colors group-hover:text-primary">
+          <h3 className={`line-clamp-2 ${t.title} text-charcoal transition-colors group-hover:text-primary`}>
             {name}
           </h3>
           {item.benefit ? (
-            <p className="mt-1 line-clamp-2 text-xs leading-snug text-grey-50">
+            <p className={`line-clamp-2 ${t.sub} text-grey-50`}>
               {item.benefit}
             </p>
           ) : (
             !grouped &&
-            item.size && <p className="mt-1 text-xs text-grey-50">{item.size}</p>
+            item.size && <p className={`${t.sub} text-grey-50`}>{item.size}</p>
           )}
         </LocalizedClientLink>
 
@@ -121,7 +153,7 @@ export default function ProductCard({
                 role="radio"
                 aria-checked={i === selected}
                 onClick={() => setSelected(i)}
-                className={`min-h-[32px] rounded-rounded border px-2.5 text-xs font-semibold transition-colors ${
+                className={`${t.chip} rounded-rounded border font-semibold transition-colors ${
                   i === selected
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-beige text-charcoal hover:border-primary/50"
@@ -136,17 +168,17 @@ export default function ProductCard({
         <div className="flex items-baseline gap-2" aria-live="polite">
           {item.purchasable ? (
             <>
-              <span className="text-lg font-bold tabular-nums text-charcoal">
+              <span className={`${t.price} tabular-nums text-charcoal`}>
                 {format(item.price)}
               </span>
               {onSale && (
-                <span className="text-xs text-grey-40 line-through tabular-nums">
+                <span className={`${t.was} text-grey-40 line-through tabular-nums`}>
                   {format(item.originalPrice!)}
                 </span>
               )}
             </>
           ) : (
-            <span className="text-sm font-medium text-grey-50">
+            <span className={`${t.soon} font-medium text-grey-50`}>
               {item.comingSoon ? "Launching soon" : "Price unavailable"}
             </span>
           )}
@@ -161,11 +193,12 @@ export default function ProductCard({
             title={item.title}
             thumbnail={item.image}
             unitPrice={item.price}
+            large={rail}
           />
         ) : (
           <button
             disabled
-            className="w-full cursor-not-allowed rounded-lg border border-beige bg-grey-5 py-2.5 text-xs font-semibold text-grey-40"
+            className={`w-full cursor-not-allowed rounded-lg border border-beige bg-grey-5 ${t.button} font-semibold text-grey-40`}
           >
             {item.comingSoon ? "Coming soon" : "Currently unavailable"}
           </button>
