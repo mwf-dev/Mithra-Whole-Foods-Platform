@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import crypto from "crypto"
+import { isValidEasyshipSignature } from "../../../lib/easyship-signature"
 import { deliverByTrackingNumber } from "../../../lib/fedex-delivery"
 import { EasyshipWebhookPayload } from "../../../modules/fulfillment-easyship/types"
 
@@ -9,25 +9,6 @@ const TERMINAL_DELIVERED_STATUSES = new Set([
   "delivered_to_customer",
   "completed",
 ])
-
-function isValidEasyshipSignature(
-  rawBody: Buffer | string,
-  signatureHexOrB64: string,
-  secret: string
-): boolean {
-  if (!secret) return true
-
-  const hmac = crypto.createHmac("sha256", secret).update(rawBody)
-  const expectedHex = hmac.digest("hex")
-  const expectedB64 = crypto.createHmac("sha256", secret).update(rawBody).digest("base64")
-
-  // Easyship might pass hex or base64 signature in header
-  return (
-    signatureHexOrB64 === expectedHex ||
-    signatureHexOrB64 === expectedB64 ||
-    signatureHexOrB64 === `sha256=${expectedHex}`
-  )
-}
 
 /**
  * Easyship Webhook Endpoint — receives real-time tracking status & label events.
@@ -45,13 +26,28 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     (req.headers["easyship-signature"] as string) ||
     (req.headers["x-signature"] as string)
 
-  const rawBody = (req as any).rawBody || JSON.stringify(req.body)
+  // Fail closed. This route marks real orders delivered (and fires customer
+  // emails), so an unsigned or unverifiable request must never get through.
+  if (!webhookSecret) {
+    logger.error("[easyship-webhook] EASYSHIP_WEBHOOK_SECRET is not set")
+    return res.status(500).json({ message: "Webhook secret not configured" })
+  }
+  if (!signatureHeader) {
+    return res.status(401).json({ message: "Missing signature" })
+  }
 
-  if (webhookSecret && signatureHeader) {
-    if (!isValidEasyshipSignature(rawBody, signatureHeader, webhookSecret)) {
-      logger.error("[easyship-webhook] Invalid HMAC signature")
-      return res.status(401).json({ message: "Invalid signature" })
-    }
+  const rawBody = (req as any).rawBody
+  if (!rawBody) {
+    // Re-serializing req.body would not reproduce the signed bytes.
+    logger.error(
+      "[easyship-webhook] rawBody unavailable — check the preserveRawBody bodyParser option for /webhooks/easyship in src/api/middlewares.ts"
+    )
+    return res.status(500).json({ message: "Cannot verify signature" })
+  }
+
+  if (!isValidEasyshipSignature(rawBody, signatureHeader, webhookSecret)) {
+    logger.error("[easyship-webhook] Invalid HMAC signature")
+    return res.status(401).json({ message: "Invalid signature" })
   }
 
   const payload = req.body as EasyshipWebhookPayload
