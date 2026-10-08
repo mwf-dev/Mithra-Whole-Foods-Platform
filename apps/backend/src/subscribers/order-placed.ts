@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import * as crypto from "crypto"
 import { trackOrderCompleted } from "../lib/analytics"
 import { reportError } from "../lib/observability"
-import { resolveTemplate } from "../lib/email"
+import { resolveTemplate, trackUrl } from "../lib/email"
 
 /**
  * When an order is placed:
@@ -147,6 +147,7 @@ export default async function orderPlacedHandler({
       { year: "numeric", month: "long", day: "numeric" }
     ),
     email: order.email,
+    track_url: trackUrl(customOrderNumber),
     subtotal: money.format(Number(order.subtotal ?? 0)),
     shipping_total: money.format(Number(order.shipping_total ?? 0)),
     total: money.format(Number(order.total ?? 0)),

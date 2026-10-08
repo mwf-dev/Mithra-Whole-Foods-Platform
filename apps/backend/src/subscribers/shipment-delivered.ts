@@ -1,6 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { resolveTemplate } from "../lib/email"
+import { resolveTemplate, trackUrl } from "../lib/email"
 
 /**
  * When a fulfillment is marked delivered, email the customer.
@@ -53,6 +53,7 @@ export default async function shipmentDeliveredHandler({
       "labels.tracking_url",
       "order.id",
       "order.display_id",
+      "order.metadata",
       "order.email",
     ],
     filters: { id: data.id },
@@ -66,14 +67,19 @@ export default async function shipmentDeliveredHandler({
     return
   }
 
+  const orderNumber = String(
+    (order.metadata as any)?.order_number ?? order.display_id
+  )
+
   try {
     await notifications.createNotifications({
       to: order.email,
       channel: "email",
       template,
       data: {
-        order_id: `#${order.display_id}`,
+        order_id: `#${orderNumber}`,
         email: order.email,
+        track_url: trackUrl(orderNumber),
         tracking:
           fulfillment.labels?.map((l: any) => ({
             number: l?.tracking_number,
