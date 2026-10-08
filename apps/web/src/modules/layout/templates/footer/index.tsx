@@ -68,6 +68,10 @@ export default function Footer() {
             <ul className="flex flex-col gap-2.5 text-[13px]">
               <li><LocalizedClientLink href="/about-us" className={linkClass}>About us</LocalizedClientLink></li>
               <li><LocalizedClientLink href="/contact" className={linkClass}>Contact us</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/shipping-policy" className={linkClass}>Shipping policy</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/refund-policy" className={linkClass}>Refund policy</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/privacy-policy" className={linkClass}>Privacy policy</LocalizedClientLink></li>
+              <li><LocalizedClientLink href="/terms" className={linkClass}>Terms of service</LocalizedClientLink></li>
             </ul>
           </nav>
 
