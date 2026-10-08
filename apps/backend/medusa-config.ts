@@ -129,8 +129,26 @@ if (process.env.STRIPE_API_KEY) {
   })
 }
 
-// SendGrid email notification provider
-if (process.env.SENDGRID_API_KEY) {
+// Email notification provider. Resend is preferred (templates live in
+// src/lib/email-templates.ts); SendGrid remains as a fallback.
+if (process.env.RESEND_API_KEY) {
+  modules.push({
+    resolve: "@medusajs/medusa/notification",
+    options: {
+      providers: [
+        {
+          resolve: "./src/modules/notification-resend",
+          id: "resend",
+          options: {
+            channels: ["email"],
+            api_key: process.env.RESEND_API_KEY,
+            from: process.env.RESEND_FROM,
+          },
+        },
+      ],
+    },
+  })
+} else if (process.env.SENDGRID_API_KEY) {
   modules.push({
     resolve: "@medusajs/medusa/notification",
     options: {

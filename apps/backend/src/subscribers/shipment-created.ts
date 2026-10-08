@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { resolveTemplate } from "../lib/email"
 
 /**
  * When the admin marks a fulfillment as shipped, email the customer their
@@ -26,15 +27,15 @@ export default async function shipmentCreatedHandler({
     notifications = container.resolve(Modules.NOTIFICATION)
   } catch {
     logger.warn(
-      "[shipment-created] notification module not configured (set SENDGRID_API_KEY); skipping shipment email"
+      "[shipment-created] notification module not configured (set RESEND_API_KEY); skipping shipment email"
     )
     return
   }
 
-  const template = process.env.SENDGRID_ORDER_SHIPPED_TEMPLATE_ID
+  const template = resolveTemplate("order-shipped", "SENDGRID_ORDER_SHIPPED_TEMPLATE_ID")
   if (!template) {
     logger.warn(
-      "[shipment-created] SENDGRID_ORDER_SHIPPED_TEMPLATE_ID not set; shipment email skipped"
+      "[shipment-created] no email template configured; shipment email skipped"
     )
     return
   }

@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { resolveTemplate } from "../lib/email"
 
 /**
  * When a fulfillment is marked delivered, email the customer.
@@ -33,10 +34,10 @@ export default async function shipmentDeliveredHandler({
     return
   }
 
-  const template = process.env.SENDGRID_ORDER_DELIVERED_TEMPLATE_ID
+  const template = resolveTemplate("order-delivered", "SENDGRID_ORDER_DELIVERED_TEMPLATE_ID")
   if (!template) {
     logger.warn(
-      "[shipment-delivered] SENDGRID_ORDER_DELIVERED_TEMPLATE_ID not set; delivery email skipped"
+      "[shipment-delivered] no email template configured; delivery email skipped"
     )
     return
   }

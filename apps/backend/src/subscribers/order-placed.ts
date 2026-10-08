@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import * as crypto from "crypto"
 import { trackOrderCompleted } from "../lib/analytics"
 import { reportError } from "../lib/observability"
+import { resolveTemplate } from "../lib/email"
 
 /**
  * When an order is placed:
@@ -129,7 +130,7 @@ export default async function orderPlacedHandler({
     notifications = container.resolve(Modules.NOTIFICATION)
   } catch {
     logger.warn(
-      "[order-placed] notification module not configured (set SENDGRID_API_KEY); skipping order emails"
+      "[order-placed] notification module not configured (set RESEND_API_KEY); skipping order emails"
     )
     return
   }
@@ -168,7 +169,7 @@ export default async function orderPlacedHandler({
       : "",
   }
 
-  const customerTemplate = process.env.SENDGRID_ORDER_PLACED_TEMPLATE_ID
+  const customerTemplate = resolveTemplate("order-placed", "SENDGRID_ORDER_PLACED_TEMPLATE_ID")
   if (customerTemplate && order.email) {
     try {
       await notifications.createNotifications({
@@ -182,13 +183,13 @@ export default async function orderPlacedHandler({
     }
   } else {
     logger.warn(
-      "[order-placed] SENDGRID_ORDER_PLACED_TEMPLATE_ID not set; customer confirmation skipped"
+      "[order-placed] no email template configured; customer confirmation skipped"
     )
   }
 
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL
   const adminTemplate =
-    process.env.SENDGRID_ADMIN_NEW_ORDER_TEMPLATE_ID || customerTemplate
+    resolveTemplate("admin-new-order", "SENDGRID_ADMIN_NEW_ORDER_TEMPLATE_ID") || customerTemplate
   if (adminEmail && adminTemplate) {
     try {
       await notifications.createNotifications({
