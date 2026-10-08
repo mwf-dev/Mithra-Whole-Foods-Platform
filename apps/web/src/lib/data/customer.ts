@@ -660,3 +660,64 @@ export const updateCustomerAddress = async (
       return { success: false, error: err.toString() }
     })
 }
+
+/**
+ * Always reports success: telling the caller whether an email is registered
+ * would let anyone enumerate customers. The email is only sent if it exists.
+ */
+export async function requestPasswordReset(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const { values, error } = validateFormFields(formData, {
+    email: { label: "Email", required: true, maxLength: 255, kind: "email" },
+  })
+  if (error) return { ok: false, message: error }
+
+  try {
+    await sdk.auth.resetPassword("customer", "emailpass", {
+      identifier: values.email,
+    })
+  } catch (e) {
+    console.error("Password reset request failed:", e)
+  }
+  return {
+    ok: true,
+    message:
+      "If an account exists for that email, a reset link is on its way. It expires in 15 minutes.",
+  }
+}
+
+export async function resetPassword(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const { values, error } = validateFormFields(formData, {
+    email: { label: "Email", required: true, maxLength: 255, kind: "email" },
+    token: { label: "Reset link", required: true, maxLength: 4096 },
+    password: { label: "Password", required: true, maxLength: 128 },
+  })
+  if (error) return { ok: false, message: error }
+
+  if (values.password.length < 8) {
+    return { ok: false, message: "Password must be at least 8 characters." }
+  }
+  if (values.password !== (formData.get("confirm") as string)) {
+    return { ok: false, message: "Passwords do not match." }
+  }
+
+  try {
+    await sdk.auth.updateProvider(
+      "customer",
+      "emailpass",
+      { email: values.email, password: values.password },
+      values.token
+    )
+  } catch {
+    return {
+      ok: false,
+      message: "This reset link is invalid or has expired. Request a new one.",
+    }
+  }
+  return { ok: true, message: "Password updated. You can now sign in." }
+}

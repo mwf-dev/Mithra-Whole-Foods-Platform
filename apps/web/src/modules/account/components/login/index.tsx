@@ -5,6 +5,7 @@ import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useSearchParams } from "next/navigation"
 import { useActionState } from "react"
 
@@ -47,6 +48,15 @@ const Login = ({ setCurrentView }: Props) => {
             required
             data-testid="password-input"
           />
+        </div>
+        <div className="mt-2 text-right">
+          <LocalizedClientLink
+            href="/forgot-password"
+            className="text-small-regular underline"
+            data-testid="forgot-password-link"
+          >
+            Forgot password?
+          </LocalizedClientLink>
         </div>
         <ErrorMessage error={message} data-testid="login-error-message" />
         <SubmitButton data-testid="sign-in-button" className="w-full mt-6">
