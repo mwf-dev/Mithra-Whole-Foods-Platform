@@ -56,6 +56,11 @@ const contentStudioLimiter = rateLimit({
   keyGenerator: clientIpKey,
 })
 
+const trackingDemoEnabled = (req: any, res: any, next: any) =>
+  process.env.TRACKING_DEMO_ENABLED === "true"
+    ? next()
+    : res.status(404).json({ message: "Not found" })
+
 const storeLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 150,
@@ -143,9 +148,16 @@ export default defineMiddlewares({
       method: ["POST"],
       bodyParser: { sizeLimit: "15mb" },
     },
+    // The demo's ship/deliver buttons run the real order workflows, so it is
+    // off unless TRACKING_DEMO_ENABLED=true AND the caller holds an admin
+    // session. Same-origin fetches from the page carry that session cookie.
+    {
+      matcher: "/tracking-demo",
+      middlewares: [trackingDemoEnabled, authenticate("user", ["session", "bearer"]), trackingDemoLimiter],
+    },
     {
       matcher: "/tracking-demo/*",
-      middlewares: [trackingDemoLimiter],
+      middlewares: [trackingDemoEnabled, authenticate("user", ["session", "bearer"]), trackingDemoLimiter],
     },
   ],
 })
