@@ -13,7 +13,7 @@ export default function ForgotForm() {
     <div className="max-w-sm w-full flex flex-col items-center">
       <h1 className="text-large-semi uppercase mb-6">Forgot password</h1>
       <p className="text-center text-base-regular mb-8">
-        Enter your email and we'll send you a link to choose a new password.
+        Enter your email and we&apos;ll send you a link to choose a new password.
       </p>
       <form className="w-full" action={formAction}>
         <Input
