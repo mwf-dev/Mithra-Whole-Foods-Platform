@@ -1,4 +1,4 @@
-import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -92,12 +92,15 @@ if (process.env.REDIS_URL && !IS_DEV) {
       options: { redisUrl: process.env.REDIS_URL },
     },
     {
-      resolve: "@medusajs/medusa/event-bus-redis",
+      // Local wrapper: the stock 2.17.0 module hangs `medusa start` forever.
+      // See src/modules/event-bus-redis/index.ts.
+      key: Modules.EVENT_BUS,
+      resolve: "./src/modules/event-bus-redis",
       options: { redisUrl: process.env.REDIS_URL },
     },
     {
       resolve: "@medusajs/medusa/workflow-engine-redis",
-      options: { redis: { url: process.env.REDIS_URL } },
+      options: { redis: { redisUrl: process.env.REDIS_URL } },
     }
   )
 }
