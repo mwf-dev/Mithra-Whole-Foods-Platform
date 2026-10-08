@@ -6,6 +6,7 @@ import { CheckCircleSolid } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { Heading, Text, useToggleState } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useActionState } from "react"
@@ -63,6 +64,22 @@ const Addresses = ({
       </div>
       {isOpen ? (
         <form action={formAction}>
+          {!customer && (
+            <p
+              className="mb-6 rounded-lg bg-[#F3F7F4] px-4 py-3 text-small-regular"
+              data-testid="guest-checkout-note"
+            >
+              You&apos;re checking out as a guest &mdash; no account needed.{" "}
+              <LocalizedClientLink
+                href={`/account?redirect=${encodeURIComponent(
+                  pathname.replace(/^\/[a-z]{2}(?=\/)/i, "") + "?step=address"
+                )}`}
+                className="underline"
+              >
+                Already have an account? Sign in
+              </LocalizedClientLink>
+            </p>
+          )}
           <div className="pb-8">
             <ShippingAddress
               customer={customer}

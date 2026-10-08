@@ -4,9 +4,11 @@ import { Text, Button } from "@medusajs/ui"
 type OrderDetailsProps = {
   order: HttpTypes.StoreOrder
   showStatus?: boolean
+  /** The invoice endpoint needs a signed-in customer, so guests don't get the button. */
+  showInvoice?: boolean
 }
 
-const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
+const OrderDetails = ({ order, showStatus, showInvoice = true }: OrderDetailsProps) => {
   const formatStatus = (str: string) => {
     const formatted = str.split("_").join(" ")
 
@@ -35,13 +37,15 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
         Order number: <span data-testid="order-id">{order.metadata?.order_number as string || order.display_id}</span>
       </Text>
 
-      <div className="mt-4">
-        <a href={`/api/invoice/${order.id}`} target="_blank" rel="noreferrer">
-          <Button variant="secondary">
-            Download Invoice
-          </Button>
-        </a>
-      </div>
+      {showInvoice && (
+        <div className="mt-4">
+          <a href={`/api/invoice/${order.id}`} target="_blank" rel="noreferrer">
+            <Button variant="secondary">
+              Download Invoice
+            </Button>
+          </a>
+        </div>
+      )}
 
       <div className="flex items-center text-compact-small gap-x-4 mt-4">
         {showStatus && (

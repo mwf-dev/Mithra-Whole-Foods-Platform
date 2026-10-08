@@ -1,4 +1,5 @@
 import { retrieveOrder } from "@lib/data/orders"
+import { retrieveCustomer } from "@lib/data/customer"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import TrackEvent from "@lib/analytics/track-event"
 import { Metadata } from "next"
@@ -14,7 +15,10 @@ export const metadata: Metadata = {
 
 export default async function OrderConfirmedPage(props: Props) {
   const params = await props.params
-  const order = await retrieveOrder(params.id).catch(() => null)
+  const [order, customer] = await Promise.all([
+    retrieveOrder(params.id).catch(() => null),
+    retrieveCustomer().catch(() => null),
+  ])
 
   if (!order) {
     return notFound()
@@ -38,7 +42,7 @@ export default async function OrderConfirmedPage(props: Props) {
             order.items?.reduce((acc, i) => acc + i.quantity, 0) ?? 0,
         }}
       />
-      <OrderCompletedTemplate order={order} />
+      <OrderCompletedTemplate order={order} isGuest={!customer} />
     </>
   )
 }

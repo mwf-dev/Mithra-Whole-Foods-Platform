@@ -10,13 +10,16 @@ import OrderDetails from "@modules/order/components/order-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
 import { HttpTypes } from "@medusajs/types"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
+  isGuest?: boolean
 }
 
 export default async function OrderCompletedTemplate({
   order,
+  isGuest = false,
 }: OrderCompletedTemplateProps) {
   const cookies = await nextCookies()
 
@@ -44,7 +47,13 @@ export default async function OrderCompletedTemplate({
           </div>
           
           <div className="border-t border-gray-100 pt-8">
-            <OrderDetails order={order} />
+            <OrderDetails order={order} showInvoice={!isGuest} />
+            {isGuest && (
+              <p className="mt-4 text-sm text-gray-600">
+                Keep your order number and the phone number you entered at checkout — you can track this order any time at{" "}
+                <LocalizedClientLink href="/track" className="underline">Track order</LocalizedClientLink>.
+              </p>
+            )}
           </div>
 
           <div className="border-t border-gray-100 pt-8">

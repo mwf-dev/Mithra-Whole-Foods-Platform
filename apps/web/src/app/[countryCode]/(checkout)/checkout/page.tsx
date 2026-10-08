@@ -5,7 +5,7 @@ import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 import TrackEvent from "@lib/analytics/track-event"
 import { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -16,7 +16,7 @@ export default async function Checkout({
 }: {
   params: Promise<{ countryCode: string }>
 }) {
-  const { countryCode } = await params
+  await params
 
   // Fetch cart + customer in parallel — independent backend reads.
   const [cart, customer] = await Promise.all([
@@ -26,16 +26,6 @@ export default async function Checkout({
 
   if (!cart) {
     return notFound()
-  }
-
-  // Require an account to place an order. Send guests to sign in / sign up,
-  // then bring them straight back to checkout.
-  if (!customer) {
-    redirect(
-      `/${countryCode}/account?redirect=${encodeURIComponent(
-        `/${countryCode}/checkout?step=address`
-      )}`
-    )
   }
 
   return (
