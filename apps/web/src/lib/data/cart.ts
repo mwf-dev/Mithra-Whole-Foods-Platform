@@ -21,6 +21,7 @@ import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
 import { addressRules, validateFormFields } from "@lib/util/form-validation"
 import { retrieveCustomer } from "./customer"
+import { normalizePhone } from "@lib/util/phone"
 
 /**
  * Purges the cached read of one cart, for every device holding it.
@@ -412,6 +413,13 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 
     const shipping = validateFormFields(formData, {
       ...addressRules("shipping_address."),
+      // Couriers and guest order tracking both need a reachable number.
+      "shipping_address.phone": {
+        label: "Phone",
+        required: true,
+        maxLength: 32,
+        kind: "phone",
+      },
       email: { label: "Email", required: true, maxLength: 255, kind: "email" },
     })
     if (shipping.error) {
@@ -419,6 +427,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     }
     const sv = shipping.values
     countryCode = sv["shipping_address.country_code"].toLowerCase()
+    const phone = normalizePhone(sv["shipping_address.phone"])
+    if (!phone) {
+      return "Please enter a valid phone number, e.g. 610-202-3456."
+    }
 
     const data = {
       shipping_address: {
@@ -431,7 +443,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         city: sv["shipping_address.city"],
         country_code: countryCode,
         province: sv["shipping_address.province"],
-        phone: sv["shipping_address.phone"],
+        phone,
       },
       email: sv["email"],
     } as any
