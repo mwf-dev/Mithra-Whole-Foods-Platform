@@ -5,6 +5,48 @@ import medusaError from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
 
+export type TrackedOrder = {
+  number: string
+  placed_at: string
+  status: "received" | "packed" | "shipped" | "delivered" | "canceled"
+  ship_to: string
+  items: { title: string; quantity: number }[]
+  fulfillments: {
+    packed_at: string | null
+    shipped_at: string | null
+    delivered_at: string | null
+    tracking: { number: string; url: string | null }[]
+  }[]
+}
+
+/** Guest-friendly lookup: order number + the phone used at checkout. */
+export async function lookupOrder(
+  _state: unknown,
+  formData: FormData
+): Promise<{ order?: TrackedOrder; error?: string } | null> {
+  const order = String(formData.get("order") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim()
+  if (!order || !phone) {
+    return { error: "Enter your order number and the phone number you used at checkout." }
+  }
+  try {
+    const res = await sdk.client.fetch<{ order: TrackedOrder }>(
+      "/store/order-lookup",
+      { method: "POST", body: { order, phone } }
+    )
+    return { order: res.order }
+  } catch (e: any) {
+    const status = e?.status ?? e?.response?.status
+    if (status === 429) {
+      return { error: "Too many attempts. Please wait a few minutes and try again." }
+    }
+    if (status === 404) {
+      return { error: "We couldn't find an order matching those details. Check the order number and phone." }
+    }
+    return { error: "Something went wrong looking up your order. Please try again." }
+  }
+}
+
 export const retrieveOrder = async (id: string) => {
   const headers = {
     ...(await getAuthHeaders()),
