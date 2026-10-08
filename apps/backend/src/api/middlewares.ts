@@ -56,6 +56,30 @@ const contentStudioLimiter = rateLimit({
   keyGenerator: clientIpKey,
 })
 
+/**
+ * Guest order lookup (POST /store/order-lookup). Two limits: a general
+ * per-client one, and a tight per-order-number one so nobody can grind through
+ * phone numbers against a single order. Failed and successful attempts both
+ * count — a real customer needs one or two tries, not eight.
+ */
+const orderLookupLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 20,
+  message: { message: "Too many lookups, please try again in a minute." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: storeRateLimitKey,
+})
+const orderLookupPerOrderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: { message: "Too many attempts for this order. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) =>
+    `order:${String(req.body?.order ?? "").trim().replace(/^#/, "").toUpperCase().slice(0, 40)}`,
+})
+
 const trackingDemoEnabled = (req: any, res: any, next: any) =>
   process.env.TRACKING_DEMO_ENABLED === "true"
     ? next()
@@ -108,6 +132,11 @@ export default defineMiddlewares({
       matcher: "/store/orders/*/invoice",
       method: ["GET"],
       middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    {
+      matcher: "/store/order-lookup",
+      method: ["POST"],
+      middlewares: [orderLookupLimiter, orderLookupPerOrderLimiter],
     },
     {
       matcher: "/admin/homepage",
