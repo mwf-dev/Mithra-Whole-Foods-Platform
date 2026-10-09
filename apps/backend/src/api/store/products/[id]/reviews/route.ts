@@ -5,6 +5,7 @@ import {
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { z } from "zod"
+import { isSellable } from "../../../../../lib/catalog-visibility"
 
 import { PRODUCT_REVIEW_MODULE } from "../../../../../modules/product-review"
 import ProductReviewService from "../../../../../modules/product-review/service"
@@ -29,6 +30,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     50
   )
   const offset = parseInt((req.query.offset as string) ?? "0", 10) || 0
+
+  // Reviews of a hidden product would confirm it exists; answer as if it doesn't.
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: found } = await query.graph({
+    entity: "product",
+    fields: ["id", "status"],
+    filters: { id: productId },
+  })
+  if (!found?.length || !isSellable(found[0] as any)) {
+    return res.status(404).json({ message: "Product not found." })
+  }
 
   const service: ProductReviewService = req.scope.resolve(PRODUCT_REVIEW_MODULE)
 
@@ -105,11 +117,12 @@ export const POST = async (
 
   const { data: products } = await query.graph({
     entity: "product",
-    fields: ["id"],
+    fields: ["id", "status"],
     filters: { id: productId },
   })
 
-  if (!products?.length) {
+  // A hidden product must look non-existent, not just unlisted.
+  if (!products?.length || !isSellable(products[0] as any)) {
     return res.status(404).json({ message: "Product not found." })
   }
 

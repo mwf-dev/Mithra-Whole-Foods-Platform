@@ -12,6 +12,8 @@ type GraphResult = { data: any[] }
 function buildContainer(opts: {
   carts: any[]
   existingVariantIds: string[]
+  /** variant id -> product status for variants that exist but whose product is not "published" */
+  statusOverrides?: Record<string, string>
   deleteLineItems: jest.Mock
 }) {
   const query = {
@@ -20,7 +22,12 @@ function buildContainer(opts: {
         return { data: opts.carts }
       }
       if (entity === "product_variant") {
-        return { data: opts.existingVariantIds.map((id) => ({ id })) }
+        return {
+          data: opts.existingVariantIds.map((id) => ({
+            id,
+            product: { status: opts.statusOverrides?.[id] ?? "published" },
+          })),
+        }
       }
       throw new Error(`unexpected entity ${entity}`)
     }),
@@ -123,5 +130,29 @@ describe("removeOrphanedCartItems", () => {
 
     expect(removed).toBe(0)
     expect(deleteLineItems).not.toHaveBeenCalled()
+  })
+
+  it("removes items whose product was hidden (draft) but keeps published ones", async () => {
+    const deleteLineItems = jest.fn().mockResolvedValue(undefined)
+    const { container } = buildContainer({
+      carts: [
+        {
+          id: "cart_1",
+          completed_at: null,
+          items: [
+            { id: "li_visible", title: "Visible", variant_id: "var_pub" },
+            { id: "li_hidden", title: "Hidden", variant_id: "var_hidden" },
+          ],
+        },
+      ],
+      existingVariantIds: ["var_pub", "var_hidden"],
+      statusOverrides: { var_hidden: "draft" },
+      deleteLineItems,
+    })
+
+    const removed = await removeOrphanedCartItems(container)
+
+    expect(removed).toBe(1)
+    expect(deleteLineItems).toHaveBeenCalledWith(["li_hidden"])
   })
 })

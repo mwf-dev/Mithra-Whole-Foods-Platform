@@ -6,8 +6,11 @@ import {
 import { removeOrphanedCartItems } from "../utils/cart-cleanup"
 import { invalidateSearchIndex } from "../lib/product-search"
 
-const DELETION_EVENTS = new Set([
+// Deleting a product, or changing one (it may have just been hidden), can
+// leave open carts holding items nobody is allowed to buy any more.
+const CART_SCRUB_EVENTS = new Set([
   "product.deleted",
+  "product.updated",
   "product-variant.deleted",
 ])
 
@@ -16,14 +19,15 @@ const DELETION_EVENTS = new Set([
  * invalidates the storefront cache, so shoppers see the change immediately
  * instead of a stale cached page.
  *
- * Deletions additionally scrub the removed variants out of open carts —
- * otherwise those carts fail transfer/checkout with 400s forever.
+ * Deletions and product updates additionally scrub removed or now-hidden
+ * variants out of open carts — otherwise those carts fail transfer/checkout
+ * with 400s forever, or keep a hidden product buyable.
  */
 export default async function catalogChangedHandler({
   event,
   container,
 }: SubscriberArgs<unknown>) {
-  if (DELETION_EVENTS.has(event.name)) {
+  if (CART_SCRUB_EVENTS.has(event.name)) {
     try {
       await removeOrphanedCartItems(container)
     } catch (e) {
