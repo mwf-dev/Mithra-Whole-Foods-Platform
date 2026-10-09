@@ -9,6 +9,7 @@ import {
   Button,
 } from "@medusajs/ui"
 import { useEffect, useState } from "react"
+import SalesCharts from "../../components/sales-charts"
 
 type OrderRow = {
   id: string
@@ -260,6 +261,9 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Sales charts */}
+      <SalesCharts />
+
       {/* Priority Action To-Do List (FIFO: Oldest Pending Orders) */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-3">
@@ -271,9 +275,9 @@ const DashboardPage = () => {
               Fulfill these orders first to ensure timely customer delivery.
             </Text>
           </div>
-          <a href="/app/orders">
+          <a href="/app/ship-orders">
             <Button size="small" variant="secondary">
-              Open Full Orders List →
+              Open Ship orders →
             </Button>
           </a>
         </div>
