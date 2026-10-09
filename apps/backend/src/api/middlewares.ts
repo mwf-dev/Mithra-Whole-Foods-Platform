@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit"
 import { clientIpKey, storeRateLimitKey } from "../utils/client-ip"
 import { usageMetrics } from "../utils/usage-metrics"
 import { hideUnpublishedInCategories } from "./hide-unpublished"
+import { adminAccessGuard } from "./admin-access-guard"
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -107,6 +108,12 @@ export default defineMiddlewares({
     {
       matcher: "/*",
       middlewares: [usageMetrics],
+    },
+    // Super-admin / client rules for every signed-in admin request. See
+    // src/lib/admin-access.ts; a no-op until SUPER_ADMIN_EMAILS names a real user.
+    {
+      matcher: "/admin/*",
+      middlewares: [adminAccessGuard],
     },
     {
       matcher: "/auth/*",
