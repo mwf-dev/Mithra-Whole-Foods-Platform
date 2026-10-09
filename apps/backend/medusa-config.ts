@@ -1,4 +1,5 @@
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
+import { NAV_GUARD_SCRIPT } from './src/lib/admin-nav-guard-script'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -207,6 +208,14 @@ module.exports = defineConfig({
         __MAX_UPLOAD_FILE_SIZE__: 5 * 1024 * 1024,
       },
       plugins: [
+        {
+          // Hides sidebar items the signed-in login may not use (see
+          // src/lib/admin-access.ts). Cosmetic; the server enforces the rules.
+          name: "mithra-nav-guard",
+          transformIndexHtml: () => [
+            { tag: "script", children: NAV_GUARD_SCRIPT, injectTo: "body" as const },
+          ],
+        },
         {
           name: "mithra-admin-custom-branding",
           transformIndexHtml(html: string) {
