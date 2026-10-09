@@ -45,6 +45,10 @@ const ago = (iso: string) => {
   return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`
 }
 
+// Opens the print-ready page in a new tab; it brings up the print dialog itself.
+const printUrl = (type: "packing-slip" | "invoice", ids: string[]) =>
+  `/admin/ship-orders/print?type=${type}&ids=${ids.join(",")}&autoprint=1`
+
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, {
     credentials: "include",
@@ -104,6 +108,14 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
           <Text size="small" className="text-ui-fg-subtle">
             {ago(row.placed_at)} · {money(row.total, row.currency)}
           </Text>
+        </div>
+        <div className="flex gap-2">
+          <a href={printUrl("packing-slip", [row.id])} target="_blank" rel="noreferrer">
+            <Button size="small" variant="secondary">Packing slip</Button>
+          </a>
+          <a href={printUrl("invoice", [row.id])} target="_blank" rel="noreferrer">
+            <Button size="small" variant="secondary">Invoice</Button>
+          </a>
         </div>
       </div>
 
@@ -271,6 +283,15 @@ const ShipOrdersPage = () => {
 
       <div className="flex flex-col gap-4 px-6 py-5">
         {hint && <Text size="small" className="text-ui-fg-subtle">{hint}</Text>}
+        {tab === "to_ship" && visible.length > 0 && (
+          <div>
+            <a href={printUrl("packing-slip", visible.slice(0, 50).map((r) => r.id))} target="_blank" rel="noreferrer">
+              <Button size="small" variant="secondary">
+                Print all {Math.min(visible.length, 50)} packing slip{visible.length === 1 ? "" : "s"}
+              </Button>
+            </a>
+          </div>
+        )}
         {error && <Text className="text-ui-fg-error">Couldn't load orders: {error}</Text>}
         {!rows && !error && <Text className="text-ui-fg-subtle">Loading…</Text>}
         {rows && visible.length === 0 && <Text className="text-ui-fg-subtle">Nothing here.</Text>}
