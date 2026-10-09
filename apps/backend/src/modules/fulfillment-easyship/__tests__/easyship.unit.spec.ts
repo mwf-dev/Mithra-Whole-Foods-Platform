@@ -68,6 +68,7 @@ describe("EasyshipFulfillmentService", () => {
         province: "PA",
         postal_code: "19104",
         country_code: "US",
+        phone: "+12155550123",
       },
     }
     const items = [
@@ -85,6 +86,35 @@ describe("EasyshipFulfillmentService", () => {
     expect(result.labels).toHaveLength(1)
     expect(result.labels[0].tracking_number).toMatch(/^1Z/)
     expect(result.labels[0].tracking_url).toContain("track")
+  })
+
+  it("refuses to buy a label for an incomplete order instead of inventing data", async () => {
+    const order = {
+      email: "shopper@example.com",
+      shipping_address: { first_name: "Jane", address_1: "123 Market St" },
+    }
+    await expect(
+      service.createFulfillment({}, [{ title: "Oil", quantity: 1 }], order, {})
+    ).rejects.toThrow(/missing .*city.*phone/)
+  })
+
+  it("refuses to issue mock labels in production", async () => {
+    const prev = process.env.NODE_ENV
+    process.env.NODE_ENV = "production"
+    try {
+      const order = {
+        email: "a@b.co",
+        shipping_address: {
+          first_name: "J", last_name: "D", address_1: "1 St", city: "X",
+          province: "PA", postal_code: "19104", country_code: "us", phone: "+12155550123",
+        },
+      }
+      await expect(
+        service.createFulfillment({}, [{ title: "Oil", quantity: 1 }], order, {})
+      ).rejects.toThrow(/EASYSHIP_API_KEY/)
+    } finally {
+      process.env.NODE_ENV = prev
+    }
   })
 })
 

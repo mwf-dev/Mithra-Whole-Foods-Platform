@@ -98,7 +98,7 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
       ? items.map((item: any) => ({
           actual_weight: Number(item.variant?.weight || item.weight || 500) / 1000, // convert g to kg
           declared_currency: "USD",
-          declared_customs_value: Number(item.unit_price || 1000) / 100,
+          declared_customs_value: Number(item.unit_price ?? 0),
         }))
       : [{ actual_weight: 1.0, declared_currency: "USD", declared_customs_value: 20 }]
 
@@ -183,13 +183,38 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
       order?.email ||
       fulfillment?.order?.email ||
       fulfillment?.email ||
-      shippingAddress?.email ||
-      "customer@mithrawholefoods.com"
+      shippingAddress?.email
     const customerPhone =
-      shippingAddress?.phone ||
-      order?.phone ||
-      fulfillment?.order?.phone ||
-      "+12155555678"
+      shippingAddress?.phone || order?.phone || fulfillment?.order?.phone
+
+    // Buying a label is a real purchase. Never paper over missing data with
+    // placeholder values — a label to "123 Customer St" is money wasted and a
+    // parcel that can't be delivered.
+    const missing = [
+      ["name", `${shippingAddress.first_name || ""}${shippingAddress.last_name || ""}`.trim()],
+      ["address", shippingAddress.address_1],
+      ["city", shippingAddress.city],
+      ["state", shippingAddress.province],
+      ["ZIP code", shippingAddress.postal_code],
+      ["country", shippingAddress.country_code],
+      ["phone", customerPhone],
+      ["email", customerEmail],
+    ]
+      .filter(([, v]) => !v)
+      .map(([k]) => k)
+    if (missing.length) {
+      throw new Error(
+        `Cannot buy a shipping label: the order is missing ${missing.join(", ")}.`
+      )
+    }
+
+    // Without a real key the client returns fake tracking numbers. Fine for
+    // local dev and tests; in production they would be emailed to customers.
+    if (!this.client.isConfigured && process.env.NODE_ENV === "production") {
+      throw new Error(
+        "Cannot buy a shipping label: EASYSHIP_API_KEY is not configured."
+      )
+    }
 
     const totalWeightKg = items.reduce(
       (acc, item) => acc + (Number(item.variant?.weight || item.weight || 500) * Number(item.quantity || 1)) / 1000,
@@ -206,12 +231,12 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
         contact_name: this.options.shipFromName || "Mithra Whole Foods",
       },
       destination_address: {
-        line_1: shippingAddress.address_1 || "123 Customer St",
+        line_1: shippingAddress.address_1,
         line_2: shippingAddress.address_2 || undefined,
-        city: shippingAddress.city || "Philadelphia",
-        state: shippingAddress.province || "PA",
-        postal_code: shippingAddress.postal_code || "19104",
-        country_alpha2: shippingAddress.country_code?.toUpperCase() || "US",
+        city: shippingAddress.city,
+        state: shippingAddress.province,
+        postal_code: shippingAddress.postal_code,
+        country_alpha2: String(shippingAddress.country_code).toUpperCase(),
         contact_name: `${shippingAddress.first_name || ""} ${shippingAddress.last_name || ""}`.trim() || "Customer",
         contact_phone: customerPhone,
         contact_email: customerEmail,
@@ -224,7 +249,7 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
             quantity: item.quantity || 1,
             actual_weight: Number(item.variant?.weight || 500) / 1000,
             declared_currency: "USD",
-            declared_customs_value: Number(item.unit_price || 1000) / 100,
+            declared_customs_value: Number(item.unit_price ?? 0),
           })),
         },
       ],
