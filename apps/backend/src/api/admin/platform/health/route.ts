@@ -132,24 +132,27 @@ function configurationChecks(): Check[] {
   )
 
   flag(
-    "config.sendgrid",
+    "config.email",
     "Transactional email",
-    Boolean(process.env.SENDGRID_API_KEY),
-    "SENDGRID_API_KEY is set — order and shipment emails can send",
-    "SENDGRID_API_KEY is unset — order/shipment subscribers run and silently send nothing",
-    "Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL, plus the SENDGRID_*_TEMPLATE_ID variables."
+    Boolean(process.env.RESEND_API_KEY ? process.env.RESEND_FROM : process.env.SENDGRID_API_KEY),
+    process.env.RESEND_API_KEY
+      ? "Resend is configured — order, shipping and password-reset emails can send"
+      : "SendGrid is configured — order and shipment emails can send",
+    process.env.RESEND_API_KEY
+      ? "RESEND_API_KEY is set but RESEND_FROM is not — the provider will not start"
+      : "No email provider configured — order, shipping and password-reset emails are silently not sent",
+    "Set RESEND_API_KEY and RESEND_FROM (a sender on a domain verified in Resend)."
   )
 
   flag(
-    "config.sendgrid_templates",
-    "Email templates configured",
-    Boolean(
-      process.env.SENDGRID_ORDER_PLACED_TEMPLATE_ID &&
-        process.env.SENDGRID_ORDER_SHIPPED_TEMPLATE_ID
-    ),
-    "Order-placed and order-shipped templates are set",
-    "One or both SendGrid dynamic template ids are unset — those emails will not render",
-    "Create the templates in SendGrid and set SENDGRID_ORDER_PLACED_TEMPLATE_ID / SENDGRID_ORDER_SHIPPED_TEMPLATE_ID.",
+    "config.easyship",
+    "Shipping labels & tracking",
+    Boolean(process.env.EASYSHIP_API_KEY && process.env.EASYSHIP_WEBHOOK_SECRET),
+    "EASYSHIP_API_KEY and EASYSHIP_WEBHOOK_SECRET are set",
+    !process.env.EASYSHIP_API_KEY
+      ? "EASYSHIP_API_KEY is unset — \"Buy label\" will refuse; manual tracking numbers still work"
+      : "EASYSHIP_WEBHOOK_SECRET is unset — the delivery webhook rejects every request, so orders never flip to delivered on their own",
+    "Set EASYSHIP_API_KEY on the backend, and the same webhook secret in both Railway and the EasyShip dashboard.",
     "warn"
   )
 
@@ -172,16 +175,18 @@ function configurationChecks(): Check[] {
     "warn"
   )
 
+  // Redis is deliberately not used: one backend container, in-memory cache /
+  // events / workflows. Only a problem if REDIS_URL points at something that
+  // no longer exists, or if a second container is ever started.
   flag(
     "config.redis",
-    "Redis cache / event bus",
-    Boolean(process.env.REDIS_URL) || process.env.NODE_ENV === "development",
+    "Cache / event bus mode",
+    true,
     process.env.REDIS_URL
-      ? "REDIS_URL is set"
-      : "Development mode — in-memory cache is expected",
-    "REDIS_URL is unset in a non-development environment — cache, events and workflows are per-instance and will diverge if you scale past one container",
-    "Provision Redis and set REDIS_URL.",
-    "warn"
+      ? "REDIS_URL is set — Redis-backed cache, events and workflows"
+      : "Single-container mode — in-memory cache, events and workflows (fine for one backend container; add Redis only before running two)",
+    "",
+    ""
   )
 
   flag(
