@@ -3,6 +3,7 @@ import { authenticate } from "@medusajs/framework/http"
 import rateLimit from "express-rate-limit"
 import { clientIpKey, storeRateLimitKey } from "../utils/client-ip"
 import { usageMetrics } from "../utils/usage-metrics"
+import { hideUnpublishedInCategories } from "./hide-unpublished"
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -132,6 +133,18 @@ export default defineMiddlewares({
       matcher: "/store/orders/*/invoice",
       method: ["GET"],
       middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    // Medusa's category relation expansion returns draft (hidden) products to
+    // anyone with the public key — see ./hide-unpublished.ts.
+    {
+      matcher: "/store/product-categories",
+      method: ["GET"],
+      middlewares: [hideUnpublishedInCategories],
+    },
+    {
+      matcher: "/store/product-categories/*",
+      method: ["GET"],
+      middlewares: [hideUnpublishedInCategories],
     },
     {
       matcher: "/store/order-lookup",
