@@ -72,7 +72,7 @@ const Addresses = ({
               You&apos;re checking out as a guest &mdash; no account needed.{" "}
               <LocalizedClientLink
                 href={`/account?redirect=${encodeURIComponent(
-                  pathname.replace(/^\/[a-z]{2}(?=\/)/i, "") + "?step=address"
+                  pathname + "?step=address"
                 )}`}
                 className="underline"
               >
