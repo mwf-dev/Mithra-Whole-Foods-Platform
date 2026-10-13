@@ -9,12 +9,11 @@ import { AISLES, HERO_AISLES, aisleHref } from "@modules/home/aisles"
 export function Hero() {
   const slides: HeroSlide[] = HERO_AISLES.map((id) => AISLES.find((a) => a.id === id))
     .filter((a): a is NonNullable<typeof a> => !!a?.hero)
-    .map((a) => ({
-      id: a.id,
-      href: aisleHref(a),
-      world: a.world,
-      ...a.hero!,
-    }))
+    .flatMap((a) => [
+      { id: a.id, href: aisleHref(a), world: a.world, ...a.hero! },
+      // Single-product slides follow their aisle's own slide.
+      ...(a.extraHeroes ?? []).map((h) => ({ world: a.world, ...h })),
+    ])
 
   return <HeroClient slides={slides} />
 }

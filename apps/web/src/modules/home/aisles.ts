@@ -35,6 +35,12 @@ export type AisleArt = {
   kind: "cutout" | "label"
 }
 
+export type ExtraHero = NonNullable<Aisle["hero"]> & {
+  id: string
+  /** Storefront path of the product page the slide links to. */
+  href: string
+}
+
 export type ComingSoonItem = { name: string; image: string }
 
 export type Aisle = {
@@ -58,6 +64,11 @@ export type Aisle = {
     /** Round sticker over the scene ("New", "Launching soon"). */
     badge?: string
   }
+  /**
+   * More hero slides for single products of this aisle. They follow the
+   * aisle's own slide and link to the product page rather than the category.
+   */
+  extraHeroes?: ExtraHero[]
   spotlight?: {
     eyebrow: string
     headline: string
@@ -154,6 +165,34 @@ export const AISLES: Aisle[] = [
       badge: "New",
       launching: true,
     },
+    extraHeroes: [
+      {
+        id: "nendran-banana",
+        href: "/products/mithra-nendran-raw-banana-powder-200g",
+        kicker: "New · Nendran Raw Banana Powder",
+        headline: "Pure Nendran raw banana powder",
+        chips: ["No added sugar", "No artificial colours"],
+        cta: "See the powder",
+        image: `${P}/raw-banana.webp`,
+        imageAlt: "Mithra Nendran Raw Banana Powder pouch with raw bananas and banana porridge",
+        scene: "/hero/nendran.webp",
+        badge: "New",
+        launching: true,
+      },
+      {
+        id: "bluey-pancake",
+        href: "/products/mithra-blueberry-millet-pancake-mix-1lb",
+        kicker: "New · Bluey Millet Pan Cake Mix",
+        headline: "Blueberry pancakes, made with millets",
+        chips: ["No maida or wheat", "No artificial colours", "No preservatives"],
+        cta: "See the pancake mix",
+        image: "/hero/pancake.webp",
+        imageAlt: "Mithra Bluey Millet Pan Cake Mix, Blueberry, with a stack of blueberry pancakes",
+        scene: "/hero/pancake.webp",
+        badge: "New",
+        launching: true,
+      },
+    ],
   },
   {
     id: "health-mixes",
