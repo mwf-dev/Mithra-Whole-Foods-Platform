@@ -9,6 +9,7 @@ import { SpotlightBand } from "@modules/home/components/spotlight-band"
 import { WhyMithra } from "@modules/home/components/why-mithra"
 import { FilmStory } from "@modules/home/components/film-story"
 import { SESAME_FILM } from "@modules/home/films"
+import { Philosophy, FamilyPromise, PurityPromise } from "@modules/home/components/brand-statements"
 import { OfferCards } from "@modules/home/components/offer-cards"
 import { ShopByMoment } from "@modules/home/components/shop-by-moment"
 import { ReviewsStrip } from "@modules/home/components/reviews-strip"
@@ -86,6 +87,7 @@ export default async function Home(props: {
       <StoryStrip />
       <FestivalBanner />
       {band(0)}
+      <Philosophy />
       <WhyMithra />
       <FilmStory
         film={SESAME_FILM}
@@ -94,9 +96,11 @@ export default async function Home(props: {
         body="Mithra sesame oil is cold pressed in a traditional wooden chekku, then bottled unrefined, with no chemicals and no additives."
         cta={{ label: "Shop cold-pressed oils", href: "/categories/cold-pressed-oils" }}
       />
+      <FamilyPromise />
       {band(1)}
       <OfferCards cards={settings?.offer_cards} />
       <ShopByMoment />
+      <PurityPromise />
       {band(2)}
       <ReviewsStrip reviews={reviews} />
     </>
