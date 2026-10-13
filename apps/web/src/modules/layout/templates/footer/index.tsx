@@ -19,14 +19,19 @@ export default function Footer() {
           {/* Brand + contact, as on the client's business card */}
           <div className="flex flex-col gap-4">
             {/* The client's wordmark, light version for the dark footer. */}
-            <Image
-              src="/brand/mithra-wordmark-light.svg"
-              alt={`${BUSINESS.name} — ${BUSINESS.tagline}`}
-              width={336}
-              height={83.4}
-              unoptimized
-              className="h-[72px] w-auto self-start"
-            />
+            <div className="flex flex-col items-start">
+              <Image
+                src="/brand/mithra-wordmark-name-light.svg"
+                alt={BUSINESS.name}
+                width={336}
+                height={52.2}
+                unoptimized
+                className="h-[44px] w-auto"
+              />
+              <span lang="ta" className="mt-1 w-full text-center font-tamil text-[15px] font-semibold tracking-wide text-[#D2A679]">
+                உணவே மருந்து
+              </span>
+            </div>
             <address className="flex flex-col gap-2.5 text-[13px] not-italic">
               <span className="font-semibold text-white">{BUSINESS.legalName}</span>
               <a

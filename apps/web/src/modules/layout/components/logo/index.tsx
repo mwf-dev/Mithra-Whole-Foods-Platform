@@ -11,40 +11,36 @@ const MARK_SRC = "/brand/mithra-mark.png"
 const MARK_RATIO = 463 / 512
 
 /**
- * The client's own wordmark artwork ("Mithra" green, "Whole Foods" brown,
- * "— Harvesting Goodness —"), traced from their supplied image into vector
- * paths so it stays sharp at any size. `name` is the same artwork without the
- * tagline, for small screens where the tagline would be unreadable.
+ * The client's own wordmark artwork, traced from their supplied image into
+ * vector paths so it stays sharp at any size. "Mithra Whole Foods" is one
+ * green; the Tamil motto "உணவே மருந்து" sits beneath it in brown as live text
+ * (Noto Sans Tamil, `--font-tamil`) so it stays crisp and selectable.
  */
-const WORDMARK = {
-  full: { src: "/brand/mithra-wordmark.svg", w: 336, h: 83.4 },
-  name: { src: "/brand/mithra-wordmark-name.svg", w: 336, h: 52.2 },
-} as const
+const WORDMARK = { src: "/brand/mithra-wordmark-name.svg", w: 336, h: 52.2 } as const
+
+export const MOTTO = "உணவே மருந்து"
 
 const SIZES = {
-  // Header: name only up to xl (fits beside the menu and cart on a 360px
-  // phone), the full lockup with the tagline from xl.
   header: {
     mark: "h-11 md:h-14 xl:h-[72px]",
-    name: "h-[30px] sm:h-[36px] xl:hidden",
-    full: "hidden xl:block xl:h-[66px]",
+    name: "h-[26px] sm:h-[32px] xl:h-[42px]",
+    motto: "text-[10px] sm:text-[12px] xl:text-[16px]",
     gap: "gap-2 md:gap-3",
     // Largest rendered height in px. next/image builds its 1x/2x srcset from
-    // this, so it must be the displayed size, not the source size — otherwise
-    // a 72px mark downloads the 1080px variant.
+    // this, so it must be the displayed size, not the source size.
     px: 72,
   },
   // Route-transition overlay: the dominant thing on screen.
   hero: {
     mark: "h-[clamp(3.5rem,10vw,6.5rem)]",
-    name: "",
-    full: "h-[clamp(4.5rem,13vw,8rem)]",
+    name: "h-[clamp(2rem,6vw,3.6rem)]",
+    motto: "text-[clamp(0.8rem,2.4vw,1.4rem)]",
     gap: "gap-3 md:gap-5",
     px: 104,
   },
 } as const
 
-/** Mark + the client's wordmark artwork. */
+/** Mark + wordmark, with the Tamil motto below the wordmark. */
 export function BrandLockup({
   size = "header",
   priority = false,
@@ -64,26 +60,23 @@ export function BrandLockup({
         quality={75}
         className={`${s.mark} w-auto shrink-0 object-contain`}
       />
-      {s.name && (
+      <span className="flex flex-col items-center">
         <Image
-          src={WORDMARK.name.src}
+          src={WORDMARK.src}
           alt=""
-          width={WORDMARK.name.w}
-          height={WORDMARK.name.h}
+          width={WORDMARK.w}
+          height={WORDMARK.h}
           priority={priority}
           unoptimized
           className={`${s.name} w-auto`}
         />
-      )}
-      <Image
-        src={WORDMARK.full.src}
-        alt=""
-        width={WORDMARK.full.w}
-        height={WORDMARK.full.h}
-        priority={priority}
-        unoptimized
-        className={`${s.full} w-auto`}
-      />
+        <span
+          lang="ta"
+          className={`mt-0.5 font-tamil font-semibold leading-tight tracking-wide text-[#8B5A2B] ${s.motto}`}
+        >
+          {MOTTO}
+        </span>
+      </span>
     </span>
   )
 }
