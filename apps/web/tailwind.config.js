@@ -97,6 +97,7 @@ module.exports = {
           "sans-serif",
         ],
         display: ["var(--font-display)", "Georgia", "serif"],
+        tamil: ["var(--font-tamil)", "Noto Sans Tamil", "sans-serif"],
         // legacy alias — older components use font-playfair; both render DM Serif Display
         playfair: ["var(--font-display)", "Georgia", "serif"],
       },

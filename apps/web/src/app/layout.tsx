@@ -1,9 +1,15 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import { DM_Serif_Display, Inter } from "next/font/google"
+import { DM_Serif_Display, Inter, Noto_Sans_Tamil } from "next/font/google"
 import "styles/globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const notoTamil = Noto_Sans_Tamil({
+  subsets: ["tamil"],
+  weight: ["500", "600"],
+  variable: "--font-tamil",
+  display: "swap",
+})
 const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
   weight: "400",
@@ -22,7 +28,7 @@ import BusinessStructuredData from "@modules/common/components/business-structur
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-mode="light" className={`${inter.variable} ${dmSerif.variable}`} suppressHydrationWarning>
+    <html lang="en" data-mode="light" className={`${inter.variable} ${dmSerif.variable} ${notoTamil.variable}`} suppressHydrationWarning>
       <body>
         <BusinessStructuredData />
         <main className="relative">{props.children}</main>
