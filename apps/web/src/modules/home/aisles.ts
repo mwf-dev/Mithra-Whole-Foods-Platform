@@ -63,6 +63,8 @@ export type Aisle = {
     scene?: string
     /** Round sticker over the scene ("New", "Launching soon"). */
     badge?: string
+    /** Link target when the slide's products live in another of the aisle's categories. */
+    href?: string
   }
   /**
    * More hero slides for single products of this aisle. They follow the
@@ -218,6 +220,18 @@ export const AISLES: Aisle[] = [
     categoryHandles: ["traditional-rice", "rices"],
     world: { bg: "#AB1316", ink: "#F6EFC9", deep: "#7C2119" },
     art: { src: `${P}/rice-rajabogam.webp`, alt: "Mithra Rajabogam Ponni boiled rice bag", kind: "cutout" },
+    hero: {
+      kicker: "Mithra rice",
+      headline: "Rice for every South Indian meal",
+      chips: ["Ponni", "Sona Masoori", "Seeraga Samba"],
+      cta: "Shop rice",
+      image: `${P}/rice-rajabogam.webp`,
+      imageAlt:
+        "Six Mithra rice bags (Rajabogam, Bangarutheegalu, Mullai, Malligai, Marutham, Neithal) with steaming rice, raw grains, idlis and paddy stalks",
+      scene: "/hero/rice.webp",
+      // The Mithra bags sit in "rices"; the aisle's first category is the heritage varieties.
+      href: "/categories/rices",
+    },
   },
   {
     id: "oils",
@@ -284,7 +298,7 @@ export const AISLES: Aisle[] = [
 ]
 
 /** Aisles, in order, that get a hero slide. */
-export const HERO_AISLES = ["ghee", "podis", "oils", "kids-flours", "sweets-snacks"]
+export const HERO_AISLES = ["ghee", "rice", "podis", "oils", "kids-flours", "sweets-snacks"]
 
 /** Aisles, in order, that the homepage features as spotlight bands. */
 export const SPOTLIGHT_AISLES = ["podis", "ghee", "health-mixes"]
