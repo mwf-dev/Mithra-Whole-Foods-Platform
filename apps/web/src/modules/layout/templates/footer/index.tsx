@@ -1,8 +1,8 @@
 import { Mail, MapPin, Phone } from "lucide-react"
-import Image from "next/image"
 
 import { BUSINESS, mapsUrl } from "@lib/business"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { BrandLockup } from "@modules/layout/components/logo"
 
 const linkClass = "transition-colors hover:text-white"
 
@@ -18,20 +18,14 @@ export default function Footer() {
         <div className="mb-10 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand + contact, as on the client's business card */}
           <div className="flex flex-col gap-4">
-            {/* The client's wordmark, light version for the dark footer. */}
-            <div className="flex flex-col items-start">
-              <Image
-                src="/brand/mithra-wordmark-name-light.svg"
-                alt={BUSINESS.name}
-                width={336}
-                height={52.2}
-                unoptimized
-                className="h-[44px] w-auto"
-              />
-              <span lang="ta" className="mt-1 w-full text-center font-tamil text-[15px] font-semibold tracking-wide text-[#D2A679]">
-                உணவே மருந்து
-              </span>
-            </div>
+            <LocalizedClientLink
+              href="/"
+              aria-label="Mithra Whole Foods — home"
+              className="inline-flex self-start rounded-rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              data-testid="footer-logo-link"
+            >
+              <BrandLockup />
+            </LocalizedClientLink>
             <address className="flex flex-col gap-2.5 text-[13px] not-italic">
               <span className="font-semibold text-white">{BUSINESS.legalName}</span>
               <a
