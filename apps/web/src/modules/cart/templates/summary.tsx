@@ -8,6 +8,8 @@ import DiscountCode from "@modules/checkout/components/discount-code"
 import FreeShippingNudge from "@modules/cart/components/free-shipping-nudge"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
+import { ORDERS_OPEN } from "@lib/launch"
+import OrdersClosedNotice from "@modules/cart/components/orders-closed-notice"
 
 type SummaryProps = {
   cart: HttpTypes.StoreCart & {
@@ -35,13 +37,19 @@ const Summary = ({ cart }: SummaryProps) => {
       </Heading>
       <Divider />
       <CartTotals totals={cart} />
-      <LocalizedClientLink
-        href={"/checkout?step=" + step}
-        data-testid="checkout-button"
-        className="hidden lg:block"
-      >
-        <Button className="w-full h-10">Go to checkout</Button>
-      </LocalizedClientLink>
+      {ORDERS_OPEN ? (
+        <LocalizedClientLink
+          href={"/checkout?step=" + step}
+          data-testid="checkout-button"
+          className="hidden lg:block"
+        >
+          <Button className="w-full h-10">Go to checkout</Button>
+        </LocalizedClientLink>
+      ) : (
+        <div className="hidden lg:block">
+          <OrdersClosedNotice />
+        </div>
+      )}
     </div>
   )
 }

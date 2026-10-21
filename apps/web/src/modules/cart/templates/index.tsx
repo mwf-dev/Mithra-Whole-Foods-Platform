@@ -11,6 +11,7 @@ import { useCustomer } from "@lib/context/customer-context"
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Button } from "@medusajs/ui"
+import { ORDERS_OPEN, ORDERS_OPEN_WHEN } from "@lib/launch"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import FreeShippingNudge from "@modules/cart/components/free-shipping-nudge"
 import CartMergeNotice, {
@@ -100,11 +101,21 @@ const CartTemplate = ({ mergedIn = [] }: { mergedIn?: MergedInItem[] }) => {
               })}
             </span>
           </div>
-          <LocalizedClientLink href={"/checkout?step=" + step} data-testid="checkout-button-mobile">
-            <Button className="w-full h-12 text-lg rounded-full font-semibold bg-black hover:bg-gray-800 text-white border-none" variant="primary">
-              Click to go to checkout
-            </Button>
-          </LocalizedClientLink>
+          {ORDERS_OPEN ? (
+            <LocalizedClientLink href={"/checkout?step=" + step} data-testid="checkout-button-mobile">
+              <Button className="w-full h-12 text-lg rounded-full font-semibold bg-black hover:bg-gray-800 text-white border-none" variant="primary">
+                Click to go to checkout
+              </Button>
+            </LocalizedClientLink>
+          ) : (
+            <p
+              role="status"
+              data-testid="orders-closed-mobile"
+              className="rounded-2xl bg-beige px-4 py-3 text-center text-sm font-semibold text-terracotta"
+            >
+              Opening soon · Orders open in {ORDERS_OPEN_WHEN}
+            </p>
+          )}
         </div>
       )}
     </div>

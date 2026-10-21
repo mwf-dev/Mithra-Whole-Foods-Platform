@@ -11,6 +11,7 @@ import { AnalyticsIdentify } from "@lib/analytics/provider"
 import { StoreCartShippingOption } from "@medusajs/types"
 import { AnnouncementBar } from "@modules/home/components/announcement-bar"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
+import LaunchBanner from "@modules/layout/components/launch-banner"
 import Chatbot from "@modules/layout/components/chatbot"
 import WelcomePopup from "@modules/layout/components/welcome-popup"
 import { buildWelcomeCards } from "@modules/layout/components/welcome-popup/cards"
@@ -46,6 +47,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         <RouteTransitionOverlay />
       </Suspense>
       <AnalyticsIdentify customerId={customer?.id} />
+      <LaunchBanner />
       <AnnouncementBar text={homepageSettings?.announcement_text} />
       <Nav />
       {customer && cart && (

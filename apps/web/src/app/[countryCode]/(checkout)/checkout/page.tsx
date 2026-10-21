@@ -6,6 +6,8 @@ import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 import TrackEvent from "@lib/analytics/track-event"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { ORDERS_OPEN } from "@lib/launch"
+import OrdersClosedNotice from "@modules/cart/components/orders-closed-notice"
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -17,6 +19,15 @@ export default async function Checkout({
   params: Promise<{ countryCode: string }>
 }) {
   await params
+
+  // Before launch the form is never shown, even if someone types the URL.
+  if (!ORDERS_OPEN) {
+    return (
+      <div className="content-container py-16 max-w-xl">
+        <OrdersClosedNotice showShopLink />
+      </div>
+    )
+  }
 
   // Fetch cart + customer in parallel — independent backend reads.
   const [cart, customer] = await Promise.all([

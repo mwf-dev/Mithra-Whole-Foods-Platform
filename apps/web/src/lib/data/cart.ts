@@ -22,6 +22,7 @@ import { getLocale } from "@lib/data/locale-actions"
 import { addressRules, validateFormFields } from "@lib/util/form-validation"
 import { retrieveCustomer } from "./customer"
 import { normalizePhone } from "@lib/util/phone"
+import { ORDERS_OPEN, ORDERS_OPEN_WHEN } from "@lib/launch"
 
 /**
  * Purges the cached read of one cart, for every device holding it.
@@ -512,6 +513,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
  * @returns The cart object if the order was successful, or null if not.
  */
 export async function placeOrder(cartId?: string) {
+  if (!ORDERS_OPEN) {
+    throw new Error(`We are not taking orders yet. Orders open in ${ORDERS_OPEN_WHEN}.`)
+  }
+
   const id = cartId || (await getCartId())
 
   if (!id) {
