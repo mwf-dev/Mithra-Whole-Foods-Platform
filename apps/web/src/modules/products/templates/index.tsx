@@ -13,6 +13,7 @@ import { FilmStory } from "@modules/home/components/film-story"
 import { filmForProduct } from "@modules/home/films"
 import ProductStorySection from "@modules/products/components/product-story"
 import { storyForProduct } from "@modules/products/product-stories"
+import { cleanDescription } from "@lib/util/clean-description"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -33,6 +34,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
   const film = filmForProduct(product.handle)
   const story = storyForProduct(product.handle)
+  // Legacy descriptions carry HTML entities and a "Tags:" tail; when nothing
+  // readable is left, the story's first paragraph stands in.
+  const description =
+    cleanDescription(product.description) ||
+    story?.intro[0] ||
+    "Premium quality traditional food sourced directly from nature. Rich in nutrients and perfect for a healthy lifestyle."
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
@@ -81,9 +88,24 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
             <div className="h-px bg-gray-100 w-full mb-6"></div>
 
-            <p className="text-gray-600 leading-relaxed mb-8">
-              {product.description || "Premium quality traditional food sourced directly from nature. Rich in nutrients and perfect for a healthy lifestyle."}
-            </p>
+            <p className="text-gray-600 leading-relaxed mb-5">{description}</p>
+
+            {story?.facts && story.facts.length > 0 && (
+              <ul
+                aria-label="At a glance"
+                data-testid="product-facts"
+                className="mb-8 flex flex-wrap gap-2"
+              >
+                {story.facts.map((fact) => (
+                  <li
+                    key={fact}
+                    className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
+                  >
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* Trust Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-auto">
