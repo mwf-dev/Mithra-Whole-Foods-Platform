@@ -26,6 +26,9 @@ export type HeroSlide = {
   scene?: string
   /** Round sticker on the scene, e.g. "New" — drawn in HTML, never in the art. */
   badge?: string
+  /** Copy-block colours matched to the scene's top edge (see Aisle["hero"]). */
+  sceneBg?: string
+  sceneDeep?: string
 }
 
 const SLIDE_MS = 6500
@@ -66,7 +69,11 @@ function SceneSlide({
   active: boolean
   priority: boolean
 }) {
-  const { world } = slide
+  const world = {
+    ...slide.world,
+    bg: slide.sceneBg ?? slide.world.bg,
+    deep: slide.sceneDeep ?? slide.world.deep,
+  }
   return (
     <div
       className="relative flex h-full flex-col md:block"
@@ -290,7 +297,14 @@ function ProductSlide({
 export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
   const count = slides.length
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
+  // Three independent reasons to hold the timer. Kept separate (and each one
+  // narrow) because a single shared flag got stuck on phones: a tap fires a
+  // compatibility mouseenter and focuses the tapped dot, and neither ever
+  // "leaves", so the carousel froze mid-slide until the page was reloaded.
+  const [hovering, setHovering] = useState(false) // real mouse only
+  const [keyboardFocus, setKeyboardFocus] = useState(false) // :focus-visible only
+  const [touching, setTouching] = useState(false) // finger down on the hero
+  const paused = hovering || keyboardFocus || touching
   const [reduceMotion, setReduceMotion] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
   const swipe = useRef<{ x: number; y: number } | null>(null)
@@ -341,14 +355,21 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
       className="w-full bg-white"
       style={{ ["--mx" as string]: 0, ["--my" as string]: 0 }}
       onPointerMove={onPointerMove}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        setPaused(false)
-        resetPointer()
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") setHovering(true)
       }}
-      onFocus={() => setPaused(true)}
+      onPointerLeave={(e) => {
+        if (e.pointerType === "mouse") {
+          setHovering(false)
+          resetPointer()
+        }
+      }}
+      onFocus={(e) => {
+        // Keyboard users only: a tap focuses buttons on touch devices too.
+        if (e.target.matches?.(":focus-visible")) setKeyboardFocus(true)
+      }}
       onBlur={(e) => {
-        if (!rootRef.current?.contains(e.relatedTarget as Node)) setPaused(false)
+        if (!rootRef.current?.contains(e.relatedTarget as Node)) setKeyboardFocus(false)
       }}
       // Swipe on touch screens. Touch events, not pointer events: as soon as
       // the browser starts treating a touch as a scroll it cancels the
@@ -358,12 +379,18 @@ export function HeroClient({ slides = [] }: { slides?: HeroSlide[] }) {
       onTouchStart={(e) => {
         const t = e.touches[0]
         swipe.current = { x: t.clientX, y: t.clientY }
-        setPaused(true)
+        setTouching(true)
+      }}
+      // The browser cancels the touch when it takes over for a page scroll;
+      // without this the finger is never "lifted" and the timer stays held.
+      onTouchCancel={() => {
+        swipe.current = null
+        setTouching(false)
       }}
       onTouchEnd={(e) => {
         const start = swipe.current
         swipe.current = null
-        setPaused(false)
+        setTouching(false)
         if (!start) return
         const t = e.changedTouches[0]
         const dx = t.clientX - start.x

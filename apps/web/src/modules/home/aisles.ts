@@ -65,6 +65,13 @@ export type Aisle = {
     badge?: string
     /** Link target when the slide's products live in another of the aisle's categories. */
     href?: string
+    /**
+     * Phone copy-block colours, matched to the scene's own top edge. Only needed
+     * when the scene's backdrop differs from the aisle's `world` (otherwise a
+     * visible band shows where the flat copy block meets the image).
+     */
+    sceneBg?: string
+    sceneDeep?: string
   }
   /**
    * More hero slides for single products of this aisle. They follow the
@@ -178,6 +185,8 @@ export const AISLES: Aisle[] = [
         image: `${P}/raw-banana.webp`,
         imageAlt: "Mithra Nendran Raw Banana Powder pouch with raw bananas and banana porridge",
         scene: "/hero/nendran.webp",
+        sceneBg: "#1A462A",
+        sceneDeep: "#0F2A19",
         badge: "New",
         launching: true,
       },
@@ -191,6 +200,8 @@ export const AISLES: Aisle[] = [
         image: "/hero/pancake.webp",
         imageAlt: "Mithra Bluey Millet Pan Cake Mix, Blueberry, with a stack of blueberry pancakes",
         scene: "/hero/pancake.webp",
+        sceneBg: "#361756",
+        sceneDeep: "#1F0C35",
         badge: "New",
         launching: true,
       },
