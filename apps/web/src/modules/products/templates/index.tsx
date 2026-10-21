@@ -11,6 +11,8 @@ import ProductGallery from "@modules/products/components/product-gallery"
 import ProductReviews from "@modules/products/components/reviews"
 import { FilmStory } from "@modules/home/components/film-story"
 import { filmForProduct } from "@modules/home/films"
+import ProductStorySection from "@modules/products/components/product-story"
+import { storyForProduct } from "@modules/products/product-stories"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -30,6 +32,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   }
 
   const film = filmForProduct(product.handle)
+  const story = storyForProduct(product.handle)
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
@@ -109,6 +112,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             
           </div>
         </div>
+
+        {story && <ProductStorySection story={story} />}
 
         {/* Reviews */}
         {film && (
