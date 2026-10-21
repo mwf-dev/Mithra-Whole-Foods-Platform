@@ -63,9 +63,10 @@ const ICONS: Record<StoryPointIcon, typeof Sprout> = {
 export default function ProductStorySection({ story }: { story: ProductStory }) {
   return (
     <section
+      id="product-story"
       aria-labelledby="product-story-heading"
       data-testid="product-story"
-      className="mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+      className="mt-8 scroll-mt-28 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
     >
       <div className="bg-beige px-5 py-10 sm:px-10 lg:px-14 lg:py-14">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-terracotta">
@@ -168,5 +169,51 @@ export default function ProductStorySection({ story }: { story: ProductStory }) 
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * Compact cards for the buy-box column: the story's first four points, so the
+ * space beside the gallery is used, plus a link down to the full story.
+ */
+export function StoryHighlights({ story }: { story: ProductStory }) {
+  const items = story.points.slice(0, 4)
+  return (
+    <div data-testid="product-highlights" className="mb-8">
+      <h2 className="mb-3 font-sans text-sm font-semibold uppercase tracking-[0.1em] text-terracotta">
+        Highlights
+      </h2>
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {items.map(({ icon, title, text }) => {
+          const Icon = ICONS[icon]
+          return (
+            <li
+              key={title}
+              className="flex gap-3 rounded-xl border border-gray-100 bg-cream p-4"
+            >
+              <span
+                aria-hidden
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+              >
+                <Icon size={18} strokeWidth={1.75} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-sans text-sm font-semibold leading-snug text-charcoal">
+                  {title}
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-grey-60">{text}</p>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+      <a
+        href="#product-story"
+        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark"
+      >
+        Read the full story
+        <span aria-hidden>↓</span>
+      </a>
+    </div>
   )
 }

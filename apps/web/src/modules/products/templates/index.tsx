@@ -11,7 +11,7 @@ import ProductGallery from "@modules/products/components/product-gallery"
 import ProductReviews from "@modules/products/components/reviews"
 import { FilmStory } from "@modules/home/components/film-story"
 import { filmForProduct } from "@modules/home/films"
-import ProductStorySection from "@modules/products/components/product-story"
+import ProductStorySection, { StoryHighlights } from "@modules/products/components/product-story"
 import { storyForProduct } from "@modules/products/product-stories"
 import { cleanDescription } from "@lib/util/clean-description"
 
@@ -106,6 +106,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 ))}
               </ul>
             )}
+
+            {story && <StoryHighlights story={story} />}
 
             {/* Trust Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-auto">

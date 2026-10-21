@@ -9,6 +9,7 @@ export const RICE: StoryMap = {
       "Grown during Tamil Nadu's traditional Samba season, our Rajabogam Ponni Boiled Rice is cultivated with patience, care, and generations of farming knowledge.",
       "Our Ponni paddy is allowed to mature naturally for 150 days giving the grains sufficient time to develop before harvest.",
     ],
+    facts: ["20 lb bag", "Single boiled", "Samba season grown"],
     pointsHeading: "What Makes Our Ponni Rice Special?",
     points: [
       {
