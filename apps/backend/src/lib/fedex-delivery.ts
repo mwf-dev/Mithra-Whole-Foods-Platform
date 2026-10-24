@@ -1,6 +1,7 @@
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { markOrderFulfillmentAsDeliveredWorkflow } from "@medusajs/medusa/core-flows"
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { recordTrackingEvent } from "./record-tracking"
 
 /**
  * Shared by the real FedEx webhook (src/api/webhooks/fedex/route.ts) and the
@@ -66,6 +67,13 @@ export async function deliverByTrackingNumber(
   await markOrderFulfillmentAsDeliveredWorkflow(container).run({
     input: { orderId, fulfillmentId: fulfillment.id },
   })
+
+  // History is best-effort: the order is already delivered at this point.
+  await recordTrackingEvent(container, fulfillment.id, {
+    status: "delivered",
+    at: new Date().toISOString(),
+    source: "easyship",
+  }).catch(() => undefined)
 
   return {
     ok: true,

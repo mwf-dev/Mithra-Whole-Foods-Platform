@@ -2,6 +2,8 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isValidEasyshipSignature } from "../../../lib/easyship-signature"
 import { deliverByTrackingNumber } from "../../../lib/fedex-delivery"
+import { fulfillmentIdByTracking, recordTrackingEvent } from "../../../lib/record-tracking"
+import { normalizeStatus } from "../../../lib/tracking-events"
 import { EasyshipWebhookPayload } from "../../../modules/fulfillment-easyship/types"
 
 const TERMINAL_DELIVERED_STATUSES = new Set([
@@ -66,6 +68,24 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   logger.info(
     `[easyship-webhook] Event: ${event_type}, Tracking: ${trackingNumber || "N/A"}, Status: ${status}`
   )
+
+  // Keep every status for the tracking timeline. Failing to record must not
+  // make Easyship retry (and must never block the delivered handling below).
+  const normalized = normalizeStatus(status)
+  if (trackingNumber && normalized && normalized !== "delivered") {
+    try {
+      const fulfillmentId = await fulfillmentIdByTracking(req.scope, trackingNumber)
+      if (fulfillmentId) {
+        await recordTrackingEvent(req.scope, fulfillmentId, {
+          status: normalized,
+          at: new Date().toISOString(),
+          source: "easyship",
+        })
+      }
+    } catch (error) {
+      logger.error(`[easyship-webhook] Could not record ${normalized} for ${trackingNumber}`, error as Error)
+    }
+  }
 
   if (trackingNumber && TERMINAL_DELIVERED_STATUSES.has(status)) {
     try {
