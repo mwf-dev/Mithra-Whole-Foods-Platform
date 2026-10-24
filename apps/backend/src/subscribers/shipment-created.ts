@@ -32,14 +32,6 @@ export default async function shipmentCreatedHandler({
     return
   }
 
-  const template = resolveTemplate("order-shipped", "SENDGRID_ORDER_SHIPPED_TEMPLATE_ID")
-  if (!template) {
-    logger.warn(
-      "[shipment-created] no email template configured; shipment email skipped"
-    )
-    return
-  }
-
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const {
     data: [fulfillment],
@@ -47,6 +39,7 @@ export default async function shipmentCreatedHandler({
     entity: "fulfillment",
     fields: [
       "id",
+      "metadata",
       "labels.tracking_number",
       "labels.tracking_url",
       "order.id",
@@ -56,6 +49,16 @@ export default async function shipmentCreatedHandler({
     ],
     filters: { id: data.id },
   })
+
+  // Hand-delivered orders have no carrier: say "out for delivery", not "shipped".
+  const manual = (fulfillment?.metadata as any)?.delivery_method === "manual"
+  const template = manual
+    ? resolveTemplate("order-out-for-delivery", "SENDGRID_ORDER_OUT_FOR_DELIVERY_TEMPLATE_ID")
+    : resolveTemplate("order-shipped", "SENDGRID_ORDER_SHIPPED_TEMPLATE_ID")
+  if (!template) {
+    logger.warn("[shipment-created] no email template configured; shipment email skipped")
+    return
+  }
 
   const order = fulfillment?.order
   if (!order?.email) {
@@ -78,6 +81,7 @@ export default async function shipmentCreatedHandler({
         order_id: `#${orderNumber}`,
         email: order.email,
         track_url: trackUrl(orderNumber),
+        note: manual ? (fulfillment.metadata as any)?.note ?? "" : "",
         tracking:
           fulfillment.labels?.map((l: any) => ({
             number: l?.tracking_number,

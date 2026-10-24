@@ -8,6 +8,9 @@ export type EmailTemplate =
   | "admin-new-order"
   | "order-shipped"
   | "order-delivered"
+  | "order-out-for-delivery"
+  | "order-canceled"
+  | "order-refunded"
   | "password-reset"
 
 export const EMAIL_TEMPLATES: readonly EmailTemplate[] = [
@@ -15,6 +18,9 @@ export const EMAIL_TEMPLATES: readonly EmailTemplate[] = [
   "admin-new-order",
   "order-shipped",
   "order-delivered",
+  "order-out-for-delivery",
+  "order-canceled",
+  "order-refunded",
   "password-reset",
 ]
 
@@ -106,6 +112,37 @@ ${d.track_url ? button(d.track_url, "Track your order") : ""}`
           "Your order was delivered",
           `<p>Order <b>${esc(d.order_id)}</b> has been delivered. We hope you enjoy it!</p>
 <p>If anything is wrong, just reply to this email.</p>`
+        ),
+      }
+    case "order-out-for-delivery":
+      return {
+        subject: `Order ${d.order_id} is out for delivery`,
+        html: layout(
+          "Your order is out for delivery",
+          `<p>Order <b>${esc(d.order_id)}</b> is on its way and will be delivered by our own team.</p>
+${d.note ? `<p><b>Delivery note:</b> ${esc(d.note)}</p>` : ""}
+<p>Please keep your phone nearby in case we need to reach you.</p>
+${d.track_url ? button(d.track_url, "Track your order") : ""}`
+        ),
+      }
+    case "order-canceled":
+      return {
+        subject: `Order ${d.order_id} was canceled`,
+        html: layout(
+          "Your order was canceled",
+          `<p>Order <b>${esc(d.order_id)}</b> has been canceled.</p>
+<p>If you paid by card, any charge will be returned to your original payment method; your bank can take a few business days to show it.</p>
+<p>Questions? Just reply to this email.</p>`
+        ),
+      }
+    case "order-refunded":
+      return {
+        subject: `Refund issued for order ${d.order_id}`,
+        html: layout(
+          "Your refund is on its way",
+          `<p>We've refunded <b>${esc(d.amount)}</b> for order <b>${esc(d.order_id)}</b>.</p>
+<p>It goes back to your original payment method. Banks usually take 5–10 business days to show it.</p>
+<p>Questions? Just reply to this email.</p>`
         ),
       }
     case "password-reset":

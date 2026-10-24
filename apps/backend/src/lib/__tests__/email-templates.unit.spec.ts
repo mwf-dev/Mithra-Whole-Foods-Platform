@@ -23,3 +23,26 @@ describe("renderEmail", () => {
     expect(renderEmail("nope", {})).toBeNull()
   })
 })
+
+import { formatMoney, latestRefundAmount } from "../refund-email"
+
+describe("new emails", () => {
+  it("manual delivery email shows the note, escaped", () => {
+    const out = renderEmail("order-out-for-delivery", { order_id: "#1", note: "<b>door</b>" })!
+    expect(out.html).toContain("&lt;b&gt;door")
+    expect(out.subject).toContain("out for delivery")
+  })
+  it("refund email names the amount", () => {
+    expect(renderEmail("order-refunded", { order_id: "#1", amount: "$5.00" })!.html).toContain("$5.00")
+  })
+  it("picks the latest refund", () => {
+    expect(
+      latestRefundAmount([
+        { amount: 3, created_at: "2026-10-01" },
+        { amount: 7, created_at: "2026-10-02" },
+      ])
+    ).toBe(7)
+    expect(latestRefundAmount([])).toBeNull()
+    expect(formatMoney(12.5, "usd")).toBe("$12.50")
+  })
+})
