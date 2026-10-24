@@ -5,9 +5,20 @@ import { useState, useEffect, useRef } from "react"
 
 // Injected at admin build time from STOREFRONT_URL (see medusa-config.ts).
 // Used for the live-preview iframe and as the postMessage target origin.
-const STOREFRONT_URL: string =
-  (import.meta as any).env?.VITE_STOREFRONT_URL || "http://localhost:8000"
-const STOREFRONT_ORIGIN = new URL(STOREFRONT_URL).origin
+// A bad value here (e.g. a missing "https://") used to throw at import time and
+// blank the whole admin, so it is normalised and can never throw.
+const RAW_STOREFRONT_URL: string =
+  ((import.meta as any).env?.VITE_STOREFRONT_URL || "http://localhost:8000").trim()
+const STOREFRONT_URL: string = /^https?:\/\//i.test(RAW_STOREFRONT_URL)
+  ? RAW_STOREFRONT_URL
+  : `https://${RAW_STOREFRONT_URL}`
+const STOREFRONT_ORIGIN = (() => {
+  try {
+    return new URL(STOREFRONT_URL).origin
+  } catch {
+    return "http://localhost:8000"
+  }
+})()
 
 type ListItem = Record<string, string>
 
