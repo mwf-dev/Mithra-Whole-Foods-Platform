@@ -42,7 +42,8 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxDelayMs: 2_000,
   // Generous enough for a cold Railway container, short enough that a hung
   // backend doesn't hold a server render open until the platform kills it.
-  timeoutMs: 10_000,
+  // Overridable for local dev, where the backend talks to a far-away Neon DB.
+  timeoutMs: Number(process.env.MEDUSA_FETCH_TIMEOUT_MS) || 10_000,
 }
 
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "OPTIONS"])

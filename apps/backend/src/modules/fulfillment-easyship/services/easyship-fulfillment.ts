@@ -7,6 +7,7 @@ import {
   ValidateFulfillmentDataContext,
 } from "@medusajs/framework/types"
 import { EasyshipOptions } from "../types"
+import { reportError } from "../../../lib/observability"
 import { EasyshipClient } from "./easyship-client"
 
 export class EasyshipFulfillmentService extends AbstractFulfillmentProviderService {
@@ -154,10 +155,8 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
         is_calculated_price_tax_inclusive: false,
       }
     } catch (error) {
-      console.warn(
-        "[fulfillment-easyship] calculatePrice failed, applying fallback rate:",
-        error
-      )
+      // A silent flat rate hides a broken key or outage, so surface it.
+      reportError(error, { scope: "fulfillment-easyship.calculatePrice", level: "warning" })
       return {
         calculated_amount: 899, // $8.99 fallback
         is_calculated_price_tax_inclusive: false,

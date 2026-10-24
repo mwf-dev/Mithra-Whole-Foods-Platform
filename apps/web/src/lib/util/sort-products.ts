@@ -46,5 +46,16 @@ export function sortProducts(
     })
   }
 
-  return sortedProducts
+  return purchasableFirst(sortedProducts)
+}
+
+const isPurchasable = (p: HttpTypes.StoreProduct) =>
+  (p.variants ?? []).some((v) => (v?.calculated_price?.calculated_amount ?? 0) > 0)
+
+/**
+ * "Coming soon" (unpriced) products sink below everything that can be bought,
+ * whatever the sort. Stable: order inside each group is untouched.
+ */
+export function purchasableFirst<T extends HttpTypes.StoreProduct>(products: T[]): T[] {
+  return [...products.filter(isPurchasable), ...products.filter((p) => !isPurchasable(p))]
 }

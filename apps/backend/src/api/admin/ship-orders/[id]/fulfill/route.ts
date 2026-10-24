@@ -56,6 +56,18 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
     })
   }
 
+  // Cash on delivery needs someone to collect the cash; a courier parcel can't.
+  // Set ALLOW_COD_COURIER=true if the courier account supports COD collection.
+  if (
+    method === "courier" &&
+    paymentState(order.payment_collections) === "cod" &&
+    process.env.ALLOW_COD_COURIER !== "true"
+  ) {
+    return res.status(409).json({
+      message: "This is a pay-on-delivery order. It can only go by manual delivery, so the driver can collect the cash.",
+    })
+  }
+
   const driver = typeof body.driver === "string" ? body.driver.trim().slice(0, 80) : ""
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 300) : ""
 
