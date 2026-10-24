@@ -1,386 +1,236 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { DetailWidgetProps, AdminOrder } from "@medusajs/framework/types"
-import { Container, Heading, Text, Button, toast } from "@medusajs/ui"
-import { CheckCircleSolid } from "@medusajs/icons"
-import { useState } from "react"
+import { Badge, Button, Container, Heading, Input, Text, toast } from "@medusajs/ui"
+import { useCallback, useEffect, useState } from "react"
 
 /**
- * Connected Milestone Dot Timeline & Dispatch Command Station for Order Details.
- * 100% SVG Icons (Zero Emojis), High-Contrast Light Mode, Interactive Courier Actions.
+ * Delivery panel on the order page. It talks to /admin/ship-orders/* (the same
+ * rules as the Ship orders page): the packer first chooses courier or our own
+ * delivery, then follows the steps for that choice.
  */
-const OrderLifecycleDispatchWidget = ({
-  data: order,
-}: DetailWidgetProps<AdminOrder>) => {
-  const [loadingAction, setLoadingAction] = useState<string | null>(null)
+type Label = { tracking_number: string | null; tracking_url: string | null; label_url: string | null }
+type Fulfillment = {
+  id: string
+  shipped_at: string | null
+  delivered_at: string | null
+  delivery_method: "courier" | "manual" | null
+  driver: string | null
+  note: string | null
+  labels: Label[]
+}
+type Row = {
+  id: string
+  stage: "to_ship" | "label_ready" | "shipped" | "delivered"
+  payment: "paid" | "cod" | "unpaid"
+  can_fulfill: boolean
+  block_reason: string | null
+  fulfillments: Fulfillment[]
+}
 
-  const fulfillments = (order.fulfillments as any[]) || []
-  const activeFulfillments = fulfillments.filter((f) => !f.canceled_at)
-  const primaryFulfillment = activeFulfillments[0] as any
+const STEPS = ["Choose delivery", "Pack", "Out for delivery", "Delivered"]
+const STAGE_INDEX = { to_ship: 0, label_ready: 1, shipped: 2, delivered: 3 } as const
 
-  const isPaid = (order.payment_collections || []).some(
-    (p: any) => p.status === "completed" || p.status === "captured"
-  ) || order.payment_status === "captured" || true
+async function api(url: string, init?: RequestInit) {
+  const res = await fetch(url, { credentials: "include", headers: { "Content-Type": "application/json" }, ...init })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body?.message || `Request failed (${res.status})`)
+  return body
+}
 
-  const isPacked = !!primaryFulfillment?.packed_at || activeFulfillments.length > 0
-  const isShipped = !!primaryFulfillment?.shipped_at || !!primaryFulfillment?.data?.tracking_number || !!primaryFulfillment?.labels?.[0]?.tracking_number
-  const isDelivered = !!primaryFulfillment?.delivered_at
+const OrderDeliveryWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => {
+  const [row, setRow] = useState<Row | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [mode, setMode] = useState<"courier" | "manual" | null>(null)
+  const [driver, setDriver] = useState("")
+  const [note, setNote] = useState("")
+  const [tracking, setTracking] = useState("")
+  const [notify, setNotify] = useState(true)
 
-  const trackingNumber =
-    primaryFulfillment?.labels?.[0]?.tracking_number ||
-    primaryFulfillment?.data?.tracking_number ||
-    primaryFulfillment?.data?.easyship_shipment_id ||
-    ""
-
-  const labelUrl =
-    primaryFulfillment?.labels?.[0]?.label_url ||
-    primaryFulfillment?.data?.label_url ||
-    ""
-
-  const trackingUrl =
-    primaryFulfillment?.labels?.[0]?.tracking_url ||
-    primaryFulfillment?.data?.tracking_url ||
-    (trackingNumber ? `https://www.trackmyshipment.co/shipment-tracking/${trackingNumber}` : "")
-
-  const courierName =
-    primaryFulfillment?.data?.courier_name ||
-    (primaryFulfillment?.labels?.[0]?.tracking_url?.includes("fedex") ? "FedEx" :
-    primaryFulfillment?.labels?.[0]?.tracking_url?.includes("ups") ? "UPS" :
-    "Easyship Courier")
-
-  const shippingMethodName = order.shipping_methods?.[0]?.name || "Standard Courier Delivery"
-
-  // Step calculations: 1 = Payment, 2 = Packing, 3 = Shipped, 4 = Delivered
-  const stepNumber = isDelivered ? 4 : isShipped ? 3 : isPacked ? 2 : 1
-
-  // Quick fulfillment handler
-  const handleCreateFulfillment = async () => {
-    setLoadingAction("fulfill")
+  const load = useCallback(async () => {
     try {
-      const locRes = await fetch("/admin/stock-locations?limit=1", { credentials: "include" })
-      const locData = await locRes.json()
-      const locationId = locData.stock_locations?.[0]?.id
-
-      if (!locationId) {
-        toast.error("No stock location found. Please configure locations in Settings.")
-        return
-      }
-
-      const items = (order.items || []).map((it) => ({
-        id: it.id,
-        quantity: it.quantity,
-      }))
-
-      const res = await fetch(`/admin/orders/${order.id}/fulfillments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          location_id: locationId,
-          items,
-        }),
-      })
-
-      if (res.ok) {
-        toast.success("Order packed and shipping label generated via Easyship!")
-        window.location.reload()
-      } else {
-        const err = await res.json().catch(() => ({}))
-        toast.error(err.message || "Failed to create fulfillment.")
-      }
+      const { order: r } = await api(`/admin/ship-orders/${order.id}`)
+      setRow(r)
+      setError(null)
     } catch (e: any) {
-      toast.error(e?.message || "Error creating fulfillment")
+      setError(e.message)
+    }
+  }, [order.id])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const run = async (path: string, body: unknown, ok: string) => {
+    setBusy(true)
+    try {
+      const res = await api(`/admin/ship-orders/${order.id}/${path}`, { method: "POST", body: JSON.stringify(body) })
+      toast.success(ok)
+      setRow(res.order)
+    } catch (e: any) {
+      toast.error(e.message)
     } finally {
-      setLoadingAction(null)
+      setBusy(false)
     }
   }
 
-  // Mark shipped handler
-  const handleMarkShipped = async () => {
-    if (!primaryFulfillment?.id) return
-    setLoadingAction("ship")
-    try {
-      const res = await fetch(`/admin/orders/${order.id}/fulfillments/${primaryFulfillment.id}/shipments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          labels: trackingNumber ? [{ tracking_number: trackingNumber, tracking_url: trackingUrl, label_url: labelUrl }] : [],
-        }),
-      })
-      if (res.ok) {
-        toast.success("Order marked as Dispatched & In Transit!")
-        window.location.reload()
-      } else {
-        toast.info("Status marked as shipped.")
-        window.location.reload()
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to update shipping status")
-    } finally {
-      setLoadingAction(null)
-    }
-  }
-
-  // Mark delivered handler
-  const handleMarkDelivered = async () => {
-    if (!primaryFulfillment?.id) {
-      toast.error("Create fulfillment first.")
+  const pack = (method: "courier" | "manual") => {
+    if (method === "courier" && !window.confirm("Buy a shipping label for this order? This charges your Easyship account.")) {
       return
     }
-
-    setLoadingAction("deliver")
-    try {
-      const res = await fetch(
-        `/admin/orders/${order.id}/fulfillments/${primaryFulfillment.id}/deliver`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      )
-
-      if (res.ok) {
-        toast.success("Order marked as Delivered!")
-        window.location.reload()
-      } else {
-        toast.info("Delivery status recorded.")
-        window.location.reload()
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to update delivery status")
-    } finally {
-      setLoadingAction(null)
-    }
+    run("fulfill", { method, driver, note }, method === "courier" ? "Label bought" : "Packed for our own delivery")
   }
 
+  const step = row ? STAGE_INDEX[row.stage] : 0
+  const open = row?.fulfillments.find((f) => !f.shipped_at)
+  const label = open?.labels.find((l) => l.tracking_number)
+  const inTransit = row?.fulfillments.find((f) => f.shipped_at && !f.delivered_at)
+  const doneLabels = (row?.fulfillments ?? []).flatMap((f) => f.labels).filter((l) => l.tracking_number)
+
   return (
-    <Container className="p-0 overflow-hidden mb-6 border border-gray-200 rounded-xl shadow-xs bg-white text-gray-900">
-      {/* Header Bar */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/80 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Heading level="h2" className="text-base font-bold text-gray-900 tracking-tight">
-            Order Fulfillment & Delivery Pipeline
-          </Heading>
-          <Text className="text-xs text-gray-500 mt-0.5 font-medium">
-            Track order lifecycle from payment capture to doorstep delivery.
-          </Text>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Method:</span>
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-gray-200 text-gray-800">
-            {shippingMethodName}
-          </span>
-        </div>
+    <Container className="mb-6 p-0 overflow-hidden">
+      <div className="px-6 py-4 border-b border-ui-border-base">
+        <Heading level="h2">Delivery</Heading>
+        <Text size="small" className="text-ui-fg-subtle">Choose how this order goes out, then follow the steps.</Text>
       </div>
 
-      {/* Connected Milestone Dot Stepper */}
-      <div className="p-6 bg-white border-b border-gray-200">
-        <div className="relative flex items-center justify-between max-w-4xl mx-auto">
-          {/* Background Connecting Line */}
-          <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200 -z-0" />
-          {/* Active Progress Connecting Line */}
-          <div
-            className="absolute top-4 left-6 h-0.5 bg-emerald-600 transition-all duration-500 -z-0"
-            style={{
-              width: stepNumber === 4 ? "calc(100% - 48px)" : stepNumber === 3 ? "66%" : stepNumber === 2 ? "33%" : "0%",
-            }}
-          />
-
-          {/* Milestone 1: Payment */}
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 shadow-xs transition-all ${
-              isPaid
-                ? "bg-emerald-600 border-emerald-600 text-white"
-                : "bg-white border-gray-300 text-gray-500"
-            }`}>
-              {isPaid ? <CheckCircleSolid className="w-4 h-4 text-white" /> : "1"}
-            </div>
-            <span className="mt-2 text-xs font-bold text-gray-900">1. Payment</span>
-            <span className="text-[11px] font-semibold text-emerald-700">Captured</span>
+      <div className="flex gap-2 px-6 py-4 border-b border-ui-border-base">
+        {STEPS.map((s, i) => (
+          <div key={s} className="flex-1">
+            <div className={`h-1.5 rounded-full ${i <= step ? "bg-ui-fg-interactive" : "bg-ui-bg-component"}`} />
+            <Text size="xsmall" weight={i === step ? "plus" : "regular"} className="mt-1">{i + 1}. {s}</Text>
           </div>
-
-          {/* Milestone 2: Packing & Label */}
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 shadow-xs transition-all ${
-              isPacked
-                ? "bg-emerald-600 border-emerald-600 text-white"
-                : "bg-amber-500 border-amber-500 text-white ring-4 ring-amber-100 animate-pulse"
-            }`}>
-              {isPacked ? <CheckCircleSolid className="w-4 h-4 text-white" /> : "2"}
-            </div>
-            <span className="mt-2 text-xs font-bold text-gray-900">2. Packing</span>
-            <span className={`text-[11px] font-semibold ${isPacked ? "text-emerald-700" : "text-amber-800 font-bold"}`}>
-              {isPacked ? "Label Ready" : "Needs Packing"}
-            </span>
-          </div>
-
-          {/* Milestone 3: Dispatch & Transit */}
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 shadow-xs transition-all ${
-              isShipped
-                ? "bg-emerald-600 border-emerald-600 text-white"
-                : isPacked
-                ? "bg-blue-600 border-blue-600 text-white ring-4 ring-blue-100"
-                : "bg-white border-gray-300 text-gray-400"
-            }`}>
-              {isShipped ? <CheckCircleSolid className="w-4 h-4 text-white" /> : "3"}
-            </div>
-            <span className="mt-2 text-xs font-bold text-gray-900">3. Dispatch</span>
-            <span className={`text-[11px] font-semibold ${isShipped ? "text-emerald-700" : isPacked ? "text-blue-700 font-bold" : "text-gray-500"}`}>
-              {isShipped ? "In Transit" : isPacked ? "Awaiting Handover" : "Pending"}
-            </span>
-          </div>
-
-          {/* Milestone 4: Delivered */}
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 shadow-xs transition-all ${
-              isDelivered
-                ? "bg-emerald-600 border-emerald-600 text-white ring-4 ring-emerald-100"
-                : "bg-white border-gray-300 text-gray-400"
-            }`}>
-              {isDelivered ? <CheckCircleSolid className="w-4 h-4 text-white" /> : "4"}
-            </div>
-            <span className="mt-2 text-xs font-bold text-gray-900">4. Delivery</span>
-            <span className={`text-[11px] font-semibold ${isDelivered ? "text-emerald-700 font-bold" : "text-gray-500"}`}>
-              {isDelivered ? "Delivered to Door" : "Pending"}
-            </span>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Action Command Card — Clear instructions and actions */}
-      <div className="p-5 bg-white flex flex-wrap items-center justify-between gap-4">
-        {/* Step 1 & 2: Unfulfilled -> Needs Packing */}
-        {!isPacked && (
+      <div className="px-6 py-5 flex flex-col gap-3">
+        {error && <Text className="text-ui-fg-error">Couldn't load delivery details: {error}</Text>}
+        {!row && !error && <Text className="text-ui-fg-subtle">Loading…</Text>}
+
+        {row?.stage === "to_ship" && (
           <>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                <span className="font-bold text-sm text-gray-900">
-                  Required Action: Pack items & generate shipping label
-                </span>
-              </div>
-              <p className="text-xs text-gray-600">
-                Clicking the button below registers parcel weight with Easyship and generates your official courier label PDF.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                size="large"
-                variant="primary"
-                isLoading={loadingAction === "fulfill"}
-                onClick={handleCreateFulfillment}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-5 py-2.5 shadow-sm"
-              >
-                Generate Easyship Courier Label
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Step 3: Packed & Ready for Carrier / In Transit */}
-        {isPacked && !isDelivered && (
-          <>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-900 border border-blue-200">
-                  {courierName}
-                </span>
-                <span className="font-bold text-sm text-gray-900">
-                  {trackingNumber ? `Tracking: ${trackingNumber}` : "Label ready"}
-                </span>
-              </div>
-              <p className="text-xs text-gray-600">
-                Print label, stick on package, and handover to courier (dropoff or scheduled pickup). Tracking updates automatically.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Always show Print Label button */}
-              <a
-                href={labelUrl || `https://app.easyship.com/shipments`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="base" variant="primary" className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs">
-                  Print Shipping Label (PDF)
-                </Button>
-              </a>
-
-              {/* Always show Live Tracking button */}
-              <a
-                href={trackingUrl || (trackingNumber ? `https://www.trackmyshipment.co/shipment-tracking/${trackingNumber}` : `https://app.easyship.com/shipments`)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="base" variant="secondary" className="border-gray-300 bg-white text-gray-800 font-bold text-xs shadow-xs hover:bg-gray-50">
-                  Track Courier {trackingNumber ? `(${trackingNumber})` : "Live"}
-                </Button>
-              </a>
-
-              {/* Mark Dispatched */}
-              {!isShipped && (
-                <Button
-                  size="base"
-                  variant="secondary"
-                  isLoading={loadingAction === "ship"}
-                  onClick={handleMarkShipped}
-                  className="border-gray-300 bg-white text-gray-800 font-semibold text-xs shadow-xs hover:bg-gray-50"
+            <Text weight="plus">How will this order be delivered?</Text>
+            <div className="grid gap-3 md:grid-cols-2">
+              {([
+                ["courier", "Courier partner (Easyship)", "We buy a label, print it, and hand the parcel to the courier. Tracking updates itself."],
+                ["manual", "We deliver it ourselves", "Our own driver or customer pickup. You mark it out for delivery, then delivered."],
+              ] as const).map(([key, title, sub]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setMode(key)}
+                  className={`rounded-lg border p-4 text-left ${
+                    mode === key ? "border-ui-border-interactive bg-ui-bg-highlight" : "border-ui-border-base"
+                  }`}
                 >
-                  Mark Dispatched (Handed Over)
-                </Button>
-              )}
-
-              {/* Mark Delivered */}
-              <Button
-                size="base"
-                variant="secondary"
-                isLoading={loadingAction === "deliver"}
-                onClick={handleMarkDelivered}
-                className="border-gray-300 bg-white text-gray-800 font-semibold text-xs shadow-xs hover:bg-gray-50"
-              >
-                Mark Delivered (Manual)
-              </Button>
+                  <div className="text-sm font-semibold">{title}</div>
+                  <div className="text-xs text-ui-fg-subtle mt-1">{sub}</div>
+                </button>
+              ))}
             </div>
+            {mode === "courier" && (
+              <div>
+                <Button onClick={() => pack("courier")} isLoading={busy} disabled={!row.can_fulfill}>
+                  Buy Easyship label &amp; pack
+                </Button>
+              </div>
+            )}
+            {mode === "manual" && (
+              <div className="grid gap-2 md:max-w-md">
+                <Input size="small" placeholder="Who delivers? (optional)" value={driver} onChange={(e) => setDriver(e.target.value)} />
+                <Input size="small" placeholder="Note (e.g. leave at door)" value={note} onChange={(e) => setNote(e.target.value)} />
+                <div>
+                  <Button onClick={() => pack("manual")} isLoading={busy} disabled={!row.can_fulfill}>
+                    Pack for our delivery
+                  </Button>
+                </div>
+              </div>
+            )}
+            {row.block_reason && <Text size="small" className="text-ui-fg-error">{row.block_reason}</Text>}
           </>
         )}
 
-        {/* Step 4: Fully Delivered */}
-        {isDelivered && (
+        {row?.stage === "label_ready" && open && (
           <>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-emerald-800">
-                <CheckCircleSolid className="w-5 h-5 text-emerald-600" />
-                <span className="font-bold text-sm text-gray-900">
-                  Order Successfully Completed & Delivered
-                </span>
-              </div>
-              <p className="text-xs text-gray-600">
-                Customer delivery confirmed by courier. No further action needed.
-              </p>
-            </div>
-
             <div className="flex items-center gap-2">
-              {trackingUrl && (
-                <a href={trackingUrl} target="_blank" rel="noopener noreferrer">
-                  <Button size="small" variant="secondary" className="border-gray-300 text-gray-800 text-xs">
-                    View Tracking History
-                  </Button>
+              <Badge color={open.delivery_method === "manual" ? "blue" : "green"}>
+                {open.delivery_method === "manual" ? "Our own delivery" : "Courier"}
+              </Badge>
+              {open.driver && <Text size="small">Driver: {open.driver}</Text>}
+            </div>
+            {open.note && <Text size="small" className="text-ui-fg-subtle">{open.note}</Text>}
+            <div className="flex flex-wrap gap-2">
+              <a href={`/admin/ship-orders/print?type=invoice&ids=${order.id}&autoprint=1`} target="_blank" rel="noreferrer">
+                <Button size="small" variant="secondary">Print invoice</Button>
+              </a>
+              <a href={`/admin/ship-orders/print?type=packing-slip&ids=${order.id}&autoprint=1`} target="_blank" rel="noreferrer">
+                <Button size="small" variant="secondary">Print packing slip</Button>
+              </a>
+              {label?.label_url && (
+                <a href={label.label_url} target="_blank" rel="noreferrer">
+                  <Button size="small" variant="secondary">Print shipping label</Button>
                 </a>
               )}
-              <a
-                href={`/store/orders/${order.id}/invoice`}
-                target="_blank"
-                rel="noopener noreferrer"
+            </div>
+            {open.delivery_method !== "manual" && (
+              label ? (
+                <Text size="small">Tracking: <span className="font-mono">{label.tracking_number}</span></Text>
+              ) : (
+                <Input size="small" className="md:max-w-sm" placeholder="Carrier tracking number" value={tracking} onChange={(e) => setTracking(e.target.value)} />
+              )
+            )}
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+              Email the customer
+            </label>
+            <div>
+              <Button
+                isLoading={busy}
+                disabled={open.delivery_method !== "manual" && !label && !tracking.trim()}
+                onClick={() =>
+                  run(
+                    "ship",
+                    { fulfillment_id: open.id, tracking_number: tracking || undefined, notify },
+                    open.delivery_method === "manual" ? "Out for delivery" : "Handed to courier"
+                  )
+                }
               >
-                <Button size="small" variant="transparent" className="text-gray-700 text-xs">
-                  Download Invoice
-                </Button>
-              </a>
+                {open.delivery_method === "manual" ? "Out for delivery" : "Handed to courier"}
+              </Button>
             </div>
           </>
         )}
+
+        {row?.stage === "shipped" && (
+          <>
+            {inTransit?.delivery_method === "manual" ? (
+              <>
+                <Text>Out for delivery{inTransit.driver ? ` with ${inTransit.driver}` : ""}.</Text>
+                <div>
+                  <Button isLoading={busy} onClick={() => run("deliver", { fulfillment_id: inTransit.id }, "Marked delivered")}>
+                    Mark delivered
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Text>With the courier. Delivered is updated automatically from Easyship tracking.</Text>
+            )}
+          </>
+        )}
+
+        {row?.stage === "delivered" && <Text>Delivered. Nothing more to do.</Text>}
+
+        {(row?.stage === "shipped" || row?.stage === "delivered") &&
+          doneLabels.map((l) => (
+            <Text key={l.tracking_number!} size="small">
+              Tracking:{" "}
+              {l.tracking_url ? (
+                <a className="font-mono underline" href={l.tracking_url} target="_blank" rel="noreferrer">{l.tracking_number}</a>
+              ) : (
+                <span className="font-mono">{l.tracking_number}</span>
+              )}
+            </Text>
+          ))}
       </div>
     </Container>
   )
@@ -390,4 +240,4 @@ export const config = defineWidgetConfig({
   zone: "order.details.before",
 })
 
-export default OrderLifecycleDispatchWidget
+export default OrderDeliveryWidget
