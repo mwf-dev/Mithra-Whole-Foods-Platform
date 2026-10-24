@@ -1,3 +1,4 @@
+import { parseShipmentResponse } from "../../../lib/easyship-webhook"
 import {
   EasyshipCreateShipmentParams,
   EasyshipOptions,
@@ -113,6 +114,12 @@ export class EasyshipClient {
 
     const payload = {
       ...params,
+      // Without these Easyship only creates a draft: no label, no tracking number.
+      shipping_settings: {
+        buy_label: true,
+        buy_label_synchronous: true,
+        printing_options: { format: "pdf", label: "4x6", commercial_invoice: "A4", packing_slip: "4x6" },
+      },
       origin_address: {
         ...params.origin_address,
         company_name:
@@ -160,25 +167,34 @@ export class EasyshipClient {
     }
 
     const raw = (await res.json()) as any
-    const shipment = raw.shipment || raw
+    const r = parseShipmentResponse(raw)
+    if (r.labelState === "failed") {
+      const detail = r.errors.length ? JSON.stringify(r.errors) : "no reason given"
+      throw new Error(`Easyship could not generate the label: ${detail}`)
+    }
     return {
       shipment: {
-        easyship_shipment_id: shipment.easyship_shipment_id || shipment.id,
-        tracking_number: shipment.tracking_number,
-        tracking_page_url: shipment.tracking_page_url,
-        label_url:
-          shipment.label_url ||
-          shipment.shipping_documents?.find((d: any) => d.type === "label")?.url,
-        courier: {
-          name:
-            shipment.courier_service?.name ||
-            shipment.courier?.name ||
-            "UPS Ground",
-        },
-        shipment_state: shipment.shipment_state || "label_generated",
-        delivery_state: shipment.delivery_state || "pending",
+        easyship_shipment_id: r.id,
+        tracking_number: r.trackingNumber || undefined,
+        tracking_page_url: r.trackingUrl || undefined,
+        label_url: r.labelUrl || undefined,
+        courier: { name: r.courier || "Courier" },
+        shipment_state: r.labelState || "label_generated",
+        delivery_state: r.status || "pending",
       },
     }
+  }
+
+  /** Current tracking state of a shipment, straight from Easyship. */
+  async getShipment(easyshipShipmentId: string) {
+    if (!this.isConfigured) throw new Error("EASYSHIP_API_KEY is not configured.")
+    const res = await fetch(`${this.baseUrl}/shipments/${easyshipShipmentId}`, {
+      headers: { Authorization: `Bearer ${this.apiKey}` },
+    })
+    if (!res.ok) {
+      throw new Error(`Easyship getShipment failed with status ${res.status}: ${await res.text().catch(() => "")}`)
+    }
+    return parseShipmentResponse(await res.json())
   }
 
   /**

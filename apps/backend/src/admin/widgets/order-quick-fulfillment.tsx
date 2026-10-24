@@ -213,7 +213,14 @@ const OrderDeliveryWidget = ({ data: order }: DetailWidgetProps<AdminOrder>) => 
                 </div>
               </>
             ) : (
-              <Text>With the courier. Delivered is updated automatically from Easyship tracking.</Text>
+              <>
+                <Text>With the courier. Delivered is updated automatically from Easyship tracking.</Text>
+                <div>
+                  <Button size="small" variant="secondary" isLoading={busy} onClick={() => run("refresh", {}, "Checked with Easyship")}>
+                    Check courier status now
+                  </Button>
+                </div>
+              </>
             )}
           </>
         )}

@@ -8,6 +8,7 @@ import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
 import AddressAutofill from "./address-autofill"
 import { ResolvedAddress, lookupUsZip } from "@lib/util/address-lookup"
+import { US_STATES, toStateCode } from "@lib/util/us-states"
 
 const ShippingAddress = ({
   customer,
@@ -108,7 +109,10 @@ const ShippingAddress = ({
         cartAddr?.address_1,
         savedAddress?.address_1
       ),
-      "shipping_address.company": pick(cartAddr?.company, savedAddress?.company),
+      "shipping_address.company": pick(
+        cartAddr?.company,
+        savedAddress?.company
+      ),
       "shipping_address.postal_code": pick(
         cartAddr?.postal_code,
         savedAddress?.postal_code
@@ -259,14 +263,36 @@ const ShippingAddress = ({
           required
           data-testid="shipping-country-select"
         />
-        <Input
-          label="State / Province"
-          name="shipping_address.province"
-          autoComplete="address-level1"
-          value={formData["shipping_address.province"]}
-          onChange={handleChange}
-          data-testid="shipping-province-input"
-        />
+        {(formData["shipping_address.country_code"] || "us") === "us" ? (
+          <label className="flex flex-col gap-1 text-small-regular text-ui-fg-subtle">
+            State
+            <select
+              name="shipping_address.province"
+              autoComplete="address-level1"
+              required
+              value={toStateCode(formData["shipping_address.province"])}
+              onChange={handleChange}
+              className="h-11 rounded-md border border-ui-border-base bg-white px-3 text-base text-ui-fg-base"
+              data-testid="shipping-province-input"
+            >
+              <option value="">Select state</option>
+              {Object.entries(US_STATES).map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <Input
+            label="State / Province"
+            name="shipping_address.province"
+            autoComplete="address-level1"
+            value={formData["shipping_address.province"]}
+            onChange={handleChange}
+            data-testid="shipping-province-input"
+          />
+        )}
       </div>
       <div className="my-8">
         <Checkbox

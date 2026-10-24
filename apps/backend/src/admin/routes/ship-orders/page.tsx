@@ -288,6 +288,12 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
                 </Button>
               ))}
 
+          {row.stage === "shipped" && row.fulfillments.some((f) => f.delivery_method === "courier") && (
+            <Button size="small" variant="secondary" isLoading={busy} onClick={() => run("refresh", {}, "Checked with Easyship")}>
+              Check courier status now
+            </Button>
+          )}
+
           {(row.stage === "shipped" || row.stage === "delivered") &&
             row.fulfillments.flatMap((f) => f.labels).filter((l) => l.tracking_number).map((l) => (
               <Text key={l.tracking_number!} size="small">

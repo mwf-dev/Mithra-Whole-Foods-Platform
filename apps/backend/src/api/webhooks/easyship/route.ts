@@ -4,13 +4,7 @@ import { isValidEasyshipSignature } from "../../../lib/easyship-signature"
 import { deliverByTrackingNumber } from "../../../lib/fedex-delivery"
 import { fulfillmentIdByTracking, recordTrackingEvent } from "../../../lib/record-tracking"
 import { normalizeStatus } from "../../../lib/tracking-events"
-import { EasyshipWebhookPayload } from "../../../modules/fulfillment-easyship/types"
-
-const TERMINAL_DELIVERED_STATUSES = new Set([
-  "delivered",
-  "delivered_to_customer",
-  "completed",
-])
+import { parseEasyshipEvent } from "../../../lib/easyship-webhook"
 
 /**
  * Easyship Webhook Endpoint — receives real-time tracking status & label events.
@@ -52,29 +46,25 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(401).json({ message: "Invalid signature" })
   }
 
-  const payload = req.body as EasyshipWebhookPayload
+  // Log what Easyship really sends: field names vary by API version.
+  logger.info(`[easyship-webhook] payload ${JSON.stringify(req.body ?? {}).slice(0, 2000)}`)
 
-  if (!payload || !payload.event_type) {
-    logger.warn(
-      `[easyship-webhook] Unrecognized payload shape: ${JSON.stringify(req.body)}`
-    )
+  const { eventType: event_type, trackingNumber, shipmentId, status } = parseEasyshipEvent(req.body)
+  if (!event_type && !trackingNumber && !shipmentId) {
+    logger.warn("[easyship-webhook] Unrecognized payload shape")
     return res.status(200).json({ received: true })
   }
 
-  const { event_type, data } = payload
-  const trackingNumber = data?.tracking_number
-  const status = data?.status?.toLowerCase() || ""
-
   logger.info(
-    `[easyship-webhook] Event: ${event_type}, Tracking: ${trackingNumber || "N/A"}, Status: ${status}`
+    `[easyship-webhook] Event: ${event_type}, Tracking: ${trackingNumber || "N/A"}, Shipment: ${shipmentId || "N/A"}, Status: ${status}`
   )
 
   // Keep every status for the tracking timeline. Failing to record must not
   // make Easyship retry (and must never block the delivered handling below).
   const normalized = normalizeStatus(status)
-  if (trackingNumber && normalized && normalized !== "delivered") {
+  if ((trackingNumber || shipmentId) && normalized && normalized !== "delivered") {
     try {
-      const fulfillmentId = await fulfillmentIdByTracking(req.scope, trackingNumber)
+      const fulfillmentId = await fulfillmentIdByTracking(req.scope, trackingNumber, shipmentId)
       if (fulfillmentId) {
         await recordTrackingEvent(req.scope, fulfillmentId, {
           status: normalized,
@@ -87,9 +77,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     }
   }
 
-  if (trackingNumber && TERMINAL_DELIVERED_STATUSES.has(status)) {
+  if ((trackingNumber || shipmentId) && normalized === "delivered") {
     try {
-      const result = await deliverByTrackingNumber(req.scope, trackingNumber)
+      const result = await deliverByTrackingNumber(req.scope, trackingNumber || shipmentId)
 
       if (!result.ok) {
         logger.warn(
@@ -116,6 +106,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   return res.status(200).json({
     received: true,
     event_type,
-    tracking_number: trackingNumber,
+    tracking_number: trackingNumber || undefined,
   })
 }

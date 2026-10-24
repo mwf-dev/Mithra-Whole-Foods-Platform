@@ -22,14 +22,31 @@ export async function recordTrackingEvent(
 
 export async function fulfillmentIdByTracking(
   container: MedusaContainer,
-  trackingNumber: string
+  trackingNumber: string,
+  shipmentId?: string
 ): Promise<string | null> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const { data } = await query.graph({
+  if (trackingNumber) {
+    const { data } = await query.graph({
+      entity: "fulfillment",
+      fields: ["id", "canceled_at"],
+      filters: { labels: { tracking_number: trackingNumber } } as any,
+    })
+    const hit = (data as any[]).find((f) => !f.canceled_at)
+    if (hit) return hit.id
+  }
+  if (!shipmentId && !trackingNumber) return null
+  // Parked label (before "shipped") or a payload without a tracking number.
+  const { data: recent } = await query.graph({
     entity: "fulfillment",
-    fields: ["id", "canceled_at"],
-    filters: { labels: { tracking_number: trackingNumber } } as any,
+    fields: ["id", "canceled_at", "data"],
+    pagination: { take: 200, order: { created_at: "DESC" } },
   })
-  const hit = (data as any[]).find((f) => !f.canceled_at)
+  const hit = (recent as any[]).find(
+    (f) =>
+      !f.canceled_at &&
+      ((shipmentId && f.data?.easyship_shipment_id === shipmentId) ||
+        (trackingNumber && f.data?.tracking_number === trackingNumber))
+  )
   return hit?.id ?? null
 }

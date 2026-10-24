@@ -8,6 +8,9 @@ export function isValidEasyshipSignature(
 ): boolean {
   if (!secret || !provided) return false
 
+  // Easyship may sign with a JWT (HS256) instead of a body digest.
+  if (isValidJwt(provided, secret)) return true
+
   const candidate = provided.replace(/^sha256=/, "")
   const mac = crypto.createHmac("sha256", secret).update(rawBody)
   const digest = mac.digest()
@@ -19,4 +22,20 @@ export function isValidEasyshipSignature(
     const given = Buffer.from(candidate)
     return expected.length === given.length && crypto.timingSafeEqual(expected, given)
   })
+}
+
+const b64url = (b: Buffer) => b.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+
+function isValidJwt(token: string, secret: string): boolean {
+  const parts = token.replace(/^Bearer\s+/i, "").split(".")
+  if (parts.length !== 3) return false
+  try {
+    const header = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"))
+    if (header?.alg !== "HS256") return false
+  } catch {
+    return false
+  }
+  const expected = Buffer.from(b64url(crypto.createHmac("sha256", secret).update(`${parts[0]}.${parts[1]}`).digest()))
+  const given = Buffer.from(parts[2])
+  return expected.length === given.length && crypto.timingSafeEqual(expected, given)
 }
