@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { createOrderShipmentWorkflow } from "@medusajs/medusa/core-flows"
 import { activeFulfillments, genericTrackingUrl, isValidTrackingNumber } from "../../../../../lib/ship-orders"
+import { recordTrackingEvent } from "../../../../../lib/record-tracking"
 import { loadOrder, providerByOption, toRow } from "../../_shared"
 
 /**
@@ -27,10 +28,26 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
   if (!fulfillment) return res.status(404).json({ message: "Shipment not found on this order." })
   if (fulfillment.shipped_at) return res.status(409).json({ message: "Already marked as shipped." })
 
+  const method = fulfillment.metadata?.delivery_method as string | undefined
   const hasLabel = (fulfillment.labels ?? []).some((l: any) => l?.tracking_number)
   const labels: { tracking_number: string; tracking_url: string; label_url: string }[] = []
 
-  if (!hasLabel) {
+  // A label bought at the Pack step is parked in fulfillment.data until now.
+  const parked = fulfillment.data?.tracking_number as string | undefined
+
+  if (!hasLabel && parked) {
+    labels.push({
+      tracking_number: parked,
+      tracking_url: (fulfillment.data?.tracking_url as string) || genericTrackingUrl(parked),
+      label_url: (fulfillment.data?.label_url as string) || "",
+    })
+  } else if (!hasLabel && method === "manual") {
+    // Hand delivery has no carrier number. An optional reference is still kept.
+    if (isValidTrackingNumber(body.tracking_number)) {
+      const n = body.tracking_number.trim()
+      labels.push({ tracking_number: n, tracking_url: "", label_url: "" })
+    }
+  } else if (!hasLabel) {
     if (!isValidTrackingNumber(body.tracking_number)) {
       return res.status(400).json({ message: "Enter the carrier's tracking number." })
     }
@@ -55,6 +72,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
   } catch (e: any) {
     return res.status(502).json({ message: e?.message || "Could not mark the shipment as shipped." })
   }
+
+  await recordTrackingEvent(req.scope, fulfillment.id, {
+    status: method === "manual" ? "out_for_delivery" : "in_transit",
+    at: new Date().toISOString(),
+    source: "admin",
+  }).catch(() => undefined)
 
   const fresh = await loadOrder(req.scope, order.id)
   res.json({ order: toRow(fresh, await providerByOption(req.scope, [fresh])) })

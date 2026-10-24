@@ -6,7 +6,38 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 type Stage = "to_ship" | "label_ready" | "shipped" | "delivered"
 
 type Label = { tracking_number: string | null; tracking_url: string | null; label_url: string | null }
-type Fulfillment = { id: string; shipped_at: string | null; delivered_at: string | null; labels: Label[] }
+type TrackEvent = { status: string; at: string }
+type Fulfillment = {
+  id: string
+  shipped_at: string | null
+  delivered_at: string | null
+  delivery_method: "courier" | "manual" | null
+  driver: string | null
+  note: string | null
+  events: TrackEvent[]
+  labels: Label[]
+}
+
+const STATUS_TEXT: Record<string, string> = {
+  label_created: "Label created",
+  in_transit: "In transit",
+  out_for_delivery: "Out for delivery",
+  exception: "Delivery problem",
+  delivered: "Delivered",
+}
+
+function History({ events }: { events: TrackEvent[] }) {
+  if (!events.length) return null
+  return (
+    <ul className="text-xs text-ui-fg-subtle">
+      {events.map((e, i) => (
+        <li key={i}>
+          {STATUS_TEXT[e.status] ?? e.status} · {new Date(e.at).toLocaleString()}
+        </li>
+      ))}
+    </ul>
+  )
+}
 type Row = {
   id: string
   number: string
@@ -64,6 +95,8 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
   const [busy, setBusy] = useState(false)
   const [tracking, setTracking] = useState<Record<string, string>>({})
   const [notify, setNotify] = useState(true)
+  const [driver, setDriver] = useState("")
+  const [note, setNote] = useState("")
 
   const run = async (path: string, body: unknown, ok: string) => {
     setBusy(true)
@@ -78,14 +111,14 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
     }
   }
 
-  const fulfill = () => {
+  const fulfill = (method: "courier" | "manual") => {
     if (
-      row.auto_label &&
+      method === "courier" &&
       !window.confirm(`Buy a shipping label for ${row.number}? This charges your Easyship account.`)
     ) {
       return
     }
-    run("fulfill", {}, row.auto_label ? "Label bought" : "Order packed")
+    run("fulfill", { method, driver, note }, method === "courier" ? "Label bought" : "Packed for manual delivery")
   }
 
   const openFulfillments = row.fulfillments.filter((f) => !f.shipped_at)
@@ -140,21 +173,53 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
         <div className="flex flex-col gap-2">
           {row.stage === "to_ship" && (
             <>
-              <Button onClick={fulfill} isLoading={busy} disabled={!row.can_fulfill}>
-                {row.auto_label ? "Buy label & pack" : "Pack order"}
+              <Text size="small" weight="plus">How will this go out?</Text>
+              <Button onClick={() => fulfill("courier")} isLoading={busy} disabled={!row.can_fulfill}>
+                Courier: buy label &amp; pack
               </Button>
-              {row.block_reason && <Text size="small" className="text-ui-fg-error">{row.block_reason}</Text>}
-              {!row.auto_label && row.can_fulfill && (
-                <Text size="small" className="text-ui-fg-subtle">
-                  Customer chose a manual option — you'll enter the tracking number next.
-                </Text>
+              {!row.auto_label && (
+                <>
+                  <Input
+                    size="small"
+                    placeholder="Manual: who delivers? (optional)"
+                    value={driver}
+                    onChange={(e) => setDriver(e.target.value)}
+                  />
+                  <Input
+                    size="small"
+                    placeholder="Manual: note (e.g. leave at door)"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <Button variant="secondary" onClick={() => fulfill("manual")} isLoading={busy} disabled={!row.can_fulfill}>
+                    Manual delivery: pack
+                  </Button>
+                </>
               )}
+              {row.block_reason && <Text size="small" className="text-ui-fg-error">{row.block_reason}</Text>}
             </>
           )}
 
           {row.stage === "label_ready" &&
             openFulfillments.map((f) => {
               const label = f.labels.find((l) => l.tracking_number)
+              const manual = f.delivery_method === "manual"
+              if (manual) {
+                return (
+                  <div key={f.id} className="flex flex-col gap-2">
+                    <Badge size="2xsmall" color="blue">Manual delivery</Badge>
+                    {f.driver && <Text size="small">Driver: {f.driver}</Text>}
+                    {f.note && <Text size="small" className="text-ui-fg-subtle">{f.note}</Text>}
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+                      Email the customer
+                    </label>
+                    <Button isLoading={busy} onClick={() => run("ship", { fulfillment_id: f.id, notify }, "Out for delivery")}>
+                      Out for delivery
+                    </Button>
+                  </div>
+                )
+              }
               return (
                 <div key={f.id} className="flex flex-col gap-2">
                   {label?.label_url && (
@@ -193,6 +258,15 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
               )
             })}
 
+          {row.stage === "shipped" &&
+            row.fulfillments
+              .filter((f) => f.delivery_method === "manual" && f.shipped_at && !f.delivered_at)
+              .map((f) => (
+                <Button key={f.id} isLoading={busy} onClick={() => run("deliver", { fulfillment_id: f.id }, "Marked delivered")}>
+                  Mark delivered
+                </Button>
+              ))}
+
           {(row.stage === "shipped" || row.stage === "delivered") &&
             row.fulfillments.flatMap((f) => f.labels).filter((l) => l.tracking_number).map((l) => (
               <Text key={l.tracking_number!} size="small">
@@ -206,6 +280,9 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
                 )}
               </Text>
             ))}
+          {row.fulfillments.map((f) => (
+            <History key={f.id} events={f.events} />
+          ))}
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   paymentState,
   remainingItems,
 } from "../../../lib/ship-orders"
+import { readEvents } from "../../../lib/tracking-events"
 
 export const ORDER_FIELDS = [
   "id",
@@ -40,6 +41,8 @@ export const ORDER_FIELDS = [
   "payment_collections.status",
   "payment_collections.payments.provider_id",
   "fulfillments.id",
+  "fulfillments.metadata",
+  "fulfillments.data",
   "fulfillments.packed_at",
   "fulfillments.shipped_at",
   "fulfillments.delivered_at",
@@ -113,6 +116,10 @@ export function toRow(order: any, providers: Map<string, string>) {
       id: f.id,
       shipped_at: f.shipped_at ?? null,
       delivered_at: f.delivered_at ?? null,
+      delivery_method: (f.metadata?.delivery_method as string | undefined) ?? (f.labels?.length ? "courier" : null),
+      driver: (f.metadata?.driver as string | undefined) ?? null,
+      note: (f.metadata?.note as string | undefined) ?? null,
+      events: readEvents(f.metadata),
       labels: (f.labels ?? [])
         .filter((l: any) => l)
         .map((l: any) => ({
