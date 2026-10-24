@@ -8,14 +8,18 @@ import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
 import ShippingDetails from "@modules/order/components/shipping-details"
+import ShipmentTracking from "@modules/order/components/shipment-tracking"
+import type { TrackedFulfillment } from "@lib/data/orders"
 import React from "react"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
+  fulfillments?: TrackedFulfillment[]
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
+  fulfillments = [],
 }) => {
   return (
     <div className="flex flex-col justify-center gap-y-4">
@@ -34,6 +38,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         data-testid="order-details-container"
       >
         <OrderDetails order={order} showStatus />
+        <ShipmentTracking fulfillments={fulfillments} />
         <Items order={order} />
         <ShippingDetails order={order} />
         <OrderSummary order={order} />

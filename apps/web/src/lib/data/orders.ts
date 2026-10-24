@@ -11,12 +11,31 @@ export type TrackedOrder = {
   status: "received" | "packed" | "shipped" | "delivered" | "canceled"
   ship_to: string
   items: { title: string; quantity: number }[]
-  fulfillments: {
-    packed_at: string | null
-    shipped_at: string | null
-    delivered_at: string | null
-    tracking: { number: string; url: string | null }[]
-  }[]
+  fulfillments: TrackedFulfillment[]
+}
+
+export type TrackedFulfillment = {
+  packed_at: string | null
+  shipped_at: string | null
+  delivered_at: string | null
+  delivery_method: "courier" | "manual" | null
+  events: { status: string; label: string; at: string }[]
+  tracking: { number: string; url: string | null }[]
+}
+
+/** Shipment progress for a signed-in shopper's own order. Empty on any failure. */
+export async function retrieveOrderTracking(id: string): Promise<TrackedFulfillment[]> {
+  const headers = await getAuthHeaders()
+  try {
+    const res = await sdk.client.fetch<{ fulfillments: TrackedFulfillment[] }>(
+      `/store/orders/${id}/tracking`,
+      { method: "GET", headers, cache: "no-store" }
+    )
+    return res.fulfillments ?? []
+  } catch {
+    // Tracking is an extra on the order page; a failure must not break it.
+    return []
+  }
 }
 
 /** Guest-friendly lookup: order number + the phone used at checkout. */

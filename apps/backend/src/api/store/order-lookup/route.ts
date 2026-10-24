@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { samePhone } from "../../../lib/phone"
+import { publicFulfillments, TRACKING_FIELDS } from "../../../lib/tracking-events"
 
 /**
  * POST /store/order-lookup  { order: "ORD-ABC123" | "15", phone: "610-202-3456" }
@@ -45,29 +46,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
       "items.title",
       "items.product_title",
       "items.quantity",
-      "fulfillments.id",
-      "fulfillments.packed_at",
-      "fulfillments.shipped_at",
-      "fulfillments.delivered_at",
-      "fulfillments.canceled_at",
-      "fulfillments.labels.tracking_number",
-      "fulfillments.labels.tracking_url",
+      ...TRACKING_FIELDS,
     ],
     filters: { id: found.id },
   })
 
   if (!order || !samePhone(order.shipping_address?.phone, phone)) return notFound()
 
-  const fulfillments = ((order.fulfillments ?? []) as any[])
-    .filter((f) => f && !f.canceled_at)
-    .map((f) => ({
-      packed_at: f.packed_at ?? null,
-      shipped_at: f.shipped_at ?? null,
-      delivered_at: f.delivered_at ?? null,
-      tracking: (f.labels ?? [])
-        .filter((l: any) => l?.tracking_number)
-        .map((l: any) => ({ number: l.tracking_number, url: l.tracking_url ?? null })),
-    }))
+  const fulfillments = publicFulfillments(order.fulfillments as any[])
 
   let status: "canceled" | "delivered" | "shipped" | "packed" | "received" = "received"
   if (order.canceled_at) status = "canceled"

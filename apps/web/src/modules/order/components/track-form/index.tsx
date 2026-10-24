@@ -3,6 +3,7 @@
 import { lookupOrder, TrackedOrder } from "@lib/data/orders"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
+import ShipmentTracking from "@modules/order/components/shipment-tracking"
 import { useActionState } from "react"
 
 const STEPS: { key: TrackedOrder["status"]; label: string }[] = [
@@ -72,24 +73,9 @@ export default function TrackForm({ initialOrder = "" }: { initialOrder?: string
           <p className="text-xl font-semibold">{order.number}</p>
           {order.ship_to && <p className="text-sm text-gray-600">Shipping to {order.ship_to}</p>}
           <Timeline order={order} />
-          {order.fulfillments.flatMap((f) => f.tracking).length > 0 && (
-            <div className="mt-6">
-              <p className="font-medium">Tracking</p>
-              <ul className="mt-1 list-disc pl-5">
-                {order.fulfillments.flatMap((f) => f.tracking).map((t) => (
-                  <li key={t.number}>
-                    {t.url ? (
-                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="underline">
-                        {t.number}
-                      </a>
-                    ) : (
-                      t.number
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="mt-6">
+            <ShipmentTracking fulfillments={order.fulfillments} />
+          </div>
           <ul className="mt-6 border-t pt-4 text-sm text-gray-700">
             {order.items.map((i, idx) => (
               <li key={idx}>

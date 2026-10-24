@@ -137,6 +137,11 @@ export default defineMiddlewares({
     // The route itself still has to confirm the caller *owns* the order;
     // authentication alone only proves they own *an* account.
     {
+      matcher: "/store/orders/*/tracking",
+      method: ["GET"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    {
       matcher: "/store/orders/*/invoice",
       method: ["GET"],
       middlewares: [authenticate("customer", ["session", "bearer"])],
