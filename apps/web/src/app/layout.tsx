@@ -19,6 +19,8 @@ const dmSerif = DM_Serif_Display({
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
   // Official Mithra mark (see modules/layout/components/logo).
+  // Staging must never be indexed (set NEXT_PUBLIC_NOINDEX=true there).
+  ...(process.env.NEXT_PUBLIC_NOINDEX === "true" ? { robots: { index: false, follow: false } } : {}),
   icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
 }
 
