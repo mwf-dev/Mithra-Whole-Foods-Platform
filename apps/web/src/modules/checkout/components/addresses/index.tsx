@@ -9,7 +9,7 @@ import Divider from "@modules/common/components/divider"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
@@ -39,6 +39,13 @@ const Addresses = ({
   }
 
   const [message, formAction] = useActionState(setAddresses, null)
+  const [guestChosen, setGuestChosen] = useState(false)
+
+  // Shoppers who are not signed in pick guest or account before any form.
+  // A cart that already has an address means they chose earlier.
+  const needsChoice =
+    !customer && !guestChosen && !cart?.shipping_address?.address_1
+  const backTo = encodeURIComponent(pathname + "?step=address")
 
   return (
     <div className="bg-white">
@@ -62,21 +69,58 @@ const Addresses = ({
           </Text>
         )}
       </div>
-      {isOpen ? (
+      {isOpen && needsChoice ? (
+        <div className="grid gap-4 small:grid-cols-2" data-testid="checkout-choice">
+          <div className="rounded-lg border border-ui-border-base p-5 flex flex-col gap-3">
+            <h3 className="txt-medium-plus">Continue as guest</h3>
+            <p className="text-small-regular text-ui-fg-subtle">
+              Just your name, address, phone and email. No password needed.
+            </p>
+            <button
+              type="button"
+              onClick={() => setGuestChosen(true)}
+              className="mt-auto h-11 rounded-md bg-[#2E5C31] px-4 text-white"
+              data-testid="continue-as-guest"
+            >
+              Continue as guest
+            </button>
+          </div>
+          <div className="rounded-lg border border-ui-border-base p-5 flex flex-col gap-3">
+            <h3 className="txt-medium-plus">Mithra Whole Foods account</h3>
+            <p className="text-small-regular text-ui-fg-subtle">
+              Save your address, track orders and reorder in a click.
+            </p>
+            <div className="mt-auto flex gap-2">
+              <LocalizedClientLink
+                href={`/account?redirect=${backTo}`}
+                className="flex h-11 flex-1 items-center justify-center rounded-md border border-[#2E5C31] text-[#2E5C31]"
+                data-testid="choice-sign-in"
+              >
+                Sign in
+              </LocalizedClientLink>
+              <LocalizedClientLink
+                href={`/account?view=register&redirect=${backTo}`}
+                className="flex h-11 flex-1 items-center justify-center rounded-md border border-[#2E5C31] text-[#2E5C31]"
+                data-testid="choice-sign-up"
+              >
+                Create account
+              </LocalizedClientLink>
+            </div>
+          </div>
+        </div>
+      ) : isOpen ? (
         <form action={formAction}>
           {!customer && (
             <p
               className="mb-6 rounded-lg bg-[#F3F7F4] px-4 py-3 text-small-regular"
               data-testid="guest-checkout-note"
             >
-              You&apos;re checking out as a guest &mdash; no account needed.{" "}
+              You&apos;re checking out as a guest.{" "}
               <LocalizedClientLink
-                href={`/account?redirect=${encodeURIComponent(
-                  pathname + "?step=address"
-                )}`}
+                href={`/account?redirect=${backTo}`}
                 className="underline"
               >
-                Already have an account? Sign in
+                Sign in instead
               </LocalizedClientLink>
             </p>
           )}

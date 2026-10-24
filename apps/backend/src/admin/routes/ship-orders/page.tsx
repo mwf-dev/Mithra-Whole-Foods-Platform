@@ -97,6 +97,7 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
   const [notify, setNotify] = useState(true)
   const [driver, setDriver] = useState("")
   const [note, setNote] = useState("")
+  const [mode, setMode] = useState<"courier" | "manual" | null>(null)
 
   const run = async (path: string, body: unknown, ok: string) => {
     setBusy(true)
@@ -173,26 +174,46 @@ function OrderCard({ row, onChanged }: { row: Row; onChanged: (r: Row) => void }
         <div className="flex flex-col gap-2">
           {row.stage === "to_ship" && (
             <>
-              <Text size="small" weight="plus">How will this go out?</Text>
-              <Button onClick={() => fulfill("courier")} isLoading={busy} disabled={!row.can_fulfill}>
-                Courier: buy label &amp; pack
-              </Button>
-              {!row.auto_label && (
+              <Text size="small" weight="plus">How will this order be delivered?</Text>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["courier", "Courier partner", "Buy a label, hand to the courier"],
+                  ["manual", "We deliver", "Our own driver or pickup"],
+                ] as const).map(([key, title, sub]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setMode(key)}
+                    className={`rounded-lg border p-3 text-left ${
+                      mode === key ? "border-ui-border-interactive bg-ui-bg-highlight" : "border-ui-border-base"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">{title}</div>
+                    <div className="text-xs text-ui-fg-subtle">{sub}</div>
+                  </button>
+                ))}
+              </div>
+              {mode === "courier" && (
+                <Button onClick={() => fulfill("courier")} isLoading={busy} disabled={!row.can_fulfill}>
+                  Buy label &amp; pack
+                </Button>
+              )}
+              {mode === "manual" && (
                 <>
                   <Input
                     size="small"
-                    placeholder="Manual: who delivers? (optional)"
+                    placeholder="Who delivers? (optional)"
                     value={driver}
                     onChange={(e) => setDriver(e.target.value)}
                   />
                   <Input
                     size="small"
-                    placeholder="Manual: note (e.g. leave at door)"
+                    placeholder="Note (e.g. leave at door)"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                   />
-                  <Button variant="secondary" onClick={() => fulfill("manual")} isLoading={busy} disabled={!row.can_fulfill}>
-                    Manual delivery: pack
+                  <Button onClick={() => fulfill("manual")} isLoading={busy} disabled={!row.can_fulfill}>
+                    Pack for our delivery
                   </Button>
                 </>
               )}

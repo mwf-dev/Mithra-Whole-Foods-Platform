@@ -1,3 +1,4 @@
+import { isManualFulfillment } from "../../../lib/manual-fulfillment"
 import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
 import {
   CalculatedShippingOptionPrice,
@@ -173,6 +174,9 @@ export class EasyshipFulfillmentService extends AbstractFulfillmentProviderServi
     order: any,
     fulfillment: any
   ): Promise<CreateFulfillmentResult> {
+    if (isManualFulfillment()) {
+      return { data: { manual: true }, labels: [] } as CreateFulfillmentResult
+    }
     const shippingAddress =
       order?.shipping_address ||
       fulfillment?.shipping_address ||

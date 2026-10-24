@@ -1,3 +1,4 @@
+import { runManualFulfillment } from "../../../../../lib/manual-fulfillment"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
 import { createOrderFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
@@ -49,13 +50,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
   }
   const method: DeliveryMethod = (body.method as DeliveryMethod) ?? (optionIsEasyship ? "courier" : "manual")
 
-  if (method === "manual" && optionIsEasyship) {
-    // The provider would buy a label the moment we fulfil, which is the opposite of manual.
-    return res.status(409).json({
-      message: "This order's shipping option is an Easyship one, so it can only go by courier.",
-    })
-  }
-
   // Cash on delivery needs someone to collect the cash; a courier parcel can't.
   // Set ALLOW_COD_COURIER=true if the courier account supports COD collection.
   if (
@@ -100,9 +94,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
   const before = new Set(activeFulfillments(order.fulfillments).map((f: any) => f.id))
 
   try {
-    await createOrderFulfillmentWorkflow(req.scope).run({
-      input: { order_id: order.id, items, no_notification: true } as any,
-    })
+    const run = () =>
+      createOrderFulfillmentWorkflow(req.scope).run({
+        input: { order_id: order.id, items, no_notification: true } as any,
+      })
+    // Manual delivery must never reach the courier's label purchase.
+    await (method === "manual" ? runManualFulfillment(run) : run())
   } catch (e: any) {
     if (bought?.data?.easyship_shipment_id) {
       // Don't leave a paid label behind for a parcel that was never packed.

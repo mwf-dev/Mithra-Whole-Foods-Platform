@@ -1,4 +1,5 @@
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
+import { readFileSync } from 'fs'
 import { NAV_GUARD_SCRIPT } from './src/lib/admin-nav-guard-script'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
@@ -22,6 +23,17 @@ if (!IS_DEV) {
   if (!process.env.STORE_CORS || !process.env.ADMIN_CORS || !process.env.AUTH_CORS) {
     throw new Error('CORS variables must be set in production');
   }
+}
+
+// The Mithra mark replaces Medusa's logo tile on the sign-in screen and the
+// sidebar. Inlined so the admin needs no extra static route.
+let MARK_DATA_URI = ''
+try {
+  MARK_DATA_URI =
+    'data:image/png;base64,' +
+    readFileSync(`${process.cwd()}/src/admin/assets/mithra-mark.png`).toString('base64')
+} catch {
+  // Missing asset: keep Medusa's default tile rather than failing the boot.
 }
 
 const modules: Record<string, any>[] = [
@@ -223,14 +235,27 @@ module.exports = defineConfig({
               "<head>",
               `<head>
               <title>Mithra Whole Foods — Admin</title>
+              ${MARK_DATA_URI ? `<style>
+                /* Medusa logo tile -> Mithra mark */
+                div[class*="size-14"][class*="rounded-xl"] > *,
+                div[class*="size-7"][class*="rounded-md"][class*="bg-ui-button-neutral"] > svg { display: none !important; }
+                div[class*="size-14"][class*="rounded-xl"] {
+                  width: 72px !important; height: 72px !important;
+                  background: #fff url(${MARK_DATA_URI}) center / 78% no-repeat !important;
+                  box-shadow: 0 0 0 1px rgba(0,0,0,.08) !important;
+                }
+                div[class*="size-14"][class*="rounded-xl"]::after { display: none !important; }
+              </style>` : ''}
               <script>
                 (function() {
-                  var theme = localStorage.getItem("medusa_theme") || localStorage.getItem("theme");
-                  if (!theme) {
-                    localStorage.setItem("medusa_theme", "light");
-                    document.documentElement.classList.remove("dark");
-                    document.documentElement.classList.add("light");
-                  }
+                  // Light unless the user has picked a theme themselves.
+                  try {
+                    if (!localStorage.getItem("medusa_admin_theme")) {
+                      localStorage.setItem("medusa_admin_theme", "light");
+                      document.documentElement.classList.remove("dark");
+                      document.documentElement.classList.add("light");
+                    }
+                  } catch (e) {}
                 })();
                 document.addEventListener("DOMContentLoaded", function() {
                   function updateBranding() {
