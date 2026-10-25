@@ -14,6 +14,7 @@ import { model } from "@medusajs/framework/utils"
  */
 export const OpsLogEvent = model
   .define("ops_log_event", {
+    id: model.id().primaryKey(),
     kind: model.enum(["email", "webhook", "label"]),
     // "easyship" | "stripe" | "resend" | "admin" | "system" — free text so a
     // new integration can report without a migration.
