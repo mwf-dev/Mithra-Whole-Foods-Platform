@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { resolveTemplate, trackUrl } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
 
 /**
  * When a fulfillment is marked delivered, email the customer.
@@ -72,21 +73,24 @@ export default async function shipmentDeliveredHandler({
   )
 
   try {
-    await notifications.createNotifications({
-      to: order.email,
-      channel: "email",
-      template,
-      data: {
-        order_id: `#${orderNumber}`,
-        email: order.email,
-        track_url: trackUrl(orderNumber),
-        tracking:
-          fulfillment.labels?.map((l: any) => ({
-            number: l?.tracking_number,
-            url: l?.tracking_url,
-          })) ?? [],
+    await createLoggedNotification(
+      container,
+      {
+        to: order.email,
+        template,
+        data: {
+          order_id: `#${orderNumber}`,
+          email: order.email,
+          track_url: trackUrl(orderNumber),
+          tracking:
+            fulfillment.labels?.map((l: any) => ({
+              number: l?.tracking_number,
+              url: l?.tracking_url,
+            })) ?? [],
+        },
       },
-    })
+      { orderId: order.id }
+    )
   } catch (e) {
     logger.error(
       `[shipment-delivered] delivery email failed for fulfillment ${data.id}`,

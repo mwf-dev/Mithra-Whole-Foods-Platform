@@ -1,0 +1,20 @@
+feat(ops,orders): operations log with retry, and a signed guest invoice link
+
+C5 and C9 from the go-live checklist, plus C8's code guard is documented:
+
+- ops-log module (ops_log_event table + migration): one row per email
+  send/attempt, Easyship webhook event (including rejected unsigned ones)
+  and label purchase/void, stored with enough payload to replay
+- GET /admin/ops-log + POST /admin/ops-log/:id/retry and an admin "Ops log"
+  page (super-admin only) to see failures and retry them in one click;
+  webhook replay shares the exact processing core with the live route
+  (extracted to lib/easyship-event.ts)
+- every email subscriber now sends through createLoggedNotification so a
+  failed send is visible in admin instead of only Railway logs
+- signed guest invoice link: invoice_url HMAC button in the order
+  confirmation email -> public GET /invoice/:id?t=... (rate limited,
+  constant-time compare), sharing the PDF renderer extracted into
+  lib/invoice-pdf.ts from the authenticated invoice route
+
+Generated with Codebuff 🤖
+Co-Authored-By: Codebuff <noreply@codebuff.com>

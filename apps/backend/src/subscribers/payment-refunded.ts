@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { resolveTemplate } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
 import { formatMoney, latestRefundAmount } from "../lib/refund-email"
 
 /**
@@ -55,15 +56,18 @@ export default async function paymentRefundedHandler({
     if (!order?.email) return
 
     const amount = latestRefundAmount((payment as any).refunds)
-    await notifications.createNotifications({
-      to: order.email,
-      channel: "email",
-      template,
-      data: {
-        order_id: `#${(order.metadata as any)?.order_number ?? order.display_id}`,
-        amount: amount === null ? "your payment" : formatMoney(amount, payment.currency_code ?? order.currency_code),
+    await createLoggedNotification(
+      container,
+      {
+        to: order.email,
+        template,
+        data: {
+          order_id: `#${(order.metadata as any)?.order_number ?? order.display_id}`,
+          amount: amount === null ? "your payment" : formatMoney(amount, payment.currency_code ?? order.currency_code),
+        },
       },
-    })
+      { orderId: order.id }
+    )
   } catch (e) {
     logger.error(`[payment-refunded] refund email failed for payment ${data.id}`, e as Error)
   }

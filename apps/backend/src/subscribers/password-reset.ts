@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { resolveTemplate } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
 
 /**
  * Medusa emits `auth.password_reset` from POST /auth/{actor}/emailpass/reset-password.
@@ -40,12 +41,15 @@ export default async function passwordResetHandler({
       : `${backend}/app/reset-password?token=${token}&email=${email}`
 
   try {
-    await notifications.createNotifications({
-      to: data.entity_id,
-      channel: "email",
-      template,
-      data: { reset_url: resetUrl },
-    })
+    await createLoggedNotification(
+      container,
+      {
+        to: data.entity_id,
+        template,
+        data: { reset_url: resetUrl },
+      },
+      { source: "system" }
+    )
   } catch (e) {
     logger.error("[password-reset] reset email failed", e as Error)
   }

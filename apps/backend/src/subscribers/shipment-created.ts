@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { resolveTemplate, trackUrl } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
 
 /**
  * When the admin marks a fulfillment as shipped, email the customer their
@@ -73,22 +74,25 @@ export default async function shipmentCreatedHandler({
   )
 
   try {
-    await notifications.createNotifications({
-      to: order.email,
-      channel: "email",
-      template,
-      data: {
-        order_id: `#${orderNumber}`,
-        email: order.email,
-        track_url: trackUrl(orderNumber),
-        note: manual ? (fulfillment.metadata as any)?.note ?? "" : "",
-        tracking:
-          fulfillment.labels?.map((l: any) => ({
-            number: l?.tracking_number,
-            url: l?.tracking_url,
-          })) ?? [],
+    await createLoggedNotification(
+      container,
+      {
+        to: order.email,
+        template,
+        data: {
+          order_id: `#${orderNumber}`,
+          email: order.email,
+          track_url: trackUrl(orderNumber),
+          note: manual ? (fulfillment.metadata as any)?.note ?? "" : "",
+          tracking:
+            fulfillment.labels?.map((l: any) => ({
+              number: l?.tracking_number,
+              url: l?.tracking_url,
+            })) ?? [],
+        },
       },
-    })
+      { orderId: order.id }
+    )
   } catch (e) {
     logger.error(
       `[shipment-created] shipment email failed for fulfillment ${data.id}`,

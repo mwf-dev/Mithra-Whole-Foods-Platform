@@ -49,6 +49,11 @@ const modules: Record<string, any>[] = [
   {
     resolve: "./src/modules/product-brief",
   },
+  {
+    // Operations log (emails, Easyship webhooks, label purchases) behind
+    // admin → Ops log. No env gating: it is always on.
+    resolve: "./src/modules/ops-log",
+  },
 ]
 
 // S3-compatible file storage (GCS via HMAC interop, or AWS S3). Required on

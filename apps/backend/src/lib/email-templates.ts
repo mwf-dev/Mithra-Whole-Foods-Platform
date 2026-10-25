@@ -84,6 +84,7 @@ export function renderEmail(
 ${itemsTable(d.items)}
 <p>Subtotal: ${esc(d.subtotal)}<br>Shipping: ${esc(d.shipping_total)}<br><b>Total: ${esc(d.total)}</b></p>
 <p><b>Shipping to:</b><br>${esc(d.shipping_address)}</p>
+${d.invoice_url ? button(d.invoice_url, "Download invoice (PDF)") : ""}
 ${d.track_url ? button(d.track_url, "Track your order") : ""}`
         ),
       }

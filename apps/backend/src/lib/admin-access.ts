@@ -53,12 +53,13 @@ export const SECTIONS: Section[] = [
 ]
 
 /** Pages only a super admin ever sees (not switchable). */
-export const SUPER_ONLY_NAV = ["/platform", "/control-center", "/settings/users", "/settings/api-key-management", "/settings/secret-api-keys", "/settings/publishable-api-keys"]
+export const SUPER_ONLY_NAV = ["/platform", "/control-center", "/ops-log", "/settings/users", "/settings/api-key-management", "/settings/secret-api-keys", "/settings/publishable-api-keys"]
 
 /** API prefixes only a super admin may call, regardless of any switch. */
 export const SUPER_ONLY_API = [
   "/admin/platform",
   "/admin/usage",
+  "/admin/ops-log",
   "/admin/client-access",
   "/admin/invites",
   "/admin/api-keys",

@@ -4,6 +4,7 @@ import { Modules } from "@medusajs/framework/utils"
 import { createOrderFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 import { missingForShipping, paymentState, remainingItems, activeFulfillments } from "../../../../../lib/ship-orders"
 import { appendEvent, type DeliveryMethod } from "../../../../../lib/tracking-events"
+import { logOpsEvent } from "../../../../../lib/ops-log"
 import { EasyshipFulfillmentService } from "../../../../../modules/fulfillment-easyship/services/easyship-fulfillment"
 import { loadOrder, providerByOption, toRow } from "../../_shared"
 
@@ -86,7 +87,23 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
         return { title: li?.product_title || li?.title, unit_price: li?.unit_price, quantity: i.quantity }
       })
       bought = (await service.createFulfillment({}, lines, order, null)) as any
+      await logOpsEvent(req.scope, {
+        kind: "label",
+        source: "easyship",
+        status: "ok",
+        order_id: order.id,
+        reference: (bought?.data as any)?.easyship_shipment_id ?? null,
+        detail: "Label bought from Ship orders (courier delivery on a non-Easyship option)",
+        payload: bought?.data ?? null,
+      })
     } catch (e: any) {
+      await logOpsEvent(req.scope, {
+        kind: "label",
+        source: "easyship",
+        status: "failed",
+        order_id: order.id,
+        detail: `Label purchase failed: ${e?.message || e}`,
+      })
       return res.status(502).json({ message: e?.message || "Could not buy the shipping label." })
     }
   }
@@ -106,8 +123,24 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
       await new EasyshipFulfillmentService({}, { apiKey: process.env.EASYSHIP_API_KEY } as any)
         .cancelFulfillment(bought.data)
         .catch(() => undefined)
+      await logOpsEvent(req.scope, {
+        kind: "label",
+        source: "easyship",
+        status: "failed",
+        order_id: order.id,
+        reference: bought.data.easyship_shipment_id,
+        detail: `Packing failed after the label was bought — label voided: ${e?.message || e}`,
+      })
+      // Surface the provider's own message (e.g. Easyship rejecting an address).
+      return res.status(502).json({ message: e?.message || "Could not create the shipment." })
     }
-    // Surface the provider's own message (e.g. Easyship rejecting an address).
+    await logOpsEvent(req.scope, {
+      kind: "label",
+      source: "easyship",
+      status: "failed",
+      order_id: order.id,
+      detail: `Fulfillment failed (${method}${optionIsEasyship ? ", easyship option" : ""}): ${e?.message || e}`,
+    })
     return res.status(502).json({ message: e?.message || "Could not create the shipment." })
   }
 
@@ -125,6 +158,19 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<any
     const update: Record<string, unknown> = { metadata }
     if (bought) update.data = { ...(f.data ?? {}), ...bought.data }
     await fulfillmentModule.updateFulfillment(f.id, update as any)
+    if (method === "courier" && !bought) {
+      // Label bought inside Medusa's fulfillment workflow (the shipping option
+      // already points at Easyship) — record it the same way.
+      await logOpsEvent(req.scope, {
+        kind: "label",
+        source: "easyship",
+        status: "ok",
+        order_id: order.id,
+        reference: (f.data as any)?.easyship_shipment_id ?? (f.data as any)?.tracking_number ?? null,
+        detail: "Label bought via the Easyship shipping option",
+        payload: (f.data as any) ?? null,
+      })
+    }
   }
 
   const after = await loadOrder(req.scope, order.id)

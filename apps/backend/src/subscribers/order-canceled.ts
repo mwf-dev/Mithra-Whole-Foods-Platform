@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { resolveTemplate } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
 
 /** Tells the customer their order was canceled (admin cancel or cancel workflow). */
 export default async function orderCanceledHandler({
@@ -30,12 +31,15 @@ export default async function orderCanceledHandler({
   if (!order?.email) return
 
   try {
-    await notifications.createNotifications({
-      to: order.email,
-      channel: "email",
-      template,
-      data: { order_id: `#${(order.metadata as any)?.order_number ?? order.display_id}` },
-    })
+    await createLoggedNotification(
+      container,
+      {
+        to: order.email,
+        template,
+        data: { order_id: `#${(order.metadata as any)?.order_number ?? order.display_id}` },
+      },
+      { orderId: order.id }
+    )
   } catch (e) {
     logger.error(`[order-canceled] cancel email failed for ${data.id}`, e as Error)
   }

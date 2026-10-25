@@ -25,6 +25,9 @@ Verified against `apps/backend/src/api/**` and `apps/web/src/services/medusa.ts`
 | POST | `/admin/content-briefs/:productId` | Admin session | `{ status: draft \| submitted \| approved }` | `{ brief }` |
 | GET | `/store/custom` | Publishable key | — | empty 200 — dead starter stub, slated for deletion |
 | GET | `/store/reviews` | Publishable key | `?limit` (default 8, max 12), `?min_rating` (default 4) | `{ reviews: [{ id, rating, title, content, customer_name, verified_purchase, created_at, product: { id, title, handle, thumbnail } }] }` — latest **approved** reviews across the catalog, for the homepage strip (hidden below 3). Pending/rejected rows are never exposed. Added 2026-09-30 |
+| GET | `/admin/ops-log` | Admin session (**super-admin only**) | `?kind=email\|webhook\|label`, `?status=ok\|failed`, `?order_id`, `?limit` (≤200, default 100) | `{ events: [OpsLogEvent], count }` — newest first. One row per email send, Easyship webhook event, or label purchase/void. Added 2026-10-25 |
+| POST | `/admin/ops-log/:id/retry` | Admin session (**super-admin only**) | — | Replay a failed row: email re-sends the stored payload (new row, source `admin`), webhook re-runs the same processing as the live webhook route, label → `400` (buy it again in Ship orders). Success `{ retried: true }`; problems are `409` (nothing to replay / no change) or `502`. Added 2026-10-25 |
+| GET | `/invoice/:id` | **None** — HMAC-protected link (see note 2) | `?t=<base64url HMAC>` | the order's invoice **PDF** (same rendering as the authenticated route). `401` on a bad/missing token, `500` without a signing secret, per-IP rate limited (30/min). Generated into the order-confirmation email as `invoice_url`; guests have no account, this is their invoice access. Added 2026-10-25 |
 
 ### HomepageSetting shape
 
@@ -94,6 +97,12 @@ Admin UI (`src/admin/routes/homepage/page.tsx`) additionally calls built-in
    server component can raw-`fetch` it without a publishable key
    (`medusa.ts:29`). If you move it under `/store`, update that fetch to the
    SDK in the same deploy.
+2. **`/invoice/:id` is top-level on purpose** (same idea as `/homepage`): it
+   is not under `/store` because a guest never had a publishable key — its
+   protection is the HMAC `?t=` token instead (constant-time compared, no
+   expiry; the link lives in the shopper's own inbox). Signing secret is
+   `INVOICE_LINK_SECRET` or `COOKIE_SECRET`; rotating it invalidates old
+   links.
 2. **`variant.options` is an ARRAY** of option-value objects in Medusa v2.
    `variants[0].options.Weight` (current code in Shop/PDP/BestSellers) always
    misses and falls back to `'1kg'`.

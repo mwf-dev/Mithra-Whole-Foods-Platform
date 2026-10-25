@@ -26,7 +26,7 @@ re-tested today.
 
 ## 2. What is genuinely missing (code work)
 
-**Status 2026-10-24 (branch `staging`): C1, C2, C3, C4 (manual-delivery, canceled, refunded emails), C6, C7 and C8 are built, committed and pass typecheck, lint and unit tests. Not yet exercised against real Easyship/Resend/Stripe: that is what staging is for. C5 (ops log) and C9 (signed guest invoice link) remain. Setup steps: `docs/STAGING_SETUP.md`.**
+**Status 2026-10-25 (branch `staging`): C1–C9 are ALL built — C5 (ops log: admin → "Ops log" page with filters and one-click retry for failed emails/webhooks Easyship events) and C9 (signed guest invoice link: `invoice_url` button in the confirmation email → `GET /invoice/:id?t=<hmac>`) landed today. Everything passes typecheck, lint and unit tests but has **not yet been exercised against real Easyship/Resend/Stripe: that is what staging is for.** Setup steps: `docs/STAGING_SETUP.md`.**
 
 | # | Item | Why |
 |---|---|---|
@@ -34,11 +34,11 @@ re-tested today.
 | C2 | **Store every tracking status**, not only delivered | The webhook ignores `in_transit`, `out_for_delivery` and `exception`. Save each one with a timestamp on the fulfillment metadata. |
 | C3 | **Tracking timeline for the customer** (account order page and `/track`) with carrier link | The account order page shows only a status word. |
 | C4 | Emails for shipped, delivered, out-for-delivery and manual-delivery "on its way" | Subscribers exist for placed, shipped, delivered. Add manual-delivery variants and cancel/refund. Verify the templates render. |
-| C5 | **Ops log + stuck-orders page** (webhooks received, emails sent or failed, labels bought, with retry) | Nothing persists webhook or email attempts, so a failed email is invisible. |
+| C5 | ~~**Ops log + stuck-orders page**~~ **BUILT 2026-10-25** (admin → "Ops log"; emails, Easyship webhooks and label events recorded with one-click retry; super-admin only) | (was) Nothing persisted webhook or email attempts, so a failed email was invisible. |
 | C6 | Show the Easyship fallback-rate event in Sentry, not just the log | A silent flat rate hides a broken Easyship key. |
 | C7 | "Coming soon" products listed before purchasable ones on `/store` | New visitors see two pages with nothing to buy. |
-| C8 | Decide Cash on Delivery for courier orders (`pp_system_default`) | Who collects the cash on a courier shipment? Hide it unless the order is manual delivery. |
-| C9 | Order-confirmation, track and invoice flow for guests: signed invoice link in the email | Invoice route needs a logged-in customer today. |
+| C8 | Cash on Delivery on courier orders (`pp_system_default`) — **DECIDED, enforced in code** (2026-10-24): the Ship orders fulfill step REFUSES courier dispatch on a pay-on-delivery order unless `ALLOW_COD_COURIER=true`; COD orders go by manual delivery so our driver collects the cash. | Who collects the cash on a courier shipment? Hide it unless the order is manual delivery. |
+| C9 | ~~Order-confirmation, track and invoice flow for guests: signed invoice link~~ **BUILT 2026-10-25** (`invoice_url` HMAC button in the confirmation email → `GET /invoice/:id?t=…`) | (was) Invoice route needed a logged-in customer. |
 
 ## 3. Staging architecture (nothing exists yet)
 

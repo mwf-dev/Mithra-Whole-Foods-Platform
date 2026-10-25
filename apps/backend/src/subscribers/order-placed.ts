@@ -4,6 +4,8 @@ import * as crypto from "crypto"
 import { trackOrderCompleted } from "../lib/analytics"
 import { reportError } from "../lib/observability"
 import { resolveTemplate, trackUrl } from "../lib/email"
+import { createLoggedNotification } from "../lib/ops-log"
+import { invoiceLinkUrl } from "../lib/invoice-link"
 
 /**
  * When an order is placed:
@@ -140,6 +142,9 @@ export default async function orderPlacedHandler({
     currency: (order.currency_code || "usd").toUpperCase(),
   })
   const addr = order.shipping_address
+  // Signed guest invoice link (C9). Null without a public backend URL — the
+  // template then simply skips the button.
+  const invoiceUrl = invoiceLinkUrl(order.id)
   const templateData = {
     order_id: `#${customOrderNumber}`,
     order_date: new Date(order.created_at as string).toLocaleDateString(
@@ -168,17 +173,17 @@ export default async function orderPlacedHandler({
           .filter(Boolean)
           .join(", ")
       : "",
+    invoice_url: invoiceUrl,
   }
 
   const customerTemplate = resolveTemplate("order-placed", "SENDGRID_ORDER_PLACED_TEMPLATE_ID")
   if (customerTemplate && order.email) {
     try {
-      await notifications.createNotifications({
-        to: order.email,
-        channel: "email",
-        template: customerTemplate,
-        data: templateData,
-      })
+      await createLoggedNotification(
+        container,
+        { to: order.email, template: customerTemplate, data: templateData },
+        { orderId: order.id }
+      )
     } catch (e) {
       logger.error(`[order-placed] customer email failed for ${data.id}`, e as Error)
     }
@@ -193,12 +198,11 @@ export default async function orderPlacedHandler({
     resolveTemplate("admin-new-order", "SENDGRID_ADMIN_NEW_ORDER_TEMPLATE_ID") || customerTemplate
   if (adminEmail && adminTemplate) {
     try {
-      await notifications.createNotifications({
-        to: adminEmail,
-        channel: "email",
-        template: adminTemplate,
-        data: templateData,
-      })
+      await createLoggedNotification(
+        container,
+        { to: adminEmail, template: adminTemplate, data: templateData },
+        { orderId: order.id }
+      )
     } catch (e) {
       logger.error(`[order-placed] admin alert failed for ${data.id}`, e as Error)
     }

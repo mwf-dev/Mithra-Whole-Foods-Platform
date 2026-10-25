@@ -59,6 +59,21 @@ const contentStudioLimiter = rateLimit({
 })
 
 /**
+ * GET /invoice/:id is the signed guest invoice link (src/lib/invoice-link.ts):
+ * public (it streams a PDF straight to the browser), so a plain per-IP limiter
+ * is the only brake on someone replaying one link aggressively. Generous —
+ * an email link needs exactly two requests and one prefetch.
+ */
+const invoiceLinkLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { message: "Too many requests, please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: clientIpKey,
+})
+
+/**
  * Guest order lookup (POST /store/order-lookup). Two limits: a general
  * per-client one, and a tight per-order-number one so nobody can grind through
  * phone numbers against a single order. Failed and successful attempts both
@@ -162,6 +177,11 @@ export default defineMiddlewares({
       matcher: "/store/order-lookup",
       method: ["POST"],
       middlewares: [orderLookupLimiter, orderLookupPerOrderLimiter],
+    },
+    {
+      matcher: "/invoice/*",
+      method: ["GET"],
+      middlewares: [invoiceLinkLimiter],
     },
     {
       matcher: "/admin/homepage",

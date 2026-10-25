@@ -116,17 +116,30 @@ export function toRow(order: any, providers: Map<string, string>) {
       id: f.id,
       shipped_at: f.shipped_at ?? null,
       delivered_at: f.delivered_at ?? null,
-      delivery_method: (f.metadata?.delivery_method as string | undefined) ?? (f.labels?.length ? "courier" : null),
+      delivery_method:
+        (f.metadata?.delivery_method as string | undefined) ??
+        (f.labels?.length || f.data?.tracking_number ? "courier" : null),
       driver: (f.metadata?.driver as string | undefined) ?? null,
       note: (f.metadata?.note as string | undefined) ?? null,
       events: readEvents(f.metadata),
-      labels: (f.labels ?? [])
-        .filter((l: any) => l)
-        .map((l: any) => ({
-          tracking_number: l.tracking_number ?? null,
-          tracking_url: l.tracking_url ?? null,
-          label_url: l.label_url ?? null,
-        })),
+      labels:
+        f.labels && f.labels.length > 0
+          ? f.labels
+              .filter((l: any) => l)
+              .map((l: any) => ({
+                tracking_number: l.tracking_number ?? null,
+                tracking_url: l.tracking_url ?? null,
+                label_url: l.label_url ?? null,
+              }))
+          : f.data?.tracking_number
+            ? [
+                {
+                  tracking_number: f.data.tracking_number,
+                  tracking_url: f.data.tracking_url ?? null,
+                  label_url: f.data.label_url ?? null,
+                },
+              ]
+            : [],
     })),
   }
 }
