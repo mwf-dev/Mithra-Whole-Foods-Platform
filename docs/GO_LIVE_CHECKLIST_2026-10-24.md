@@ -70,6 +70,10 @@ Steps:
 
 ## 5. Staging test script (all must pass)
 
+Easyship-specific script (label purchase, carrier-side status sync from the
+Easyship dashboard, webhook replay, signed guest invoice): **see
+`docs/EASYSHIP_STAGING_TEST_2026-10-25.md`** — run it alongside this list.
+
 1. Guest: add to cart, checkout with email + phone, Stripe test card `4242 4242 4242 4242`, order confirmed, confirmation email arrives (Resend).
 2. Account: sign up with email + password, order again, saved address prefilled, password reset email works.
 3. Admin Ship orders, **Courier**: buy an Easyship sandbox label, packing slip prints, shipment email arrives with tracking.
